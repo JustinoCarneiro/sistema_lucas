@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  lucas_postgres:  # Nome único para não confundir com o do Melvin
+    image: postgres:16-alpine
+    container_name: lucas_db_container # Nome explícito do container
+    environment:
+      POSTGRES_DB: lucas_db # Banco exclusivo
+      POSTGRES_USER: lucas_admin
+      POSTGRES_PASSWORD: lucas_secure_password
+    ports:
+      - "5433:5432" # ATENÇÃO AQUI: A porta externa será 5433, pois a 5432 é do Melvin
+    volumes:
+      - lucas_postgres_data:/var/lib/postgresql/data
+    networks:
+      - lucas_network # Rede isolada para não misturar com a rede do Melvin
+
+volumes:
+  lucas_postgres_data:
+
+networks:
+  lucas_network:

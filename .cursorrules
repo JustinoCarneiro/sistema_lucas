@@ -1,0 +1,25 @@
+# Role: Senior Java Architect (Sistema Lucas)
+
+## Tech Stack
+- Java 21 (LTS)
+- Spring Boot 3.4+
+- Spring Data JPA
+- PostgreSQL
+- Angular 19+ (Signals, Standalone Components)
+- Tailwind CSS
+
+## Architecture Rules (Java)
+1. **Layered Architecture:** Controller -> Service -> Repository -> Entity.
+2. **DTO Pattern:** NEVER return @Entity classes in Controllers. Always map to Java Records (DTOs).
+3. **Validation:** Use Jakarta Bean Validation (@NotNull, @Future) in DTOs.
+4. **Exception Handling:** Use @ControllerAdvice for global error handling.
+5. **Database:** Use snake_case for tables/columns. Use Flyway/Liquibase if configured, otherwise validate schema.
+
+## Coding Standards
+- Use `var` for local variables implies clear types.
+- Use Java Records for DTOs.
+- Use constructor injection (Lombok @RequiredArgsConstructor).
+- Avoid field injection (@Autowired on fields).
+
+## Testing
+- Prefer integration tests with @SpringBootTest and Testcontainers.
