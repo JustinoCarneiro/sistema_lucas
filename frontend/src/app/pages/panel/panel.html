@@ -1,0 +1,30 @@
+<div class="flex h-screen bg-gray-100">
+  
+    <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl">
+      <div class="p-6 text-2xl font-bold border-b border-blue-800 tracking-wider">
+        Dr. House
+      </div>
+      
+      <nav class="flex-1 p-4 space-y-3 mt-4 text-gray-300">
+        <a href="#" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition">📅 Agenda</a>
+        <a href="#" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition">👥 Pacientes</a>
+        <a routerLink="/panel/doctors" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition cursor-pointer">🩺 Médicos</a>
+      </nav>
+      
+      <div class="p-4 border-t border-blue-800">
+        <button (click)="logout()" class="w-full flex items-center justify-center py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg transition shadow-md">
+          🚪 Sair do Sistema
+        </button>
+      </div>
+    </aside>
+  
+    <main class="flex-1 p-8 overflow-y-auto">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-800">Sistema da Clínica</h1>
+        <span class="bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-1.5 rounded-full">Sessão Ativa</span>
+      </div>
+  
+      <router-outlet></router-outlet>
+    </main>
+    
+  </div>

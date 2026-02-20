@@ -1,0 +1,82 @@
+<div class="space-y-8">
+  
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">Gerenciar Médicos</h2>
+      <p class="text-gray-500">Cadastre novos profissionais ou visualize o corpo clínico.</p>
+    </div>
+  
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4">Novo Médico</h3>
+      
+      <form [formGroup]="doctorForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Nome Completo</label>
+          <input type="text" formControlName="name" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">E-mail</label>
+          <input type="email" formControlName="email" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Senha</label>
+          <input type="password" formControlName="password" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">CRM</label>
+          <input type="text" formControlName="crm" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Especialidade</label>
+          <input type="text" formControlName="specialty" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div class="flex items-end">
+          <button type="submit" [disabled]="doctorForm.invalid" 
+            class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition">
+            ➕ Cadastrar Médico
+          </button>
+        </div>
+  
+      </form>
+    </div>
+  
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome / Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRM</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especialidade</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          
+          <tr *ngFor="let doc of doctorsList" class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4">
+              <div class="text-sm font-bold text-gray-900">{{ doc.name }}</div>
+              <div class="text-sm text-gray-500">{{ doc.email }}</div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ doc.crm }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ doc.specialty }}</td>
+            <td class="px-6 py-4">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                Ativo
+              </span>
+            </td>
+          </tr>
+  
+          <tr *ngIf="doctorsList.length === 0">
+            <td colspan="4" class="px-6 py-8 text-center text-gray-500">Nenhum médico encontrado.</td>
+          </tr>
+  
+        </tbody>
+      </table>
+    </div>
+  
+  </div>
