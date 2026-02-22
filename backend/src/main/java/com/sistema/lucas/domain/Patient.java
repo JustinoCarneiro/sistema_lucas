@@ -19,4 +19,7 @@ public class Patient extends User {
 
     @Column(name = "health_insurance")
     private String healthInsurance; // Ex: Unimed, Amil
+
+    @Column(name = "whatsapp")
+    private String whatsapp;
 }

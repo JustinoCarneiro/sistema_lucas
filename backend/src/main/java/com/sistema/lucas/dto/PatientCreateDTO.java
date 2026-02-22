@@ -19,5 +19,8 @@ public record PatientCreateDTO(
     @CPF(message = "CPF inválido") // <--- AQUI ESTÁ O USO
     String cpf,
 
-    String healthInsurance
+    String healthInsurance,
+
+    @NotBlank(message = "O WhatsApp é obrigatório para notificações")
+    String whatsapp
 ) {}

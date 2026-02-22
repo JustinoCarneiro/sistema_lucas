@@ -33,7 +33,7 @@ public class SecurityConfigurations {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    req.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
+                    req.requestMatchers("/auth/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/doctors").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/patients").permitAll();
                     req.anyRequest().authenticated();

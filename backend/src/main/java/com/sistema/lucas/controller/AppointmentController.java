@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.GetMapping;
+import com.sistema.lucas.repository.AppointmentRepository;
 
 @RestController
 @RequestMapping("/appointments")
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class AppointmentController {
 
     private final AppointmentService service;
+    private final AppointmentRepository repository;
 
     @PostMapping
     public ResponseEntity<AppointmentResponseDTO> schedule(@RequestBody @Valid AppointmentCreateDTO dto) {
@@ -35,5 +40,20 @@ public class AppointmentController {
 
         // 3. Retorna Status 201 (Created)
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<AppointmentResponseDTO>> listAll(Pageable pagination) {
+        // Exemplo simples usando o repositório e convertendo para DTO
+        // Se preferir, pode criar este método dentro do AppointmentService!
+        var page = repository.findAll(pagination).map(appointment -> new AppointmentResponseDTO(
+                appointment.getId(),
+                appointment.getDoctor().getName(),
+                appointment.getPatient().getName(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                appointment.getStatus()
+        ));
+        return ResponseEntity.ok(page);
     }
 }

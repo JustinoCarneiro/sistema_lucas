@@ -6,6 +6,8 @@ import com.sistema.lucas.dto.PatientCreateDTO;
 import com.sistema.lucas.repository.PatientRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,5 +42,11 @@ public class PatientController {
         repository.save(patient);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(patient);
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Patient>> listAll(Pageable pagination) {
+        var page = repository.findAll(pagination);
+        return ResponseEntity.ok(page);
     }
 }

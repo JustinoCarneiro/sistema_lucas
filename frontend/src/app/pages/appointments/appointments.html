@@ -1,0 +1,83 @@
+<div class="space-y-8">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">Agenda de Consultas</h2>
+      <p class="text-gray-500">Faça a gestão da marcação de consultas da clínica.</p>
+    </div>
+  
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4">Nova Marcação</h3>
+      
+      <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Médico</label>
+          <select formControlName="doctorId" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+            <option value="" disabled selected>Selecione um Médico...</option>
+            <option *ngFor="let doc of doctorsList" [value]="doc.id">{{ doc.name }} ({{doc.specialty}})</option>
+          </select>
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Paciente</label>
+          <select formControlName="patientId" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+            <option value="" disabled selected>Selecione um Paciente...</option>
+            <option *ngFor="let pat of patientsList" [value]="pat.id">{{ pat.name }}</option>
+          </select>
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Motivo (Opcional)</label>
+          <input type="text" formControlName="reason" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Consulta de Rotina">
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Início da Consulta</label>
+          <input type="datetime-local" formControlName="startTime" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Fim da Consulta</label>
+          <input type="datetime-local" formControlName="endTime" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+  
+        <div class="flex items-end">
+          <button type="submit" [disabled]="appointmentForm.invalid" 
+            class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition">
+            📅 Marcar Consulta
+          </button>
+        </div>
+  
+      </form>
+    </div>
+  
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data / Hora</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Médico</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let app of appointmentsList" class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4">
+              <div class="text-sm font-bold text-gray-900">{{ app.startTime | date:'dd/MM/yyyy' }}</div>
+              <div class="text-sm text-gray-500">{{ app.startTime | date:'HH:mm' }} - {{ app.endTime | date:'HH:mm' }}</div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ app.doctorName }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ app.patientName }}</td>
+            <td class="px-6 py-4">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                {{ app.status }}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="appointmentsList.length === 0">
+            <td colspan="4" class="px-6 py-8 text-center text-gray-500">Não há consultas agendadas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
