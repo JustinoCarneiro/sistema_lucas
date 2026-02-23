@@ -14,7 +14,15 @@ services:
       - lucas_postgres_data:/var/lib/postgresql/data
     networks:
       - lucas_network # Rede isolada para não misturar com a rede do Melvin
-
+  evolution_api:
+    image: atendare/evolution-api:latest
+    container_name: evolution_api
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_URL=http://localhost:8080
+      - AUTHENTICATION_API_KEY=422470291152
+      
 volumes:
   lucas_postgres_data:
 

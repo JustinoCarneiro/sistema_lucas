@@ -12,6 +12,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.format.DateTimeFormatter; // Para deixar a data bonita no e-mail
 
 @Service
 @RequiredArgsConstructor
@@ -20,10 +21,11 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final NotificationService notificationService; // 1. Injetamos o serviço de notificações
 
     @Transactional
     public Appointment schedule(AppointmentCreateDTO dto) {
-        // 1. Buscar Médico (Se não achar, erro 404)
+        // 1. Buscar Médico
         Doctor doctor = doctorRepository.findById(dto.doctorId())
             .orElseThrow(() -> new EntityNotFoundException("Médico não encontrado"));
 
@@ -31,7 +33,7 @@ public class AppointmentService {
         Patient patient = patientRepository.findById(dto.patientId())
             .orElseThrow(() -> new EntityNotFoundException("Paciente não encontrado"));
 
-        // 3. Validar Conflito de Horário (A Regra de Ouro)
+        // 3. Validar Conflito de Horário
         boolean hasConflict = appointmentRepository.existsConflict(
             doctor.getId(), dto.startTime(), dto.endTime()
         );
@@ -50,25 +52,48 @@ public class AppointmentService {
             .status(AppointmentStatus.SCHEDULED)
             .build();
 
-        return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // 👇 5. DISPARO DA NOTIFICAÇÃO (E-mail e Simulação WhatsApp) 👇
+        try {
+            String formattedDate = savedAppointment.getStartTime()
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm"));
+
+            // Envia E-mail (O @Async no NotificationService garante que não trave aqui)
+            notificationService.sendAppointmentConfirmation(
+                savedAppointment.getPatient().getEmail(),
+                savedAppointment.getPatient().getName(),
+                savedAppointment.getDoctor().getName(),
+                formattedDate
+            );
+
+            // Simula WhatsApp (Próxima etapa do Card 17)
+            String whatsappMsg = "Olá " + savedAppointment.getPatient().getName() + 
+                                ", sua consulta com Dr(a). " + savedAppointment.getDoctor().getName() + 
+                                " está confirmada para " + formattedDate + ".";
+            notificationService.sendWhatsAppMessage(savedAppointment.getPatient().getWhatsapp(), whatsappMsg);
+
+        } catch (Exception e) {
+            // Logamos o erro, mas não cancelamos a transação da consulta se o e-mail falhar
+            System.err.println("Erro ao disparar notificações: " + e.getMessage());
+        }
+
+        return savedAppointment;
     }
 
     @Transactional
     public void cancelPatientAppointment(Long appointmentId, Long patientId) {
-        // 1. Procura a consulta
         Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new EntityNotFoundException("Consulta não encontrada."));
 
-        // 2. Regra de Segurança: O paciente logado é o dono desta consulta?
         if (!appointment.getPatient().getId().equals(patientId)) {
             throw new SecurityException("Acesso negado: Você não pode cancelar a consulta de outra pessoa.");
         }
 
-        // 3. Muda o estado para CANCELADO
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        
-        // Como tem @Transactional, o Spring já atualiza automaticamente no banco,
-        // mas podemos colocar o save por garantia visual:
         appointmentRepository.save(appointment);
+
+        // Opcional: Notificar o cancelamento também
+        // notificationService.sendGenericEmail(appointment.getPatient().getEmail(), "Consulta Cancelada", "Sua consulta foi cancelada.");
     }
 }

@@ -1,20 +1,25 @@
 package com.sistema.lucas;
 
+import com.sistema.lucas.config.WhatsAppProperties;
+import com.sistema.lucas.domain.Exam;
+import com.sistema.lucas.domain.Patient;
 import com.sistema.lucas.domain.User;
 import com.sistema.lucas.domain.enums.Role;
+import com.sistema.lucas.repository.ExamRepository;
+import com.sistema.lucas.repository.PatientRepository;
 import com.sistema.lucas.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import com.sistema.lucas.domain.Patient;
-import com.sistema.lucas.repository.PatientRepository;
-import com.sistema.lucas.domain.Exam;
-import com.sistema.lucas.repository.ExamRepository;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
+@EnableAsync
+@EnableConfigurationProperties(WhatsAppProperties.class)
 public class LucasApplication {
 
     public static void main(String[] args) {
