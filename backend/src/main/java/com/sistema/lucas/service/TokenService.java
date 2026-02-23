@@ -24,10 +24,11 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create()
-                    .withIssuer("sistema-lucas") // Quem emitiu o token
-                    .withSubject(user.getEmail()) // De quem é o token (Salvando o email dentro dele)
-                    .withExpiresAt(generateExpirationDate()) // Quando expira
-                    .sign(algorithm); // Assina criptografado
+                    .withIssuer("sistema-lucas")
+                    .withSubject(user.getEmail())
+                    .withClaim("role", user.getRole().name()) // <--- ✨ ADICIONE ESTA LINHA AQUI! ✨
+                    .withExpiresAt(generateExpirationDate())
+                    .sign(algorithm);
         } catch (JWTCreationException exception) {
             throw new RuntimeException("Erro ao gerar token JWT", exception);
         }

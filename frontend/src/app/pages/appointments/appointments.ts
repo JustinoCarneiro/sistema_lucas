@@ -1,9 +1,9 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AppointmentService } from '../../services/appointment';
-import { DoctorService } from '../../services/doctor';   // <-- Importa o serviço de Médicos
-import { PatientService } from '../../services/patient'; // <-- Importa o serviço de Pacientes
+import { AppointmentService } from './appointment.service';
+import { DoctorService } from '../doctors/doctor.service';   // <-- Importa o serviço de Médicos
+import { PatientService } from '../patients/patients.service'; // <-- Importa o serviço de Pacientes
 
 @Component({
   selector: 'app-appointments',

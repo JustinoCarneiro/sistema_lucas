@@ -19,7 +19,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class User extends BaseEntity implements UserDetails { // <--- AQUI: Implementa UserDetails
+public class User extends BaseEntity implements UserDetails { // <--- AQUI: Implementa UserDetails
 
     @NotBlank
     @Column(nullable = false, length = 150)

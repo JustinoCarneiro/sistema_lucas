@@ -1,0 +1,94 @@
+<div class="p-8">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-800">As Minhas Consultas 📅</h2>
+      <p class="text-gray-500">Acompanhe o seu histórico e os seus próximos agendamentos.</p>
+    </div>
+  
+    <div *ngIf="isLoading" class="text-center py-10 text-gray-500 font-medium">
+      A carregar as suas consultas... ⏳
+    </div>
+  
+    <div *ngIf="!isLoading && myAppointments.length === 0" class="bg-blue-50 border border-blue-200 p-8 rounded-xl text-center">
+      <p class="text-blue-800 font-medium text-lg mb-2">Ainda não tem nenhuma consulta marcada.</p>
+      <p class="text-blue-600 mb-4">Que tal agendar a sua primeira visita à nossa clínica?</p>
+      <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md" (click)="openScheduleModal()">
+        + Agendar Consulta
+      </button>
+    </div>
+  
+    <div *ngIf="!isLoading && myAppointments.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Data e Hora</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Médico</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+            <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Ação</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let app of myAppointments" class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 font-semibold text-gray-800">
+              {{ app.startTime | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="px-6 py-4 text-gray-600 font-medium">Dr(a). {{ app.doctorName }}</td>
+            <td class="px-6 py-4">
+              <span class="px-3 py-1 rounded-full text-xs font-bold"
+                [ngClass]="{
+                  'bg-blue-100 text-blue-800': app.status === 'SCHEDULED',
+                  'bg-green-100 text-green-800': app.status === 'COMPLETED',
+                  'bg-red-100 text-red-800': app.status === 'CANCELLED'
+                }">
+                {{ app.status }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button *ngIf="app.status === 'SCHEDULED'" (click)="cancelAppointment(app.id)" class="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded hover:bg-red-100 transition">
+                Desmarcar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="isScheduling" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in-up">
+        
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-800">Nova Consulta</h3>
+          <button (click)="closeScheduleModal()" class="text-gray-400 hover:text-red-500 font-bold text-xl transition">&times;</button>
+        </div>
+  
+        <form [formGroup]="scheduleForm" (ngSubmit)="onSubmitSchedule()" class="space-y-4">
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Especialista</label>
+            <select formControlName="doctorId" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-white">
+              <option value="" disabled selected>Selecione o Médico</option>
+              <option *ngFor="let doctor of doctors" [value]="doctor.id">
+                Dr(a). {{ doctor.name }} - {{ doctor.specialty }}
+              </option>
+            </select>
+          </div>
+  
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data e Hora da Consulta</label>
+            <input type="datetime-local" formControlName="startTime" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+          </div>
+  
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Motivo / Sintomas (Opcional)</label>
+            <textarea formControlName="reason" rows="2" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Ex: Dores de cabeça frequentes..."></textarea>
+          </div>
+  
+          <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+            <button type="button" (click)="closeScheduleModal()" class="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Cancelar</button>
+            <button type="submit" [disabled]="scheduleForm.invalid" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              Confirmar Agendamento
+            </button>
+          </div>
+  
+        </form>
+      </div>
+    </div>
+  </div>

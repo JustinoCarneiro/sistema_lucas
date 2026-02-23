@@ -52,4 +52,23 @@ public class AppointmentService {
 
         return appointmentRepository.save(appointment);
     }
+
+    @Transactional
+    public void cancelPatientAppointment(Long appointmentId, Long patientId) {
+        // 1. Procura a consulta
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new EntityNotFoundException("Consulta não encontrada."));
+
+        // 2. Regra de Segurança: O paciente logado é o dono desta consulta?
+        if (!appointment.getPatient().getId().equals(patientId)) {
+            throw new SecurityException("Acesso negado: Você não pode cancelar a consulta de outra pessoa.");
+        }
+
+        // 3. Muda o estado para CANCELADO
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        
+        // Como tem @Transactional, o Spring já atualiza automaticamente no banco,
+        // mas podemos colocar o save por garantia visual:
+        appointmentRepository.save(appointment);
+    }
 }

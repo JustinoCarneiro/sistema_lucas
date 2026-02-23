@@ -14,4 +14,14 @@ export class PatientService {
   createPatient(patientData: any) {
     return this.http.post(this.apiUrl, patientData);
   }
+
+  // 👇 NOVOS MÉTODOS PARA O PERFIL DO PACIENTE 👇
+
+  getMyProfile() {
+    return this.http.get<any>(`${this.apiUrl}/me`);
+  }
+
+  updateMyProfile(data: any) {
+    return this.http.put(`${this.apiUrl}/me`, data);
+  }
 }

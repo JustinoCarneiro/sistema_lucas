@@ -49,4 +49,37 @@ public class PatientController {
         var page = repository.findAll(pagination);
         return ResponseEntity.ok(page);
     }
+
+    // 1. Carrega os dados do próprio paciente logado
+    @GetMapping("/me")
+    public ResponseEntity<Patient> getMyProfile(@org.springframework.security.core.annotation.AuthenticationPrincipal com.sistema.lucas.domain.User loggedUser) {
+        return repository.findById(loggedUser.getId())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // 2. Atualiza dados sensíveis (WhatsApp, Plano de Saúde e Senha)
+    @PutMapping("/me")
+    @Transactional
+    public ResponseEntity<Void> updateMyProfile(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.sistema.lucas.domain.User loggedUser,
+            @RequestBody java.util.Map<String, String> updates) {
+        
+        var patient = repository.findById(loggedUser.getId())
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        // Atualiza WhatsApp se enviado
+        if (updates.containsKey("whatsapp")) patient.setWhatsapp(updates.get("whatsapp"));
+        
+        // Atualiza Plano de Saúde se enviado
+        if (updates.containsKey("healthInsurance")) patient.setHealthInsurance(updates.get("healthInsurance"));
+
+        // Atualiza Senha apenas se enviada e não estiver vazia
+        if (updates.containsKey("newPassword") && !updates.get("newPassword").isBlank()) {
+            patient.setPassword(passwordEncoder.encode(updates.get("newPassword")));
+        }
+
+        repository.save(patient);
+        return ResponseEntity.noContent().build();
+    }
 }

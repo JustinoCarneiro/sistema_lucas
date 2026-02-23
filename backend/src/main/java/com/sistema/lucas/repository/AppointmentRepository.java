@@ -19,4 +19,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         AND (a.startTime < :endTime AND a.endTime > :startTime)
     """)
     boolean existsConflict(Long doctorId, LocalDateTime startTime, LocalDateTime endTime);
+    // ... a sua query de conflito continua em cima ...
+
+    // Nova busca para o painel do Paciente!
+    org.springframework.data.domain.Page<Appointment> findAllByPatientId(Long patientId, org.springframework.data.domain.Pageable pageable);
 }

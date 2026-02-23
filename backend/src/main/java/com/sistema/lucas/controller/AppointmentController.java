@@ -3,6 +3,7 @@ package com.sistema.lucas.controller;
 import com.sistema.lucas.domain.Appointment;
 import com.sistema.lucas.dto.AppointmentCreateDTO;
 import com.sistema.lucas.dto.AppointmentResponseDTO;
+import com.sistema.lucas.dto.PatientScheduleDTO;
 import com.sistema.lucas.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import com.sistema.lucas.repository.AppointmentRepository;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.sistema.lucas.domain.User;
 
 @RestController
 @RequestMapping("/appointments")
@@ -55,5 +58,65 @@ public class AppointmentController {
                 appointment.getStatus()
         ));
         return ResponseEntity.ok(page);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Page<AppointmentResponseDTO>> listMyAppointments(
+            @AuthenticationPrincipal User loggedUser, // Puxa o utilizador diretamente do Token!
+            Pageable pagination) {
+            
+        // Busca no banco APENAS as consultas onde o patient_id for igual ao ID do token logado
+        var page = repository.findAllByPatientId(loggedUser.getId(), pagination)
+                .map(appointment -> new AppointmentResponseDTO(
+                        appointment.getId(),
+                        appointment.getDoctor().getName(),
+                        appointment.getPatient().getName(),
+                        appointment.getStartTime(),
+                        appointment.getEndTime(),
+                        appointment.getStatus()
+                ));
+                
+        return ResponseEntity.ok(page);
+    }
+
+    @PostMapping("/me")
+    public ResponseEntity<AppointmentResponseDTO> scheduleMyAppointments(
+            @RequestBody @Valid PatientScheduleDTO dto,
+            @AuthenticationPrincipal User loggedUser) {
+
+        // 1. Criamos o DTO original preenchendo o patientId com o ID do utilizador logado de forma segura!
+        AppointmentCreateDTO secureDto = new AppointmentCreateDTO(
+                dto.doctorId(),
+                loggedUser.getId(), // <-- O HACKER NÃO CONSEGUE MUDAR ISTO!
+                dto.startTime(),
+                dto.endTime(),
+                dto.reason()
+        );
+
+        // 2. Usamos o mesmo serviço que a clínica usa (com a mesma regra de conflito de horários)
+        Appointment appointment = service.schedule(secureDto);
+
+        // 3. Montamos a resposta
+        AppointmentResponseDTO response = new AppointmentResponseDTO(
+                appointment.getId(),
+                appointment.getDoctor().getName(),
+                appointment.getPatient().getName(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                appointment.getStatus()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/me/{id}")
+    public ResponseEntity<Void> cancelMyAppointment(
+            @PathVariable Long id, 
+            @AuthenticationPrincipal User loggedUser) {
+        
+        // Manda o ID da consulta e o ID do paciente (seguro via Token) para o serviço
+        service.cancelPatientAppointment(id, loggedUser.getId());
+        
+        return ResponseEntity.noContent().build(); // Retorna 204 (Sucesso, sem conteúdo)
     }
 }

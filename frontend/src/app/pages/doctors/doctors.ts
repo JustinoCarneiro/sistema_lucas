@@ -2,7 +2,7 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { DoctorService } from '../../services/doctor';
+import { DoctorService } from './doctor.service';
 
 @Component({
   selector: 'app-doctors',
