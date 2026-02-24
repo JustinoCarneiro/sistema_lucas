@@ -12,7 +12,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.format.DateTimeFormatter; // Para deixar a data bonita no e-mail
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -21,19 +21,16 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
-    private final NotificationService notificationService; // 1. Injetamos o serviço de notificações
+    private final NotificationService notificationService;
 
     @Transactional
     public Appointment schedule(AppointmentCreateDTO dto) {
-        // 1. Buscar Médico
         Doctor doctor = doctorRepository.findById(dto.doctorId())
             .orElseThrow(() -> new EntityNotFoundException("Médico não encontrado"));
 
-        // 2. Buscar Paciente
         Patient patient = patientRepository.findById(dto.patientId())
             .orElseThrow(() -> new EntityNotFoundException("Paciente não encontrado"));
 
-        // 3. Validar Conflito de Horário
         boolean hasConflict = appointmentRepository.existsConflict(
             doctor.getId(), dto.startTime(), dto.endTime()
         );
@@ -42,7 +39,6 @@ public class AppointmentService {
             throw new IllegalArgumentException("O médico já possui agendamento neste horário.");
         }
 
-        // 4. Criar e Salvar
         Appointment appointment = Appointment.builder()
             .doctor(doctor)
             .patient(patient)
@@ -54,12 +50,10 @@ public class AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        // 👇 5. DISPARO DA NOTIFICAÇÃO (E-mail e Simulação WhatsApp) 👇
         try {
             String formattedDate = savedAppointment.getStartTime()
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm"));
 
-            // Envia E-mail (O @Async no NotificationService garante que não trave aqui)
             notificationService.sendAppointmentConfirmation(
                 savedAppointment.getPatient().getEmail(),
                 savedAppointment.getPatient().getName(),
@@ -67,14 +61,12 @@ public class AppointmentService {
                 formattedDate
             );
 
-            // Simula WhatsApp (Próxima etapa do Card 17)
             String whatsappMsg = "Olá " + savedAppointment.getPatient().getName() + 
                                 ", sua consulta com Dr(a). " + savedAppointment.getDoctor().getName() + 
                                 " está confirmada para " + formattedDate + ".";
             notificationService.sendWhatsAppMessage(savedAppointment.getPatient().getWhatsapp(), whatsappMsg);
 
         } catch (Exception e) {
-            // Logamos o erro, mas não cancelamos a transação da consulta se o e-mail falhar
             System.err.println("Erro ao disparar notificações: " + e.getMessage());
         }
 
@@ -92,8 +84,15 @@ public class AppointmentService {
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
+    }
 
-        // Opcional: Notificar o cancelamento também
-        // notificationService.sendGenericEmail(appointment.getPatient().getEmail(), "Consulta Cancelada", "Sua consulta foi cancelada.");
+    // 👇 MÉTODO ADICIONADO PARA RESOLVER O ERRO DO CONTROLLER 👇
+    @Transactional
+    public void updateStatus(Long id, AppointmentStatus status) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Consulta não encontrada"));
+        
+        appointment.setStatus(status);
+        appointmentRepository.save(appointment);
     }
 }

@@ -1,21 +1,24 @@
 package com.sistema.lucas.controller;
 
 import com.sistema.lucas.domain.Appointment;
+import com.sistema.lucas.domain.User;
+import com.sistema.lucas.domain.enums.AppointmentStatus;
 import com.sistema.lucas.dto.AppointmentCreateDTO;
 import com.sistema.lucas.dto.AppointmentResponseDTO;
 import com.sistema.lucas.dto.PatientScheduleDTO;
+import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import com.sistema.lucas.repository.AppointmentRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import com.sistema.lucas.domain.User;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -28,11 +31,7 @@ public class AppointmentController {
 
     @PostMapping
     public ResponseEntity<AppointmentResponseDTO> schedule(@RequestBody @Valid AppointmentCreateDTO dto) {
-        
-        // 1. Chama o Service para salvar (aqui roda a regra de conflito de horário)
         Appointment appointment = service.schedule(dto);
-
-        // 2. Monta o recibo de saída (ResponseDTO)
         AppointmentResponseDTO response = new AppointmentResponseDTO(
                 appointment.getId(),
                 appointment.getDoctor().getName(),
@@ -41,15 +40,11 @@ public class AppointmentController {
                 appointment.getEndTime(),
                 appointment.getStatus()
         );
-
-        // 3. Retorna Status 201 (Created)
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
     public ResponseEntity<Page<AppointmentResponseDTO>> listAll(Pageable pagination) {
-        // Exemplo simples usando o repositório e convertendo para DTO
-        // Se preferir, pode criar este método dentro do AppointmentService!
         var page = repository.findAll(pagination).map(appointment -> new AppointmentResponseDTO(
                 appointment.getId(),
                 appointment.getDoctor().getName(),
@@ -63,10 +58,9 @@ public class AppointmentController {
 
     @GetMapping("/me")
     public ResponseEntity<Page<AppointmentResponseDTO>> listMyAppointments(
-            @AuthenticationPrincipal User loggedUser, // Puxa o utilizador diretamente do Token!
+            @AuthenticationPrincipal User loggedUser, 
             Pageable pagination) {
             
-        // Busca no banco APENAS as consultas onde o patient_id for igual ao ID do token logado
         var page = repository.findAllByPatientId(loggedUser.getId(), pagination)
                 .map(appointment -> new AppointmentResponseDTO(
                         appointment.getId(),
@@ -76,7 +70,6 @@ public class AppointmentController {
                         appointment.getEndTime(),
                         appointment.getStatus()
                 ));
-                
         return ResponseEntity.ok(page);
     }
 
@@ -85,19 +78,15 @@ public class AppointmentController {
             @RequestBody @Valid PatientScheduleDTO dto,
             @AuthenticationPrincipal User loggedUser) {
 
-        // 1. Criamos o DTO original preenchendo o patientId com o ID do utilizador logado de forma segura!
         AppointmentCreateDTO secureDto = new AppointmentCreateDTO(
                 dto.doctorId(),
-                loggedUser.getId(), // <-- O HACKER NÃO CONSEGUE MUDAR ISTO!
+                loggedUser.getId(),
                 dto.startTime(),
                 dto.endTime(),
                 dto.reason()
         );
 
-        // 2. Usamos o mesmo serviço que a clínica usa (com a mesma regra de conflito de horários)
         Appointment appointment = service.schedule(secureDto);
-
-        // 3. Montamos a resposta
         AppointmentResponseDTO response = new AppointmentResponseDTO(
                 appointment.getId(),
                 appointment.getDoctor().getName(),
@@ -106,7 +95,6 @@ public class AppointmentController {
                 appointment.getEndTime(),
                 appointment.getStatus()
         );
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -115,17 +103,14 @@ public class AppointmentController {
             @PathVariable Long id, 
             @AuthenticationPrincipal User loggedUser) {
         
-        // Manda o ID da consulta e o ID do paciente (seguro via Token) para o serviço
         service.cancelPatientAppointment(id, loggedUser.getId());
-        
-        return ResponseEntity.noContent().build(); // Retorna 204 (Sucesso, sem conteúdo)
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/doctor-me")
     public ResponseEntity<List<AppointmentResponseDTO>> listDoctorAppointments(
             @AuthenticationPrincipal User loggedUser) {
             
-        // O loggedUser aqui será o Doctor (visto que ele logou como médico)
         var appointments = repository.findByDoctorIdOrderByStartTimeAsc(loggedUser.getId())
                 .stream()
                 .map(appointment -> new AppointmentResponseDTO(
@@ -138,5 +123,33 @@ public class AppointmentController {
                 )).toList();
                 
         return ResponseEntity.ok(appointments);
+    }
+
+    @GetMapping("/doctor/today")
+    public ResponseEntity<List<AppointmentResponseDTO>> getTodayAppointments(
+            @AuthenticationPrincipal User loggedUser) {
+        
+        LocalDateTime start = LocalDateTime.now().with(LocalTime.MIN);
+        LocalDateTime end = LocalDateTime.now().with(LocalTime.MAX);
+
+        var appointments = repository.findByDoctorIdAndStartTimeBetweenOrderByStartTimeAsc(
+                loggedUser.getId(), start, end)
+                .stream()
+                .map(app -> new AppointmentResponseDTO(
+                        app.getId(),
+                        app.getDoctor().getName(),
+                        app.getPatient().getName(),
+                        app.getStartTime(),
+                        app.getEndTime(),
+                        app.getStatus()
+                )).toList();
+                
+        return ResponseEntity.ok(appointments);
+    }
+
+    @PatchMapping("/{id}/no-show")
+    public ResponseEntity<Void> markAsNoShow(@PathVariable Long id) {
+        service.updateStatus(id, AppointmentStatus.CANCELLED);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -26,4 +26,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     // NOVA: Busca para o painel do Médico (Retorna lista ou página, aqui usamos Lista para simplificar o dashboard)
     List<Appointment> findByDoctorIdOrderByStartTimeAsc(Long doctorId);
+
+    List<Appointment> findByDoctorIdAndStartTimeBetweenOrderByStartTimeAsc(
+        Long doctorId, 
+        LocalDateTime start, 
+        LocalDateTime end
+    );
 }
