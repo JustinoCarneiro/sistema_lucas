@@ -9,6 +9,7 @@ import { Register } from './pages/register/register';
 import { MyAppointmentsComponent } from './pages/my-appointments/my-appointments';
 import { MyExamsComponent } from './pages/my-exams/my-exams';
 import { MyProfileComponent } from './pages/my-profile/my-profile';
+import { DoctorAppointmentsComponent } from './pages/doctor-appointments/doctor-appointments';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -19,15 +20,17 @@ export const routes: Routes = [
     path: 'panel', 
     component: PanelComponent, 
     canActivate: [authGuard],
-    children: [ // <-- 2. ROTAS FILHAS!
-      // Se acessar só /panel, podemos carregar algo ou deixar vazio. 
-      // Quando acessar /panel/doctors, carrega a tela de médicos DENTRO do painel
+    children: [
       { path: 'doctors', component: DoctorsComponent },
       { path: 'patients', component: Patients },
       { path: 'appointments', component: Appointments },
       { path: 'my-appointments', component: MyAppointmentsComponent },
       { path: 'my-exams', component: MyExamsComponent },
-      { path: 'my-profile', component: MyProfileComponent }
+      { path: 'my-profile', component: MyProfileComponent },
+      
+      // CONFIGURAÇÃO DAS ROTAS DO MÉDICO (Remova os comentários!)
+      { path: 'doctor-appointments', component: DoctorAppointmentsComponent },
+      { path: 'doctor-schedule', component: DoctorAppointmentsComponent }, // Temporário se não tiver o componente criado
     ]
   } 
 ];

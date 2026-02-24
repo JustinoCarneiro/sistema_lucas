@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import com.sistema.lucas.repository.AppointmentRepository;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.sistema.lucas.domain.User;
+import java.util.List;
 
 @RestController
 @RequestMapping("/appointments")
@@ -118,5 +119,24 @@ public class AppointmentController {
         service.cancelPatientAppointment(id, loggedUser.getId());
         
         return ResponseEntity.noContent().build(); // Retorna 204 (Sucesso, sem conteúdo)
+    }
+
+    @GetMapping("/doctor-me")
+    public ResponseEntity<List<AppointmentResponseDTO>> listDoctorAppointments(
+            @AuthenticationPrincipal User loggedUser) {
+            
+        // O loggedUser aqui será o Doctor (visto que ele logou como médico)
+        var appointments = repository.findByDoctorIdOrderByStartTimeAsc(loggedUser.getId())
+                .stream()
+                .map(appointment -> new AppointmentResponseDTO(
+                        appointment.getId(),
+                        appointment.getDoctor().getName(),
+                        appointment.getPatient().getName(),
+                        appointment.getStartTime(),
+                        appointment.getEndTime(),
+                        appointment.getStatus()
+                )).toList();
+                
+        return ResponseEntity.ok(appointments);
     }
 }

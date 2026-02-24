@@ -4,13 +4,14 @@ import com.sistema.lucas.domain.Appointment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    // A Lógica de Ouro: Detecta sobreposição de horários
     @Query("""
         SELECT COUNT(a) > 0 
         FROM Appointment a 
@@ -19,8 +20,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         AND (a.startTime < :endTime AND a.endTime > :startTime)
     """)
     boolean existsConflict(Long doctorId, LocalDateTime startTime, LocalDateTime endTime);
-    // ... a sua query de conflito continua em cima ...
 
-    // Nova busca para o painel do Paciente!
-    org.springframework.data.domain.Page<Appointment> findAllByPatientId(Long patientId, org.springframework.data.domain.Pageable pageable);
+    // Busca para o painel do Paciente
+    Page<Appointment> findAllByPatientId(Long patientId, Pageable pageable);
+
+    // NOVA: Busca para o painel do Médico (Retorna lista ou página, aqui usamos Lista para simplificar o dashboard)
+    List<Appointment> findByDoctorIdOrderByStartTimeAsc(Long doctorId);
 }

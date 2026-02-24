@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router'; // Adicionado para o logout
 import { jwtDecode } from 'jwt-decode';
 
 @Injectable({
@@ -7,6 +8,7 @@ import { jwtDecode } from 'jwt-decode';
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private router = inject(Router);
 
   // 1. Método para Registar um novo Paciente (Card 13)
   registerPatient(patientData: any) {
@@ -20,11 +22,24 @@ export class AuthService {
 
     try {
       const decodedToken: any = jwtDecode(token);
-      // O Spring Boot guarda o perfil aqui. Pode ser 'role', 'roles' ou 'authorities'.
-      return decodedToken.role; 
+      // Nota: No Spring Boot com JWT padrão, a role costuma vir em 'role' ou 'sub'.
+      // Verifica no teu console do navegador se 'decodedToken.role' existe.
+      return decodedToken.role || null; 
     } catch (error) {
       console.error('Erro ao descodificar o token:', error);
       return null;
     }
+  }
+
+  // 3. Método para fazer logout (Resolve o erro do PanelComponent)
+  logout() {
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
+  }
+
+  // 4. Verificação extra para segurança das rotas
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('token');
+    return !!token; // Retorna true se houver token
   }
 }

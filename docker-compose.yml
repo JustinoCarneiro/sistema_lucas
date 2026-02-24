@@ -1,28 +1,30 @@
-version: '3.8'
-
 services:
-  lucas_postgres:  # Nome único para não confundir com o do Melvin
+  lucas_postgres:
     image: postgres:16-alpine
-    container_name: lucas_db_container # Nome explícito do container
+    container_name: lucas_db_container
     environment:
-      POSTGRES_DB: lucas_db # Banco exclusivo
+      POSTGRES_DB: lucas_db
       POSTGRES_USER: lucas_admin
       POSTGRES_PASSWORD: lucas_secure_password
     ports:
-      - "5433:5432" # ATENÇÃO AQUI: A porta externa será 5433, pois a 5432 é do Melvin
+      - "5433:5432"
     volumes:
       - lucas_postgres_data:/var/lib/postgresql/data
     networks:
-      - lucas_network # Rede isolada para não misturar com a rede do Melvin
-  evolution_api:
-    image: atendare/evolution-api:latest
-    container_name: evolution_api
-    ports:
-      - "8080:8080"
-    environment:
-      - SERVER_URL=http://localhost:8080
-      - AUTHENTICATION_API_KEY=422470291152
-      
+      - lucas_network
+
+  # COMENTADO TEMPORARIAMENTE PARA NÃO BLOQUEAR O SISTEMA
+  # evolution_api:
+  #   image: atendare/evolution-api:latest
+  #   container_name: evolution_api
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - SERVER_URL=http://localhost:8080
+  #     - AUTHENTICATION_API_KEY=422470291152
+  #   networks:
+  #     - lucas_network
+
 volumes:
   lucas_postgres_data:
 

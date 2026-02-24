@@ -16,4 +16,13 @@ export class DoctorService {
   createDoctor(doctorData: any) {
     return this.http.post(this.apiUrl, doctorData);
   }
+
+  // No seu doctor.service.ts
+  updateDoctor(id: number, data: any) {
+    return this.http.put(`${this.apiUrl}/${id}`, data);
+  }
+
+  deleteDoctor(id: number) {
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
 }

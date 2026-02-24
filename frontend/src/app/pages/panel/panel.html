@@ -11,16 +11,23 @@
       
       <nav class="space-y-2" *ngIf="userRole === 'ADMIN'">
         <p class="text-blue-200 text-xs font-bold uppercase mb-2 px-4">Gestão da Clínica</p>
-        <a routerLink="/panel/doctors" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">🩺 Médicos</a>
-        <a routerLink="/panel/patients" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👥 Pacientes</a>
-        <a routerLink="/panel/appointments" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Agenda Geral</a>
+        <a routerLink="/panel/doctors" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">🩺 Médicos</a>
+        <a routerLink="/panel/patients" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👥 Pacientes</a>
+        <a routerLink="/panel/appointments" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Agenda Geral</a>
       </nav>
 
-      <nav class="space-y-2 mt-6" *ngIf="userRole === 'PATIENT'">
+      <nav class="space-y-2" *ngIf="userRole === 'DOCTOR'">
+        <p class="text-blue-200 text-xs font-bold uppercase mb-2 px-4">Área Médica</p>
+        <a routerLink="/panel/doctor-appointments" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Minha Agenda</a>
+        <a routerLink="/panel/doctor-schedule" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">⏰ Meus Horários</a>
+        <a routerLink="/panel/my-profile" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👤 Meu Perfil</a>
+      </nav>
+
+      <nav class="space-y-2" *ngIf="userRole === 'PATIENT'">
         <p class="text-blue-200 text-xs font-bold uppercase mb-2 px-4">A Minha Área</p>
-        <a routerLink="/panel/my-appointments" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Minhas Consultas</a>
-        <a routerLink="/panel/my-exams" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📄 Meus Exames</a>
-        <a routerLink="/panel/my-profile" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👤 Meu Perfil</a>
+        <a routerLink="/panel/my-appointments" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Minhas Consultas</a>
+        <a routerLink="/panel/my-exams" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📄 Meus Exames</a>
+        <a routerLink="/panel/my-profile" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👤 Meu Perfil</a>
       </nav>
 
     </div>
