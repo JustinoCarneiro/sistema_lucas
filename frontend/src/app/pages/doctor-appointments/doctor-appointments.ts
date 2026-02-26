@@ -35,8 +35,7 @@ export class DoctorAppointmentsComponent implements OnInit {
     });
   }
 
-  atender(app: any) {
-    // Agora o Angular reconhece o 'this.router'
+  iniciarAtendimento(app: any) { // Nome agora coincide com o .html
     this.router.navigate(['/panel/medical-record', app.id]);
   }
 

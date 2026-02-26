@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router'; // Adicionado para o logout
 import { jwtDecode } from 'jwt-decode';
+import { environment } from '../../environments/environment'; // Importe o ambiente
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ export class AuthService {
 
   // 1. Método para Registar um novo Paciente (Card 13)
   registerPatient(patientData: any) {
-    return this.http.post('http://localhost:8081/auth/register', patientData);
+    return this.http.post(`${environment.apiUrl}/auth/register`, patientData); // Use a variável
   }
 
   // 2. Método para descobrir quem está logado (Card 14)

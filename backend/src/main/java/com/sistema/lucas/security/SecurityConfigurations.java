@@ -56,14 +56,23 @@ public class SecurityConfigurations {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Avisa que o Angular (localhost:4200) é confiável
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-        // Avisa que ele pode mandar requisições de todos os tipos, PRINCIPALMENTE O OPTIONS!
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Aceita todos os cabeçalhos
+        
+        // Use setAllowedOriginPatterns para permitir subdomínios ou variações de localhost
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:[*]", // Permite qualquer porta em localhost
+            "http://127.0.0.1:[*]",
+            "http://localhost"
+        ));
+        
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        
+        // Adicione "*" nos Headers para garantir que nada é bloqueado por falta de permissão de cabeçalho
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        configuration.setAllowCredentials(true);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplica essa regra em todas as rotas
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

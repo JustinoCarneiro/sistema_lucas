@@ -16,7 +16,7 @@ import java.time.ZoneOffset;
 public class TokenService {
 
     // Lê a senha secreta do application.properties. Se não achar, usa o valor default.
-    @Value("${api.security.token.secret:minha-senha-super-secreta-123}")
+    @Value("${api.security.token.secret}")
     private String secret;
 
     // 1. GERA O TOKEN (Na hora do Login)

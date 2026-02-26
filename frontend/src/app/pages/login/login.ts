@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment'; // Importe o ambiente
 
 @Component({
   selector: 'app-login',
@@ -30,7 +31,7 @@ export class LoginComponent {
   onSubmit() {
     if (this.loginForm.valid) {
       // Dispara o POST para o nosso Backend!
-      this.http.post('http://localhost:8081/auth/login', this.loginForm.value)
+      this.http.post(`${environment.apiUrl}/auth/login`, this.loginForm.value) 
         .subscribe({
           next: (response: any) => {
             localStorage.setItem('token', response.token);
