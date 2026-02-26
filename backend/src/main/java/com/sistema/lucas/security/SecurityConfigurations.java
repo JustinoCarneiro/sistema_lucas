@@ -29,10 +29,12 @@ public class SecurityConfigurations {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(Customizer.withDefaults()) // <--- 1. AVISA AO SPRING SECURITY PARA USAR O CORS
+                .cors(Customizer.withDefaults()) // Ativa a configuração do Bean corsConfigurationSource
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
+                    // MANTRA: OPTIONS sempre permitido para evitar o erro de Status 0
+                    req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll(); 
                     req.requestMatchers("/auth/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/doctors").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/patients").permitAll();
@@ -52,22 +54,22 @@ public class SecurityConfigurations {
         return org.springframework.security.crypto.argon2.Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 
-    // 2. A CARTEIRINHA VIP DO ANGULAR
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Use setAllowedOriginPatterns para permitir subdomínios ou variações de localhost
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:[*]", // Permite qualquer porta em localhost
-            "http://127.0.0.1:[*]",
-            "http://localhost"
+        // Inclui as origens do Docker (porta 80) e dev (4200)
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost", 
+            "http://localhost:80", 
+            "http://localhost:4200",
+            "http://127.0.0.1"
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
-        // Adicione "*" nos Headers para garantir que nada é bloqueado por falta de permissão de cabeçalho
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Permite headers necessários para JWT e Preflight
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         
         configuration.setAllowCredentials(true);
         
