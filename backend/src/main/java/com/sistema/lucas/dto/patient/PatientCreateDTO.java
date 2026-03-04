@@ -1,4 +1,4 @@
-package com.sistema.lucas.dto;
+package com.sistema.lucas.dto.patient;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

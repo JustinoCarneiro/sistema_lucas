@@ -1,7 +1,7 @@
 package com.sistema.lucas.controller;
 
 import com.sistema.lucas.domain.*;
-import com.sistema.lucas.dto.MedicalRecordRequestDTO;
+import com.sistema.lucas.dto.medical.MedicalRecordRequestDTO;
 import com.sistema.lucas.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

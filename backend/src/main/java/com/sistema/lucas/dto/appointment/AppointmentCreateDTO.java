@@ -1,11 +1,11 @@
-package com.sistema.lucas.dto;
+package com.sistema.lucas.dto.appointment;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 public record AppointmentCreateDTO(
-    @NotNull Long doctorId,
+    @NotNull Long professionalId,
     @NotNull Long patientId,
     @NotNull @Future LocalDateTime startTime,
     @NotNull @Future LocalDateTime endTime,

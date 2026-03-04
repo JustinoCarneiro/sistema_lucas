@@ -1,4 +1,4 @@
-package com.sistema.lucas.dto;
+package com.sistema.lucas.dto.patient;
 
 public record PatientProfileUpdateDTO(
         String whatsapp, 

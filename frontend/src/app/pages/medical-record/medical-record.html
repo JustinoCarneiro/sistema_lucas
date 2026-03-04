@@ -13,7 +13,7 @@
         <div *ngFor="let record of history" class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <div class="flex justify-between text-xs text-blue-600 font-bold mb-2">
             <span>{{ record.date | date:'dd/MM/yyyy' }}</span>
-            <span>Dr(a). {{ record.doctorName }}</span>
+            <span>Dr(a). {{ record.professionalName }}</span>
           </div>
           <p class="text-sm text-gray-600 italic line-clamp-3">"{{ record.notes }}"</p>
         </div>

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppointmentService } from './appointment.service';
-import { DoctorService } from '../doctors/doctor.service';   // <-- Importa o serviço de Médicos
+import { ProfessionalService } from '../professionals/professional.service';   // <-- Importa o serviço de Médicos
 import { PatientService } from '../patients/patients.service'; // <-- Importa o serviço de Pacientes
 
 @Component({
@@ -15,20 +15,20 @@ import { PatientService } from '../patients/patients.service'; // <-- Importa o 
 export class Appointments implements OnInit {
   
   appointmentsList: any[] = [];
-  doctorsList: any[] = [];
+  professionalsList: any[] = [];
   patientsList: any[] = [];
   
   appointmentForm: FormGroup;
   
   private appointmentService = inject(AppointmentService);
-  private doctorService = inject(DoctorService);
+  private professionalService = inject(ProfessionalService);
   private patientService = inject(PatientService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
 
   constructor() {
     this.appointmentForm = this.fb.group({
-      doctorId: ['', Validators.required],
+      professionalId: ['', Validators.required],
       patientId: ['', Validators.required],
       startTime: ['', Validators.required],
       endTime: ['', Validators.required],
@@ -43,7 +43,7 @@ export class Appointments implements OnInit {
   // Carrega tudo ao mesmo tempo!
   loadInitialData() {
     this.loadAppointments();
-    this.loadDoctors();
+    this.loadProfessionals();
     this.loadPatients();
   }
 
@@ -57,10 +57,10 @@ export class Appointments implements OnInit {
     });
   }
 
-  loadDoctors() {
-    this.doctorService.getDoctors().subscribe({
+  loadProfessionals() {
+    this.professionalService.getProfessionals().subscribe({
       next: (data: any) => {
-        this.doctorsList = data.content ? data.content : data;
+        this.professionalsList = data.content ? data.content : data;
         this.cdr.detectChanges();
       }
     });

@@ -36,7 +36,7 @@ public class SecurityConfigurations {
                     // LIBERAÇÃO CRÍTICA: Permite OPTIONS para todas as rotas sem autenticação
                     req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll(); 
                     req.requestMatchers("/auth/**").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/doctors").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/professionals").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/patients").permitAll();
                     req.anyRequest().authenticated();
                 })

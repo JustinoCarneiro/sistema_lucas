@@ -50,7 +50,7 @@ export class MedicalRecordComponent implements OnInit {
     this.http.post('http://localhost:8081/medical-records', payload).subscribe({
       next: () => {
         alert('Prontuário salvo com sucesso! Atendimento finalizado.');
-        this.router.navigate(['/panel/doctor-appointments']);
+        this.router.navigate(['/panel/professional-appointments']);
       }
     });
   }

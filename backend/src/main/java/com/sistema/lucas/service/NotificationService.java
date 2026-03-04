@@ -23,14 +23,14 @@ public class NotificationService {
     private final RestTemplate restTemplate = new RestTemplate(); // Helper para chamadas HTTP
 
     @Async
-    public void sendAppointmentConfirmation(String to, String patientName, String doctorName, String dateTime) {
+    public void sendAppointmentConfirmation(String to, String patientName, String professionalName, String dateTime) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("nao-responda@sistemalucas.com");
             message.setTo(to);
             message.setSubject("Consulta Confirmada - Sistema Lucas");
             message.setText("Olá " + patientName + "!\n\n" +
-                    "Sua consulta com o(a) Dr(a). " + doctorName + " foi agendada com sucesso para: " + dateTime + ".\n\n" +
+                    "Sua consulta com o(a) Dr(a). " + professionalName + " foi agendada com sucesso para: " + dateTime + ".\n\n" +
                     "Te esperamos na clínica!");
             
             mailSender.send(message);

@@ -18,8 +18,8 @@ public class Appointment extends BaseEntity {
 
     // Relacionamento: Muitas consultas podem pertencer a Um médico
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private Doctor doctor;
+    @JoinColumn(name = "professional_id", nullable = false)
+    private Professional professional;
 
     // Relacionamento: Muitas consultas podem pertencer a Um paciente
     @ManyToOne(fetch = FetchType.LAZY)

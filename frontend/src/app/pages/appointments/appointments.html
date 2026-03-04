@@ -11,9 +11,9 @@
         
         <div>
           <label class="block text-sm font-medium text-gray-700">Médico</label>
-          <select formControlName="doctorId" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+          <select formControlName="professionalId" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
             <option value="" disabled selected>Selecione um Médico...</option>
-            <option *ngFor="let doc of doctorsList" [value]="doc.id">{{ doc.name }} ({{doc.specialty}})</option>
+            <option *ngFor="let doc of professionalsList" [value]="doc.id">{{ doc.name }} ({{doc.specialty}})</option>
           </select>
         </div>
   
@@ -66,7 +66,7 @@
               <div class="text-sm font-bold text-gray-900">{{ app.startTime | date:'dd/MM/yyyy' }}</div>
               <div class="text-sm text-gray-500">{{ app.startTime | date:'HH:mm' }} - {{ app.endTime | date:'HH:mm' }}</div>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ app.doctorName }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ app.professionalName }}</td>
             <td class="px-6 py-4 text-sm text-gray-900">{{ app.patientName }}</td>
             <td class="px-6 py-4">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">

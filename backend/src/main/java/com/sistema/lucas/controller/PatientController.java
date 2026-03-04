@@ -2,7 +2,7 @@ package com.sistema.lucas.controller;
 
 import com.sistema.lucas.domain.Patient;
 import com.sistema.lucas.domain.enums.Role;
-import com.sistema.lucas.dto.PatientCreateDTO;
+import com.sistema.lucas.dto.patient.PatientCreateDTO;
 import com.sistema.lucas.repository.PatientRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @RequiredArgsConstructor
 public class PatientController {
 
-    // Precisamos criar este Repository rapidinho, igual fizemos pro Doctor
+    // Precisamos criar este Repository rapidinho, igual fizemos pro Professional
     private final PatientRepository repository;
     private final PasswordEncoder passwordEncoder;
 

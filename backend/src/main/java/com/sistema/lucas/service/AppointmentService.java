@@ -1,12 +1,12 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.domain.Appointment;
-import com.sistema.lucas.domain.Doctor;
+import com.sistema.lucas.domain.Professional;
 import com.sistema.lucas.domain.Patient;
 import com.sistema.lucas.domain.enums.AppointmentStatus;
-import com.sistema.lucas.dto.AppointmentCreateDTO;
+import com.sistema.lucas.dto.appointment.AppointmentCreateDTO;
 import com.sistema.lucas.repository.AppointmentRepository;
-import com.sistema.lucas.repository.DoctorRepository;
+import com.sistema.lucas.repository.ProfessionalRepository;
 import com.sistema.lucas.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,20 +19,20 @@ import java.time.format.DateTimeFormatter;
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
-    private final DoctorRepository doctorRepository;
+    private final ProfessionalRepository professionalRepository;
     private final PatientRepository patientRepository;
     private final NotificationService notificationService;
 
     @Transactional
     public Appointment schedule(AppointmentCreateDTO dto) {
-        Doctor doctor = doctorRepository.findById(dto.doctorId())
+        Professional professional = professionalRepository.findById(dto.professionalId())
             .orElseThrow(() -> new EntityNotFoundException("Médico não encontrado"));
 
         Patient patient = patientRepository.findById(dto.patientId())
             .orElseThrow(() -> new EntityNotFoundException("Paciente não encontrado"));
 
         boolean hasConflict = appointmentRepository.existsConflict(
-            doctor.getId(), dto.startTime(), dto.endTime()
+            professional.getId(), dto.startTime(), dto.endTime()
         );
 
         if (hasConflict) {
@@ -40,7 +40,7 @@ public class AppointmentService {
         }
 
         Appointment appointment = Appointment.builder()
-            .doctor(doctor)
+            .professional(professional)
             .patient(patient)
             .startTime(dto.startTime())
             .endTime(dto.endTime())
@@ -57,12 +57,12 @@ public class AppointmentService {
             notificationService.sendAppointmentConfirmation(
                 savedAppointment.getPatient().getEmail(),
                 savedAppointment.getPatient().getName(),
-                savedAppointment.getDoctor().getName(),
+                savedAppointment.getProfessional().getName(),
                 formattedDate
             );
 
             String whatsappMsg = "Olá " + savedAppointment.getPatient().getName() + 
-                                ", sua consulta com Dr(a). " + savedAppointment.getDoctor().getName() + 
+                                ", sua consulta com Dr(a). " + savedAppointment.getProfessional().getName() + 
                                 " está confirmada para " + formattedDate + ".";
             notificationService.sendWhatsAppMessage(savedAppointment.getPatient().getWhatsapp(), whatsappMsg);
 

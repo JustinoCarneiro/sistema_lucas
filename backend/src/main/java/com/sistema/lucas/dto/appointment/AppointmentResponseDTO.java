@@ -1,11 +1,11 @@
-package com.sistema.lucas.dto;
+package com.sistema.lucas.dto.appointment;
 
 import com.sistema.lucas.domain.enums.AppointmentStatus;
 import java.time.LocalDateTime;
 
 public record AppointmentResponseDTO(
     Long id,
-    String doctorName,
+    String professionalName,
     String patientName,
     LocalDateTime startTime,
     LocalDateTime endTime,

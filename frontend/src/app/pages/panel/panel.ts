@@ -26,8 +26,8 @@ export class PanelComponent implements OnInit {
         this.router.navigate(['/panel/my-appointments']);
       } else if (this.userRole === 'ADMIN') {
         this.router.navigate(['/panel/appointments']); 
-      } else if (this.userRole === 'DOCTOR') {
-        this.router.navigate(['/panel/doctor-appointments']);
+      } else if (this.userRole === 'PROFESSIONAL') {
+        this.router.navigate(['/panel/professional-appointments']);
       }
     }
   }

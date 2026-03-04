@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms'; // <-- Importes de Formulário
 import { AppointmentService } from '../appointments/appointment.service';
-import { DoctorService } from '../doctors/doctor.service'; // <-- Precisamos do serviço de médicos!
+import { ProfessionalService } from '../professionals/professional.service'; // <-- Precisamos do serviço de médicos!
 
 @Component({
   selector: 'app-my-appointments',
@@ -14,11 +14,11 @@ import { DoctorService } from '../doctors/doctor.service'; // <-- Precisamos do 
 export class MyAppointmentsComponent implements OnInit {
 
   private appointmentService = inject(AppointmentService);
-  private doctorService = inject(DoctorService);
+  private professionalService = inject(ProfessionalService);
   private fb = inject(FormBuilder);
   
   myAppointments: any[] = [];
-  doctors: any[] = []; // Guarda a lista de médicos
+  professionals: any[] = []; // Guarda a lista de médicos
   
   isLoading: boolean = true;
   isScheduling: boolean = false; // Controla se a janela do formulário está aberta
@@ -28,7 +28,7 @@ export class MyAppointmentsComponent implements OnInit {
   constructor() {
     // Monta a estrutura do formulário
     this.scheduleForm = this.fb.group({
-      doctorId: ['', Validators.required],
+      professionalId: ['', Validators.required],
       startTime: ['', Validators.required], // Usaremos um campo de Data/Hora
       reason: ['']
     });
@@ -36,7 +36,7 @@ export class MyAppointmentsComponent implements OnInit {
 
   ngOnInit() {
     this.loadAppointments();
-    this.loadDoctors(); // Carrega os médicos logo que a tela abre
+    this.loadProfessionals(); // Carrega os médicos logo que a tela abre
   }
 
   loadAppointments() {
@@ -53,13 +53,13 @@ export class MyAppointmentsComponent implements OnInit {
     });
   }
 
-  loadDoctors() {
-    // Assume que tem um método getDoctors() no seu DoctorService.
+  loadProfessionals() {
+    // Assume que tem um método getProfessionals() no seu ProfessionalService.
     // Se for diferente (ex: listAll), ajuste o nome abaixo!
-    this.doctorService.getDoctors().subscribe({
+    this.professionalService.getProfessionals().subscribe({
       next: (response: any) => {
         // Dependendo de como o seu Spring Boot devolve, pode ser 'response' direto ou 'response.content'
-        this.doctors = response.content || response;
+        this.professionals = response.content || response;
       },
       error: (err) => console.error('Erro ao buscar médicos', err)
     });
@@ -89,7 +89,7 @@ export class MyAppointmentsComponent implements OnInit {
 
       // Monta a "encomenda" para o Java
       const payload = {
-        doctorId: formValues.doctorId,
+        professionalId: formValues.professionalId,
         startTime: startStr + ':00', // Adiciona os segundos para o Java não reclamar
         endTime: endStr,
         reason: formValues.reason

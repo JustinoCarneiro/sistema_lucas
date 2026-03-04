@@ -15,20 +15,20 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("""
         SELECT COUNT(a) > 0 
         FROM Appointment a 
-        WHERE a.doctor.id = :doctorId 
+        WHERE a.professional.id = :professionalId 
         AND a.status <> 'CANCELLED' 
         AND (a.startTime < :endTime AND a.endTime > :startTime)
     """)
-    boolean existsConflict(Long doctorId, LocalDateTime startTime, LocalDateTime endTime);
+    boolean existsConflict(Long professionalId, LocalDateTime startTime, LocalDateTime endTime);
 
     // Busca para o painel do Paciente
     Page<Appointment> findAllByPatientId(Long patientId, Pageable pageable);
 
     // NOVA: Busca para o painel do Médico (Retorna lista ou página, aqui usamos Lista para simplificar o dashboard)
-    List<Appointment> findByDoctorIdOrderByStartTimeAsc(Long doctorId);
+    List<Appointment> findByProfessionalIdOrderByStartTimeAsc(Long professionalId);
 
-    List<Appointment> findByDoctorIdAndStartTimeBetweenOrderByStartTimeAsc(
-        Long doctorId, 
+    List<Appointment> findByProfessionalIdAndStartTimeBetweenOrderByStartTimeAsc(
+        Long professionalId, 
         LocalDateTime start, 
         LocalDateTime end
     );

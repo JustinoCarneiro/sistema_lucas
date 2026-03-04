@@ -25,7 +25,7 @@ public class LucasApplication {
     @Bean
     public CommandLineRunner initUsers(UserRepository userRepository, 
                                        PatientRepository patientRepository, 
-                                       DoctorRepository doctorRepository, 
+                                       ProfessionalRepository professionalRepository, 
                                        ExamRepository examRepository,
                                        AppointmentRepository appointmentRepository,
                                        PasswordEncoder passwordEncoder) {
@@ -35,7 +35,7 @@ public class LucasApplication {
                 // A ordem de deleção importa por causa das chaves estrangeiras (Foreign Keys)
                 appointmentRepository.deleteAll();
                 examRepository.deleteAll();
-                doctorRepository.deleteAll();
+                professionalRepository.deleteAll();
                 patientRepository.deleteAll();
                 userRepository.deleteAll();
 
@@ -52,15 +52,15 @@ public class LucasApplication {
                 System.out.println("✅ ADMIN CRIADO");
 
                 // 2. MÉDICO
-                Doctor doc = new Doctor();
+                Professional doc = new Professional();
                 doc.setName("Dr. Gregory House");
                 doc.setEmail("medico@teste.com");
                 doc.setPassword(passwordEncoder.encode("123456"));
-                doc.setRole(Role.DOCTOR);
+                doc.setRole(Role.PROFESSIONAL);
                 doc.setActive(true);
                 doc.setCrm("12345-SP");
                 doc.setSpecialty("Infectologia");
-                doctorRepository.save(doc);
+                professionalRepository.save(doc);
                 System.out.println("✅ MÉDICO CRIADO");
 
                 // 3. PACIENTE
@@ -77,7 +77,7 @@ public class LucasApplication {
 
                 // 4. CONSULTA INICIAL (Para o médico ver a agenda cheia)
                 Appointment app = new Appointment();
-                app.setDoctor(doc);
+                app.setProfessional(doc);
                 app.setPatient(pat);
                 app.setStartTime(LocalDateTime.now().plusHours(2));
                 app.setEndTime(LocalDateTime.now().plusHours(3));

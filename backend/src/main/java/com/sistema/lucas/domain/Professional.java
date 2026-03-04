@@ -5,13 +5,13 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
-@Table(name = "doctors")
+@Table(name = "professionals")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @PrimaryKeyJoinColumn(name = "user_id") // <--- Chave estrangeira para a tabela users
-public class Doctor extends User { // <--- Mudou de BaseEntity para User
+public class Professional extends User { // <--- Mudou de BaseEntity para User
 
     @NotBlank
     @Column(nullable = false, length = 20, unique = true)

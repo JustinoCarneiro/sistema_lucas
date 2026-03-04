@@ -4,12 +4,12 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router'; // 1. IMPORTAÇÃO ADICIONADA
 
 @Component({
-  selector: 'app-doctor-appointments',
+  selector: 'app-professional-appointments',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './doctor-appointments.html'
+  templateUrl: './professional-appointments.html'
 })
-export class DoctorAppointmentsComponent implements OnInit {
+export class ProfessionalAppointmentsComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router); // 2. INJEÇÃO ADICIONADA
   
@@ -23,7 +23,7 @@ export class DoctorAppointmentsComponent implements OnInit {
 
   fetchTodayAppointments() {
     this.isLoading = true;
-    this.http.get<any[]>('http://localhost:8081/appointments/doctor/today').subscribe({
+    this.http.get<any[]>('http://localhost:8081/appointments/professional/today').subscribe({
       next: (data) => {
         this.appointments = data;
         this.isLoading = false;

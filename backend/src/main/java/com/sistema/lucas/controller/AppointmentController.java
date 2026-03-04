@@ -3,9 +3,9 @@ package com.sistema.lucas.controller;
 import com.sistema.lucas.domain.Appointment;
 import com.sistema.lucas.domain.User;
 import com.sistema.lucas.domain.enums.AppointmentStatus;
-import com.sistema.lucas.dto.AppointmentCreateDTO;
-import com.sistema.lucas.dto.AppointmentResponseDTO;
-import com.sistema.lucas.dto.PatientScheduleDTO;
+import com.sistema.lucas.dto.appointment.AppointmentCreateDTO;
+import com.sistema.lucas.dto.appointment.AppointmentResponseDTO;
+import com.sistema.lucas.dto.patient.PatientScheduleDTO;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.service.AppointmentService;
 import jakarta.validation.Valid;
@@ -34,7 +34,7 @@ public class AppointmentController {
         Appointment appointment = service.schedule(dto);
         AppointmentResponseDTO response = new AppointmentResponseDTO(
                 appointment.getId(),
-                appointment.getDoctor().getName(),
+                appointment.getProfessional().getName(),
                 appointment.getPatient().getName(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
@@ -47,7 +47,7 @@ public class AppointmentController {
     public ResponseEntity<Page<AppointmentResponseDTO>> listAll(Pageable pagination) {
         var page = repository.findAll(pagination).map(appointment -> new AppointmentResponseDTO(
                 appointment.getId(),
-                appointment.getDoctor().getName(),
+                appointment.getProfessional().getName(),
                 appointment.getPatient().getName(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
@@ -64,7 +64,7 @@ public class AppointmentController {
         var page = repository.findAllByPatientId(loggedUser.getId(), pagination)
                 .map(appointment -> new AppointmentResponseDTO(
                         appointment.getId(),
-                        appointment.getDoctor().getName(),
+                        appointment.getProfessional().getName(),
                         appointment.getPatient().getName(),
                         appointment.getStartTime(),
                         appointment.getEndTime(),
@@ -79,7 +79,7 @@ public class AppointmentController {
             @AuthenticationPrincipal User loggedUser) {
 
         AppointmentCreateDTO secureDto = new AppointmentCreateDTO(
-                dto.doctorId(),
+                dto.professionalId(),
                 loggedUser.getId(),
                 dto.startTime(),
                 dto.endTime(),
@@ -89,7 +89,7 @@ public class AppointmentController {
         Appointment appointment = service.schedule(secureDto);
         AppointmentResponseDTO response = new AppointmentResponseDTO(
                 appointment.getId(),
-                appointment.getDoctor().getName(),
+                appointment.getProfessional().getName(),
                 appointment.getPatient().getName(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
@@ -107,15 +107,15 @@ public class AppointmentController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/doctor-me")
-    public ResponseEntity<List<AppointmentResponseDTO>> listDoctorAppointments(
+    @GetMapping("/professional-me")
+    public ResponseEntity<List<AppointmentResponseDTO>> listProfessionalAppointments(
             @AuthenticationPrincipal User loggedUser) {
             
-        var appointments = repository.findByDoctorIdOrderByStartTimeAsc(loggedUser.getId())
+        var appointments = repository.findByProfessionalIdOrderByStartTimeAsc(loggedUser.getId())
                 .stream()
                 .map(appointment -> new AppointmentResponseDTO(
                         appointment.getId(),
-                        appointment.getDoctor().getName(),
+                        appointment.getProfessional().getName(),
                         appointment.getPatient().getName(),
                         appointment.getStartTime(),
                         appointment.getEndTime(),
@@ -125,19 +125,19 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments);
     }
 
-    @GetMapping("/doctor/today")
+    @GetMapping("/professional/today")
     public ResponseEntity<List<AppointmentResponseDTO>> getTodayAppointments(
             @AuthenticationPrincipal User loggedUser) {
         
         LocalDateTime start = LocalDateTime.now().with(LocalTime.MIN);
         LocalDateTime end = LocalDateTime.now().with(LocalTime.MAX);
 
-        var appointments = repository.findByDoctorIdAndStartTimeBetweenOrderByStartTimeAsc(
+        var appointments = repository.findByProfessionalIdAndStartTimeBetweenOrderByStartTimeAsc(
                 loggedUser.getId(), start, end)
                 .stream()
                 .map(app -> new AppointmentResponseDTO(
                         app.getId(),
-                        app.getDoctor().getName(),
+                        app.getProfessional().getName(),
                         app.getPatient().getName(),
                         app.getStartTime(),
                         app.getEndTime(),

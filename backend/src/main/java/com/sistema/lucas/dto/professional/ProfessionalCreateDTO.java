@@ -1,10 +1,10 @@
-package com.sistema.lucas.dto;
+package com.sistema.lucas.dto.professional;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 // Java Record: Imutável, rápido e limpo.
-public record DoctorCreateDTO(
+public record ProfessionalCreateDTO(
     @NotBlank(message = "Nome obrigatório") String name,
     @NotBlank @Email(message = "Email inválido") String email,
     @NotBlank String password,

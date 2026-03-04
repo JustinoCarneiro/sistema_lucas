@@ -28,8 +28,8 @@ export class MyProfileComponent implements OnInit {
 
   loadData() {
     // Lógica inteligente: se for médico, não chama o patientService
-    if (this.userRole === 'DOCTOR') {
-      this.http.get('http://localhost:8081/doctors/me').subscribe({
+    if (this.userRole === 'PROFESSIONAL') {
+      this.http.get('http://localhost:8081/professionals/me').subscribe({
         next: (data) => {
           this.profile = data;
           this.isLoading = false;
@@ -55,7 +55,7 @@ export class MyProfileComponent implements OnInit {
 
   saveProfile() {
     // Implementaremos a edição de médico no futuro se necessário
-    if (this.userRole === 'DOCTOR') {
+    if (this.userRole === 'PROFESSIONAL') {
       alert('Edição de perfil para médicos será implementada no Card 20! 🛠️');
       return;
     }

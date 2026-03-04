@@ -2,27 +2,27 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
-export class DoctorService {
+export class ProfessionalService {
   
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8081/doctors';
+  private apiUrl = 'http://localhost:8081/professionals';
 
   // Busca todos os médicos
-  getDoctors() {
+  getProfessionals() {
     return this.http.get(this.apiUrl);
   }
 
   // Cadastra um novo médico
-  createDoctor(doctorData: any) {
-    return this.http.post(this.apiUrl, doctorData);
+  createProfessional(professionalData: any) {
+    return this.http.post(this.apiUrl, professionalData);
   }
 
-  // No seu doctor.service.ts
-  updateDoctor(id: number, data: any) {
+  // No seu professional.service.ts
+  updateProfessional(id: number, data: any) {
     return this.http.put(`${this.apiUrl}/${id}`, data);
   }
 
-  deleteDoctor(id: number) {
+  deleteProfessional(id: number) {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 }

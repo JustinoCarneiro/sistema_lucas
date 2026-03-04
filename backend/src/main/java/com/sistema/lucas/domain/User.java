@@ -49,9 +49,9 @@ public class User extends BaseEntity implements UserDetails { // <--- AQUI: Impl
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Define as permissões baseadas no nosso Enum Role
         if (this.role == Role.ADMIN) {
-            return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_DOCTOR"), new SimpleGrantedAuthority("ROLE_PATIENT"));
-        } else if (this.role == Role.DOCTOR) {
-            return List.of(new SimpleGrantedAuthority("ROLE_DOCTOR"));
+            return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_PROFESSIONAL"), new SimpleGrantedAuthority("ROLE_PATIENT"));
+        } else if (this.role == Role.PROFESSIONAL) {
+            return List.of(new SimpleGrantedAuthority("ROLE_PROFESSIONAL"));
         } else {
             return List.of(new SimpleGrantedAuthority("ROLE_PATIENT"));
         }

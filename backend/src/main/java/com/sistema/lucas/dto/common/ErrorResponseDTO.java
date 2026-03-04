@@ -1,4 +1,4 @@
-package com.sistema.lucas.dto;
+package com.sistema.lucas.dto.common;
 
 import org.springframework.http.HttpStatus;
 import java.util.Map;
