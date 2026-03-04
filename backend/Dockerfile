@@ -1,16 +1,16 @@
-# Estágio 1: Build (Maven com Java 21)
+# Estágio 1: Build
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Copia apenas o pom.xml primeiro para aproveitar o cache das camadas do Docker
+# A mágica está aqui: Copia o pom e baixa as dependências primeiro
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Em vez de go-offline, vamos rodar o package direto, 
-# mas em passos separados para garantir a cópia do código
+# Depois copia o código e compila (isso será muito rápido agora)
 COPY src ./src
-RUN mvn clean package -DskipTests -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
+RUN mvn clean package -DskipTests
 
-# Estágio 2: Runtime (JRE 21)
+# Estágio 2: Runtime
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar

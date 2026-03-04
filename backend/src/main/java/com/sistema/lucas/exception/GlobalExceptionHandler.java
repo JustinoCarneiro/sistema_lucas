@@ -13,7 +13,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice // <--- Diz ao Spring: "Capture erros de todos os Controllers"
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     // Erro 1: Validação de Campos (@NotBlank, @Email, etc)
@@ -21,7 +21,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         
-        // Pega cada campo errado e a mensagem
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
@@ -33,15 +32,44 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponseDTO("Erro de validação", HttpStatus.BAD_REQUEST, errors));
     }
 
-    // Erro 2: Violação de Integridade do Banco (Duplicidade)
+    /**
+     * UNIFICADO: Trata erros de integridade do Banco de Dados
+     * Resolve o conflito de métodos ambíguos e diferencia Delete de Duplicidade
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponseDTO> handleDuplicateEntry(DataIntegrityViolationException ex) {
-        // O erro do banco vem complexo, simplificamos aqui
-        String message = "Conflito de dados: Email, CPF ou CRM já cadastrados.";
+    public ResponseEntity<ErrorResponseDTO> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String message = "Erro de integridade de dados.";
         
+        // Captura a mensagem específica do banco (Postgres) para decidir o texto
+        String detail = ex.getMostSpecificCause().getMessage().toLowerCase();
+
+        if (detail.contains("violates foreign key") || detail.contains("fk")) {
+            // Caso de tentativa de DELETE de médico/paciente com consultas
+            message = "Não é possível excluir: este registro possui vínculos (consultas ou exames) ativos.";
+        } else if (detail.contains("duplicate key") || detail.contains("already exists")) {
+            // Caso de Cadastro de Email/CPF/CRM repetido
+            message = "Conflito: Email, CPF ou CRM já cadastrados no sistema.";
+        }
+
         return ResponseEntity
-                .status(HttpStatus.CONFLICT) // 409 Conflict
+                .status(HttpStatus.CONFLICT)
                 .body(new ErrorResponseDTO(message, HttpStatus.CONFLICT, null));
+    }
+
+    // Erro 3: Recurso não encontrado (404)
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponseDTO(ex.getMessage(), HttpStatus.NOT_FOUND, null));
+    }
+
+    // Erro 4: Regras de Negócio ou Argumentos Inválidos
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBusinessRules(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponseDTO(ex.getMessage(), HttpStatus.BAD_REQUEST, null));
     }
     
     // Erro Genérico (Fallback)
@@ -50,21 +78,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponseDTO("Erro interno no servidor: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, null));
-    }
-
-    // Erro 3: Recurso não encontrado (404)
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorResponseDTO> handleNotFound(EntityNotFoundException ex) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND) // Retorna 404 corretamente
-                .body(new ErrorResponseDTO(ex.getMessage(), HttpStatus.NOT_FOUND, null));
-    }
-
-    // Erro 4: Regras de Negócio (Ex: Horário conflitante)
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponseDTO> handleBusinessRules(IllegalArgumentException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST) // 400 - O usuário mandou dados que ferem a regra
-                .body(new ErrorResponseDTO(ex.getMessage(), HttpStatus.BAD_REQUEST, null));
     }
 }

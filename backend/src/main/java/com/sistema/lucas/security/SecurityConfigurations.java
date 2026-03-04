@@ -29,11 +29,11 @@ public class SecurityConfigurations {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(Customizer.withDefaults()) // Ativa a configuração do Bean corsConfigurationSource
+                .cors(Customizer.withDefaults()) // Utiliza o Bean corsConfigurationSource abaixo
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    // MANTRA: OPTIONS sempre permitido para evitar o erro de Status 0
+                    // LIBERAÇÃO CRÍTICA: Permite OPTIONS para todas as rotas sem autenticação
                     req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll(); 
                     req.requestMatchers("/auth/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/doctors").permitAll();
@@ -58,7 +58,7 @@ public class SecurityConfigurations {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Inclui as origens do Docker (porta 80) e dev (4200)
+        // Permite as origens do Docker (porta 80) e do ambiente de dev (4200)
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost", 
             "http://localhost:80", 
@@ -68,8 +68,8 @@ public class SecurityConfigurations {
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
-        // Permite headers necessários para JWT e Preflight
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        // Permite todos os headers para evitar bloqueio por falta de permissão de cabeçalho
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         
         configuration.setAllowCredentials(true);
         
