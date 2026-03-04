@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms'; // <-- Importes de Formulário
 import { AppointmentService } from '../appointments/appointment.service';
-import { ProfessionalService } from '../professionals/professional.service'; // <-- Precisamos do serviço de médicos!
+import { ProfessionalService } from '../professionals/professionals.service'; // <-- Precisamos do serviço de médicos!
 
 @Component({
   selector: 'app-my-appointments',
@@ -61,7 +61,7 @@ export class MyAppointmentsComponent implements OnInit {
         // Dependendo de como o seu Spring Boot devolve, pode ser 'response' direto ou 'response.content'
         this.professionals = response.content || response;
       },
-      error: (err) => console.error('Erro ao buscar médicos', err)
+      error: (err: any) => console.error('Erro ao buscar profissionais', err)
     });
   }
 

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppointmentService } from './appointment.service';
-import { ProfessionalService } from '../professionals/professional.service';   // <-- Importa o serviço de Médicos
+import { ProfessionalService } from '../professionals/professionals.service';   // <-- Importa o serviço de Médicos
 import { PatientService } from '../patients/patients.service'; // <-- Importa o serviço de Pacientes
 
 @Component({
