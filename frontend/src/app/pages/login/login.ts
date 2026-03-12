@@ -1,27 +1,24 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { environment } from '../../../environments/environment'; // Importe o ambiente
+import { AuthService } from '../../security/auth.service'; // Injetar o seu serviço
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule], // <-- Importamos o módulo de formulários
-  templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './login.html'
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  
-  // Injetando as ferramentas do Angular
-  private http = inject(HttpClient);
+  errorMessage: string = ''; // Variável para exibir erro na tela
+
+  private authService = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
 
   constructor() {
-    // Criando o nosso formulário com validações
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
@@ -30,23 +27,20 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
-      // Dispara o POST para o nosso Backend!
-      this.http.post(`${environment.apiUrl}/auth/login`, this.loginForm.value) 
+      this.authService.login(this.loginForm.value) 
         .subscribe({
           next: (response: any) => {
             localStorage.setItem('token', response.token);
-            // alert('Acesso Liberado! Bem-vindo(a)!'); <-- Pode apagar o alert se quiser!
-            
-            // Leva o usuário logado para dentro do sistema
             this.router.navigate(['/panel']); 
           },
-          error: (err) => {
-            console.error(err);
-            alert('Acesso Negado. Verifique e-mail e senha.');
+          error: (msg: string) => {
+            // 'msg' agora vem mastigada pelo catchError do AuthService
+            this.errorMessage = msg; 
+            console.error('Falha no login:', msg);
           }
         });
     } else {
-      alert('Preencha os campos corretamente!');
+      this.errorMessage = 'Preencha os campos corretamente!';
     }
   }
 }
