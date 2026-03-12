@@ -16,22 +16,23 @@ import static org.mockito.Mockito.*;
 class ProfessionalServiceTest {
 
     @InjectMocks
-    private ProfessionalService service;
+    private ProfessionalService professionalService;
 
     @Mock
-    private ProfessionalRepository repository;
+    private ProfessionalRepository professionalRepository;
 
     @Test
-    @DisplayName("Deve lançar exceção ao tentar cadastrar CRM já existente")
-    void scenario01() {
-        // Arrange
-        var dto = new ProfessionalCreateDTO("Dr. Lucas", "lucas@email.com", "senha123", "12345", "Psicologia");
-        when(repository.existsByCrm("12345")).thenReturn(true);
+    @DisplayName("Não deve cadastrar profissional com CRM duplicado")
+    void cadastrarCrmDuplicado() {
+        // Arrange (Preparação)
+        var dto = new ProfessionalCreateDTO("Dr. House", "house@med.com", "senha123", "12345-SP", "Infectologia");
+        when(professionalRepository.existsByCrm("12345-SP")).thenReturn(true);
 
-        // Act & Assert
-        var exception = assertThrows(RuntimeException.class, () -> service.create(dto));
+        // Act & Assert (Ação e Verificação)
+        var exception = assertThrows(RuntimeException.class, () -> professionalService.create(dto));
         assertEquals("Erro: Este CRM já está cadastrado no sistema.", exception.getMessage());
         
-        verify(repository, never()).save(any());
+        // Garante que o método save NUNCA foi chamado
+        verify(professionalRepository, never()).save(any());
     }
 }

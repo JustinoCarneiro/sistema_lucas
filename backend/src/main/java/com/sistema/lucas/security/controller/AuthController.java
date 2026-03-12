@@ -6,13 +6,12 @@ import com.sistema.lucas.security.dto.LoginRequestDTO;
 import com.sistema.lucas.security.dto.LoginResponseDTO;
 import com.sistema.lucas.security.dto.RegisterDTO;
 import com.sistema.lucas.security.service.TokenService;
-
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder; // Use o Bean injetado
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,12 +28,14 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Injetado para manter o padrão Argon2/BCrypt
+
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid LoginRequestDTO data) {
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
 
-        // CORREÇÃO AQUI: Passar apenas o email (String) e não o objeto User
         var user = (User) auth.getPrincipal();
         var token = tokenService.generateToken(user.getEmail());
 
@@ -42,13 +43,13 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid RegisterDTO data) {
+    public ResponseEntity<String> register(@RequestBody @Valid RegisterDTO data) {
         if (this.userRepository.findByEmail(data.email()) != null) {
             return ResponseEntity.badRequest().body("Email já cadastrado");
         }
 
-        // Encriptar a password antes de guardar
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+        // Use o passwordEncoder injetado para garantir que usa o Argon2 configurado
+        String encryptedPassword = passwordEncoder.encode(data.password());
         
         User newUser = new User(data.email(), encryptedPassword, data.role());
         this.userRepository.save(newUser);
