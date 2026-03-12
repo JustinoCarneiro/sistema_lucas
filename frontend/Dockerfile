@@ -1,15 +1,27 @@
 # Estágio 1: Build
-FROM node:18 AS build
+FROM node:20-alpine as build
 WORKDIR /app
-COPY . .
+COPY package*.json ./
 RUN npm install
-RUN npm run build
+COPY . .
+RUN npm run build -- --configuration=production
 
-# Estágio 2: Servidor
+# Estágio 2: Nginx
 FROM nginx:alpine
-# Copia o build para a pasta do Nginx
-COPY --from=build /app/dist/seu-projeto-nome /usr/share/nginx/html
-# Expõe a porta 80
+
+# O caminho correto baseado no seu angular.json é dist/sistema-lucas/browser
+# ou dist/sistema-lucas. Vamos copiar o conteúdo da pasta gerada:
+COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
+
+# Configuração para evitar erro 404 no refresh (SPA)
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html index.htm; \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
-# O Nginx roda em foreground por padrão, mantendo o container vivo
 CMD ["nginx", "-g", "daemon off;"]

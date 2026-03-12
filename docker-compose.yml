@@ -43,6 +43,8 @@ services:
     build: ./frontend
     container_name: lucas-web
     restart: always
+    environment:
+      - API_URL=http://lucas-api:8081 # Nome do serviço no network do docker
     ports:
       - "80:80"
     networks:
