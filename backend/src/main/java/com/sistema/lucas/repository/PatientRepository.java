@@ -1,6 +1,6 @@
 package com.sistema.lucas.repository;
 
-import com.sistema.lucas.domain.Patient;
+import com.sistema.lucas.model.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

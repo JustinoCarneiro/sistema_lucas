@@ -1,21 +1,16 @@
 package com.sistema.lucas;
 
-import com.sistema.lucas.config.WhatsAppProperties;
-import com.sistema.lucas.domain.*;
-import com.sistema.lucas.domain.enums.*;
+import com.sistema.lucas.model.*;
+import com.sistema.lucas.model.enums.*;
 import com.sistema.lucas.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
-@EnableAsync
-@EnableConfigurationProperties(WhatsAppProperties.class)
 public class LucasApplication {
 
     public static void main(String[] args) {
@@ -23,72 +18,53 @@ public class LucasApplication {
     }
 
     @Bean
-    public CommandLineRunner initUsers(UserRepository userRepository, 
-                                       PatientRepository patientRepository, 
-                                       ProfessionalRepository professionalRepository, 
-                                       ExamRepository examRepository,
-                                       AppointmentRepository appointmentRepository,
-                                       PasswordEncoder passwordEncoder) {
+    public CommandLineRunner initData(UserRepository userRepository, 
+                                     PatientRepository patientRepository, 
+                                     ProfessionalRepository professionalRepository, 
+                                     AppointmentRepository appointmentRepository,
+                                     PasswordEncoder passwordEncoder) {
         return args -> {
             try {
-                System.out.println("🧹 LIMPANDO DADOS ANTIGOS PARA CARGA DE TESTE...");
-                // A ordem de deleção importa por causa das chaves estrangeiras (Foreign Keys)
+                System.out.println("🧹 LIMPANDO BANCO PARA NOVO PADRÃO MVC...");
                 appointmentRepository.deleteAll();
-                examRepository.deleteAll();
                 professionalRepository.deleteAll();
                 patientRepository.deleteAll();
                 userRepository.deleteAll();
 
-                System.out.println("🚀 INICIANDO CARGA DE DADOS FRESCOS...");
-
-                // 1. ADMIN
-                User admin = new User();
-                admin.setName("Administrador");
-                admin.setEmail("admin@clinica.com");
-                admin.setPassword(passwordEncoder.encode("123456"));
-                admin.setRole(Role.ADMIN);
-                admin.setActive(true);
+                // 1. Criar Usuário ADMIN (para segurança)
+                User admin = new User("admin@clinica.com", passwordEncoder.encode("admin123"), Role.ADMIN);
                 userRepository.save(admin);
-                System.out.println("✅ ADMIN CRIADO");
 
-                // 2. MÉDICO
+                // 2. Criar Profissional (usando o novo construtor via DTO se preferir, ou manual)
                 Professional doc = new Professional();
                 doc.setName("Dr. Gregory House");
-                doc.setEmail("medico@teste.com");
+                doc.setEmail("house@teste.com");
                 doc.setPassword(passwordEncoder.encode("123456"));
-                doc.setRole(Role.PROFESSIONAL);
-                doc.setActive(true);
                 doc.setCrm("12345-SP");
                 doc.setSpecialty("Infectologia");
                 professionalRepository.save(doc);
-                System.out.println("✅ MÉDICO CRIADO");
 
-                // 3. PACIENTE
+                // 3. Criar Paciente
                 Patient pat = new Patient();
-                pat.setName("Lucas Paciente");
+                pat.setName("Lucas Silva");
                 pat.setEmail("paciente@teste.com");
                 pat.setPassword(passwordEncoder.encode("123456"));
-                pat.setRole(Role.PATIENT);
-                pat.setActive(true);
                 pat.setCpf("111.222.333-44");
-                pat.setWhatsapp("5511999998888");
                 patientRepository.save(pat);
-                System.out.println("✅ PACIENTE CRIADO");
 
-                // 4. CONSULTA INICIAL (Para o médico ver a agenda cheia)
+                // 4. Criar Consulta
                 Appointment app = new Appointment();
                 app.setProfessional(doc);
                 app.setPatient(pat);
-                app.setStartTime(LocalDateTime.now().plusHours(2));
-                app.setEndTime(LocalDateTime.now().plusHours(3));
-                app.setStatus(AppointmentStatus.SCHEDULED);
-                app.setReason("Consulta de teste inicial");
+                app.setDateTime(LocalDateTime.now().plusDays(1));
+                app.setReason("Check-up Geral");
+                app.setStatus("SCHEDULED");
                 appointmentRepository.save(app);
-                System.out.println("📅 CONSULTA CRIADA");
+
+                System.out.println("✅ CARGA INICIAL CONCLUÍDA COM SUCESSO!");
 
             } catch (Exception e) {
-                System.err.println("⚠️ Erro crítico na inicialização: " + e.getMessage());
-                e.printStackTrace();
+                System.err.println("⚠️ Erro na carga: " + e.getMessage());
             }
         };
     }
