@@ -46,4 +46,30 @@ public class ProfessionalService {
     public void delete(Long id) {
         repository.deleteById(id);
     }
+
+    @Transactional
+    public void update(Long id, ProfessionalCreateDTO dto) {
+        // 1. Busca o médico pelo ID
+        Professional professional = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Erro: Profissional não encontrado."));
+
+        // 2. Verifica se ele está a tentar mudar para um CRM que já pertence a outro médico
+        if (!professional.getCrm().equals(dto.crm()) && repository.existsByCrm(dto.crm())) {
+            throw new RuntimeException("Erro: Este CRM já está cadastrado no sistema.");
+        }
+
+        // 3. Atualiza os dados básicos
+        professional.setName(dto.name());
+        professional.setEmail(dto.email());
+        professional.setCrm(dto.crm());
+        professional.setSpecialty(dto.specialty());
+
+        // 4. Só atualiza a senha se o Angular enviar uma nova senha preenchida
+        if (dto.password() != null && !dto.password().trim().isEmpty()) {
+            professional.setPassword(passwordEncoder.encode(dto.password()));
+        }
+
+        // O Hibernate salva automaticamente no fim da transação, mas podemos chamar o save para garantir
+        repository.save(professional);
+    }
 }

@@ -39,7 +39,7 @@ public class AuthController {
             var auth = this.authenticationManager.authenticate(usernamePassword);
 
             var user = (User) auth.getPrincipal();
-            var token = tokenService.generateToken(user.getEmail());
+            var token = tokenService.generateToken(user);
 
             return ResponseEntity.ok(new LoginResponseDTO(token));
         } catch (org.springframework.security.authentication.BadCredentialsException e) {

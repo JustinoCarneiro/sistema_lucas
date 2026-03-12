@@ -38,13 +38,22 @@ export class AuthService {
     return throwError(() => errorMessage);
   }
 
+  // Adicione ou substitua o método getUserRole no auth.service.ts
   getUserRole(): string | null {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token'); // ou a forma como você guarda
     if (!token) return null;
+
     try {
-      const decodedToken: any = jwtDecode(token);
-      return decodedToken.role || null; 
-    } catch (error) {
+      // O JWT tem 3 partes separadas por ponto. A payload é a segunda parte [1].
+      const payloadBase64 = token.split('.')[1]; 
+      
+      // Descodifica de Base64 para String (JSON) e faz o parse
+      const decodedJson = JSON.parse(atob(payloadBase64));
+      
+      // Retorna a role que acabámos de injetar no backend
+      return decodedJson.role || null;
+    } catch (e) {
+      console.error('Erro ao ler a Role do token', e);
       return null;
     }
   }
