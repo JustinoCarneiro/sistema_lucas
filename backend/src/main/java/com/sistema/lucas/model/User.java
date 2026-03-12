@@ -2,19 +2,25 @@ package com.sistema.lucas.model;
 
 import com.sistema.lucas.model.enums.Role;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter
-@NoArgsConstructor // Gera construtor vazio (obrigatório para JPA)
-@AllArgsConstructor // Gera construtor com todos os campos
-public class User {
+@NoArgsConstructor
+@AllArgsConstructor
+public class User implements UserDetails { // <-- 1. Adicionado implements UserDetails
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,10 +32,50 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    // Construtor customizado que você está chamando no LucasApplication
     public User(String email, String password, Role role) {
         this.email = email;
         this.password = password;
         this.role = role;
+    }
+
+    // --- 2. MÉTODOS OBRIGATÓRIOS DO SPRING SECURITY ---
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Retorna a Role com o prefixo que o Spring exige
+        if (this.role != null) {
+            return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
+        }
+        return List.of();
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email; // O "username" do nosso sistema é o e-mail
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // A conta nunca expira
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // A conta não bloqueia
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // As credenciais não expiram
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // O usuário está sempre ativo
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder; // Use o Bean injetado
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,10 +29,11 @@ public class AuthController {
     private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Injetado para manter o padrão Argon2/BCrypt
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid LoginRequestDTO data) {
+    // 1. CORREÇÃO AQUI: Adicionado <LoginResponseDTO>
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
         try {
             var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
             var auth = this.authenticationManager.authenticate(usernamePassword);
@@ -52,12 +53,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    // (O register já estava correto com <String>)
     public ResponseEntity<String> register(@RequestBody @Valid RegisterDTO data) {
         if (this.userRepository.findByEmail(data.email()) != null) {
             return ResponseEntity.badRequest().body("Email já cadastrado");
         }
 
-        // Use o passwordEncoder injetado para garantir que usa o Argon2 configurado
         String encryptedPassword = passwordEncoder.encode(data.password());
         
         User newUser = new User(data.email(), encryptedPassword, data.role());
