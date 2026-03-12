@@ -1,20 +1,12 @@
-# Estágio 1: Build
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copia arquivos de configuração de pacotes
-COPY package*.json ./
+# 1. Copia apenas os arquivos de dependências
+COPY package.json package-lock.json ./
 
-# Instala as dependências (esta camada só muda se você alterar o package.json)
-RUN npm install
+# 2. Instala as dependências (Essa camada ficará guardada no seu PC)
+RUN npm install --frozen-lockfile
 
-# Copia o restante e gera o build
+# 3. Só DEPOIS copia o código (isso evita reinstalar tudo se você mudar só um .ts)
 COPY . .
 RUN npm run build
-
-# Estágio 2: Serve com Nginx
-FROM nginx:alpine
-# Mantendo o caminho que você confirmou que funciona
-COPY --from=build /app/dist/sistema-lucas-ui/browser /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
