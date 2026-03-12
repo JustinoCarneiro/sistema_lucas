@@ -10,30 +10,34 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Captura erros de Entidade não encontrada (ex: findById que não existe)
+    // 1. Quando não há corpo no retorno, usamos <Void>
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity handle404() {
+    public ResponseEntity<Void> handle404() {
         return ResponseEntity.notFound().build();
     }
 
-    // Captura erros de integridade (ex: CPF/CRM duplicado no banco)
+    // 2. Quando retornamos o DTO de erro, usamos <ExceptionDTO>
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity handleDataIntegrity(DataIntegrityViolationException exception) {
+    public ResponseEntity<ExceptionDTO> handleDataIntegrity(DataIntegrityViolationException exception) {
         ExceptionDTO response = new ExceptionDTO("Erro de integridade: dado já cadastrado.", "400");
         return ResponseEntity.badRequest().body(response);
     }
 
-    // Captura as RuntimeExceptions que lançamos nos nossos Services
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity handleRuntime(RuntimeException exception) {
+    public ResponseEntity<ExceptionDTO> handleRuntime(RuntimeException exception) {
         ExceptionDTO response = new ExceptionDTO(exception.getMessage(), "400");
         return ResponseEntity.badRequest().body(response);
     }
 
-    // Captura qualquer outro erro inesperado (Fallback)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity handleGeneral(Exception exception) {
+    public ResponseEntity<ExceptionDTO> handleGeneral(Exception exception) {
         ExceptionDTO response = new ExceptionDTO("Erro interno no servidor.", "500");
         return ResponseEntity.internalServerError().body(response);
+    }
+
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<ExceptionDTO> handleBadCredentials() {
+        ExceptionDTO response = new ExceptionDTO("E-mail ou senha inválidos", "401");
+        return ResponseEntity.status(401).body(response);
     }
 }

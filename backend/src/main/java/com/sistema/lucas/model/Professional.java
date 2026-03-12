@@ -1,26 +1,13 @@
 package com.sistema.lucas.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Table(name = "professionals")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
-public class Professional {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String name;
-    private String email;
-    private String password;
+@Getter
+@Setter
+public class Professional extends User { // Herança estabelecida aqui
     private String crm;
     private String specialty;
-
-    public Professional(ProfessionalCreateDTO dto) {
-        this.name = dto.name();
-        this.email = dto.email();
-        this.password = dto.password();
-        this.crm = dto.crm();
-        this.specialty = dto.specialty();
-    }
 }

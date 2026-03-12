@@ -32,14 +32,23 @@ public class AuthController {
     private PasswordEncoder passwordEncoder; // Injetado para manter o padrão Argon2/BCrypt
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
+    public ResponseEntity login(@RequestBody @Valid LoginRequestDTO data) {
+        try {
+            var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+            var auth = this.authenticationManager.authenticate(usernamePassword);
 
-        var user = (User) auth.getPrincipal();
-        var token = tokenService.generateToken(user.getEmail());
+            var user = (User) auth.getPrincipal();
+            var token = tokenService.generateToken(user.getEmail());
 
-        return ResponseEntity.ok(new LoginResponseDTO(token));
+            return ResponseEntity.ok(new LoginResponseDTO(token));
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            System.out.println("❌ SENHA INCORRETA PARA: " + data.email());
+            throw e;
+        } catch (Exception e) {
+            System.out.println("❌ ERRO INESPERADO: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @PostMapping("/register")
