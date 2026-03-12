@@ -34,7 +34,6 @@ class PatientServiceTest {
         when(patientRepository.existsByCpf(dto.cpf())).thenReturn(true);
 
         // Act & Assert
-        // Verifique se a mensagem de erro no seu Service é exatamente esta
         var exception = assertThrows(RuntimeException.class, () -> patientService.create(dto));
         assertTrue(exception.getMessage().contains("CPF já cadastrado"));
         
@@ -48,7 +47,9 @@ class PatientServiceTest {
         var dto = new PatientCreateDTO("Novo Paciente", "novo@teste.com", "senha123", "000.000.000-00", "5511000000000", "Plano Y");
         
         when(patientRepository.existsByCpf(dto.cpf())).thenReturn(false);
-        // Só configuramos o encoder se o fluxo realmente chegar nele
+        // ADICIONADO: Simular que o e-mail também não existe no banco
+        when(patientRepository.existsByEmail(dto.email())).thenReturn(false); 
+        
         when(passwordEncoder.encode(dto.password())).thenReturn("senhaCriptografada");
 
         // Act
