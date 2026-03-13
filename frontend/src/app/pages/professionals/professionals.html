@@ -1,101 +1,54 @@
-<div class="space-y-8 p-6">
-  
-  <div>
-    <h2 class="text-3xl font-bold text-gray-800">Gerenciar Médicos 🩺</h2>
-    <p class="text-gray-500">Administre o corpo clínico: adicione, edite ou remova profissionais.</p>
+<div class="p-8">
+  <div class="mb-8 flex justify-between items-end">
+    <div>
+      <h2 class="text-3xl font-bold text-gray-800">Corpo Clínico 🩺</h2>
+      <p class="text-gray-500 font-medium">Gerencie os profissionais de saúde cadastrados no sistema.</p>
+    </div>
+    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-blue-200">
+      + Cadastrar Médico
+    </button>
   </div>
 
-  <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-    <h3 class="text-lg font-semibold text-gray-700 mb-4">
-      {{ isEditing ? '📝 Editar Profissional' : '➕ Novo Médico' }}
-    </h3>
-    
-    <form [formGroup]="professionalForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Nome Completo</label>
-        <input type="text" formControlName="name" placeholder="Ex: Dr. João Silva"
-          class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">E-mail</label>
-        <input type="email" formControlName="email" placeholder="email@clinica.com"
-          class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">
-          Senha {{ isEditing ? '(deixe em branco para manter)' : '' }}
-        </label>
-        <input type="password" formControlName="password" placeholder="******"
-          class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">CRM</label>
-        <input type="text" formControlName="crm" placeholder="123456-SP"
-          class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Especialidade</label>
-        <input type="text" formControlName="specialty" placeholder="Ex: Cardiologia"
-          class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-      </div>
-
-      <div class="flex items-end space-x-2">
-        <button type="submit" [disabled]="professionalForm.invalid" 
-          class="flex-1 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition shadow-sm">
-          {{ isEditing ? 'Salvar Alterações' : 'Cadastrar Médico' }}
-        </button>
-        
-        <button *ngIf="isEditing" type="button" (click)="cancelEdit()"
-          class="bg-gray-100 text-gray-600 font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition">
-          Cancelar
-        </button>
-      </div>
-
-    </form>
-  </div>
-
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+      <thead class="bg-gray-50/80">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome / Email</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRM</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especialidade</th>
-          <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nome do Profissional</th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Especialidade</th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">CRM</th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">E-mail</th>
+          <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Ações</th>
         </tr>
       </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
-        
-        <tr *ngFor="let doc of professionalsList" class="hover:bg-gray-50 transition">
-          <td class="px-6 py-4">
-            <div class="text-sm font-bold text-gray-900">{{ doc.name }}</div>
-            <div class="text-sm text-gray-500">{{ doc.email }}</div>
+      <tbody class="bg-white divide-y divide-gray-100">
+        <tr *ngFor="let prof of professionals" class="hover:bg-blue-50/50 transition-colors duration-150">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs mr-3">
+                {{ prof.name.charAt(0) }}
+              </div>
+              <span class="text-sm text-gray-800 font-semibold">{{ prof.name }}</span>
+            </div>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-900">{{ doc.crm }}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">{{ doc.specialty }}</td>
-          <td class="px-6 py-4 text-center space-x-4">
-            <button (click)="editProfessional(doc)" class="text-blue-600 hover:text-blue-900 font-bold text-sm">
-              Editar
-            </button>
-            <button (click)="deleteProfessional(doc.id)" class="text-red-600 hover:text-red-900 font-bold text-sm">
-              Excluir
-            </button>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+            {{ prof.specialty }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {{ prof.crm }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">
+            {{ prof.email }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <button class="text-blue-600 hover:text-blue-900 mr-4">Editar</button>
+            <button class="text-red-600 hover:text-red-900">Excluir</button>
           </td>
         </tr>
-
-        <tr *ngIf="professionalsList.length === 0">
-          <td colspan="4" class="px-6 py-10 text-center text-gray-500 italic">
-            Nenhum profissional cadastrado no momento.
-          </td>
-        </tr>
-
       </tbody>
     </table>
-  </div>
 
+    <div *ngIf="professionals.length === 0" class="p-10 text-center text-gray-500">
+      Nenhum médico encontrado na base de dados.
+    </div>
+  </div>
 </div>

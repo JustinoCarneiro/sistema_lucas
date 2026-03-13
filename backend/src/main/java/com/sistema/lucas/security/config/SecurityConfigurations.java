@@ -48,7 +48,7 @@ public class SecurityConfigurations {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Permite o acesso vindo do seu frontend Docker (porta 80)
-        configuration.setAllowedOrigins(List.of("http://localhost", "http://localhost:80"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost", "http://localhost:80"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);

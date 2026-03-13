@@ -17,6 +17,8 @@ export class PanelComponent implements OnInit {
 
   userRole: string | null = '';
 
+  today: Date = new Date();
+
   ngOnInit() {
     this.userRole = this.authService.getUserRole();
 

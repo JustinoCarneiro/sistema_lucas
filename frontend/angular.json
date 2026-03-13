@@ -62,10 +62,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "sistema-lucas-ui:build:production"
+              "buildTarget": "frontend:build:production"
             },
             "development": {
-              "buildTarget": "sistema-lucas-ui:build:development"
+              "buildTarget": "frontend:build:development"
             }
           },
           "defaultConfiguration": "development"

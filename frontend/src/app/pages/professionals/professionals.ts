@@ -11,7 +11,7 @@ import { ProfessionalService } from './professionals.service';
 })
 export class ProfessionalsComponent implements OnInit {
   
-  professionalsList: any[] = [];
+  professionals: any[] = [];
   professionalForm: FormGroup;
   isEditing = false;
   currentProfessionalId: number | null = null;
@@ -38,7 +38,7 @@ export class ProfessionalsComponent implements OnInit {
     this.professionalService.getProfessionals().subscribe({
       next: (data: any) => {
         // Trata se o backend devolver uma Page ou uma List direta
-        this.professionalsList = data.content ? data.content : data;
+        this.professionals = data.content ? data.content : data;
         this.cdr.detectChanges(); 
       },
       error: (err) => console.error('Erro ao buscar médicos', err)

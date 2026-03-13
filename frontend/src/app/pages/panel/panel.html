@@ -1,46 +1,88 @@
-<div class="min-h-screen flex bg-gray-50">
+<div class="min-h-screen flex bg-gray-50 font-sans">
 
-  <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl">
+  <aside class="w-72 bg-slate-900 text-white flex flex-col shadow-2xl relative z-20">
     
-    <div class="p-6 border-b border-blue-800">
-      <h2 class="text-2xl font-bold tracking-tight">Sistema Lucas</h2>
-      <p class="text-blue-300 text-sm mt-1">Gestão de Saúde</p>
+    <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold tracking-wide text-gray-50">Sistema <span class="text-blue-400">Lucas</span></h2>
+        <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold mt-0.5">Gestão Clínica</p>
+      </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto py-6 px-4">
+    <div class="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar">
       
-      <nav class="space-y-2" *ngIf="userRole === 'ADMIN'">
-        <p class="text-blue-200 text-xs font-bold uppercase mb-2 px-4">Gestão da Clínica</p>
-        <a routerLink="/panel/professionals" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">🩺 Médicos</a>
-        <a routerLink="/panel/patients" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👥 Pacientes</a>
-        <a routerLink="/panel/appointments" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Agenda Geral</a>
+      <nav class="space-y-1 mb-8" *ngIf="userRole === 'ADMIN'">
+        <p class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3 px-3">Administração</p>
+        <a routerLink="/panel/professionals" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>🩺</span> Médicos
+        </a>
+        <a routerLink="/panel/patients" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>👥</span> Pacientes
+        </a>
+        <a routerLink="/panel/appointments" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>📅</span> Agenda Geral
+        </a>
       </nav>
 
-      <nav class="space-y-2" *ngIf="userRole === 'PROFESSIONAL'">
-        <p class="text-blue-200 text-xs font-bold uppercase mb-2 px-4">Área Médica</p>
-        <a routerLink="/panel/professional-appointments" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Minha Agenda</a>
-        <a routerLink="/panel/professional-schedule" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">⏰ Meus Horários</a>
-        <a routerLink="/panel/my-profile" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👤 Meu Perfil</a>
+      <nav class="space-y-1 mb-8" *ngIf="userRole === 'PROFESSIONAL'">
+        <p class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3 px-3">Área Médica</p>
+        <a routerLink="/panel/professional-appointments" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>📅</span> Minha Agenda
+        </a>
+        <a routerLink="/panel/my-profile" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>👤</span> Meu Perfil
+        </a>
       </nav>
 
-      <nav class="space-y-2" *ngIf="userRole === 'PATIENT'">
-        <p class="text-blue-200 text-xs font-bold uppercase mb-2 px-4">A Minha Área</p>
-        <a routerLink="/panel/my-appointments" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📅 Minhas Consultas</a>
-        <a routerLink="/panel/my-exams" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">📄 Meus Exames</a>
-        <a routerLink="/panel/my-profile" routerLinkActive="bg-blue-800" class="block py-2.5 px-4 rounded-lg hover:bg-blue-800 transition">👤 Meu Perfil</a>
+      <nav class="space-y-1 mb-8" *ngIf="userRole === 'PATIENT'">
+        <p class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3 px-3">A Minha Área</p>
+        <a routerLink="/panel/my-appointments" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>📅</span> Minhas Consultas
+        </a>
+        <a routerLink="/panel/my-exams" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>📄</span> Meus Exames
+        </a>
+        <a routerLink="/panel/my-profile" routerLinkActive="bg-blue-600 text-white shadow-md" class="flex items-center gap-3 py-3 px-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 font-medium">
+          <span>👤</span> Meu Perfil
+        </a>
       </nav>
 
     </div>
 
-    <div class="p-4 border-t border-blue-800">
-      <button (click)="logout()" class="w-full flex items-center justify-center space-x-2 bg-blue-800 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors">
-        <span>Sair do Sistema</span>
+    <div class="p-5 border-t border-slate-800 bg-slate-900/50">
+      <div class="flex items-center gap-3 mb-4 px-2">
+        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-300">
+          {{ userRole?.charAt(0) || 'U' }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate">Utilizador</p>
+          <p class="text-xs text-slate-400 truncate">{{ userRole | lowercase }}</p>
+        </div>
+      </div>
+      <button (click)="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-500/90 text-slate-300 hover:text-white py-2.5 px-4 rounded-xl transition-all duration-200 font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Sair do Sistema
       </button>
     </div>
   </aside>
 
-  <main class="flex-1 h-screen overflow-y-auto bg-gray-50">
-    <router-outlet></router-outlet>
+  <main class="flex-1 h-screen overflow-y-auto bg-gray-50/50 relative">
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-10">
+       <span class="text-sm font-medium text-gray-500">
+         Data: {{ today | date:'longDate' }}
+       </span>
+    </header>
+    
+    <div class="p-8">
+      <router-outlet></router-outlet>
+    </div>
   </main>
 
 </div>
