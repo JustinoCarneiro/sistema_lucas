@@ -1,65 +1,62 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms'; // <-- Importes de Formulário
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppointmentService } from '../appointments/appointment.service';
-import { ProfessionalService } from '../professionals/professionals.service'; // <-- Precisamos do serviço de médicos!
+import { ProfessionalService } from '../professionals/professionals.service';
 
 @Component({
   selector: 'app-my-appointments',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule], // <-- Adicione o ReactiveFormsModule aqui
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './my-appointments.html',
   styleUrl: './my-appointments.css'
 })
 export class MyAppointmentsComponent implements OnInit {
-
   private appointmentService = inject(AppointmentService);
   private professionalService = inject(ProfessionalService);
   private fb = inject(FormBuilder);
   
+  // Inicializados como arrays vazios para evitar erro de "length"
   myAppointments: any[] = [];
-  professionals: any[] = []; // Guarda a lista de médicos
+  professionals: any[] = []; 
   
   isLoading: boolean = true;
-  isScheduling: boolean = false; // Controla se a janela do formulário está aberta
-  
+  isScheduling: boolean = false;
   scheduleForm: FormGroup;
 
   constructor() {
-    // Monta a estrutura do formulário
     this.scheduleForm = this.fb.group({
       professionalId: ['', Validators.required],
-      startTime: ['', Validators.required], // Usaremos um campo de Data/Hora
+      startTime: ['', Validators.required],
       reason: ['']
     });
   }
 
   ngOnInit() {
     this.loadAppointments();
-    this.loadProfessionals(); // Carrega os médicos logo que a tela abre
+    this.loadProfessionals();
   }
 
   loadAppointments() {
     this.isLoading = true;
     this.appointmentService.getMyAppointments().subscribe({
-      next: (response) => {
-        this.myAppointments = response.content; 
+      next: (response: any) => {
+        // Suporta tanto o formato Page do Spring quanto List simples
+        this.myAppointments = response.content || response || []; 
         this.isLoading = false;
       },
       error: (err) => {
         console.error('Erro ao buscar consultas', err);
+        this.myAppointments = [];
         this.isLoading = false;
       }
     });
   }
 
   loadProfessionals() {
-    // Assume que tem um método getProfessionals() no seu ProfessionalService.
-    // Se for diferente (ex: listAll), ajuste o nome abaixo!
     this.professionalService.getProfessionals().subscribe({
       next: (response: any) => {
-        // Dependendo de como o seu Spring Boot devolve, pode ser 'response' direto ou 'response.content'
-        this.professionals = response.content || response;
+        this.professionals = response.content || response || [];
       },
       error: (err: any) => console.error('Erro ao buscar profissionais', err)
     });
@@ -77,20 +74,18 @@ export class MyAppointmentsComponent implements OnInit {
   onSubmitSchedule() {
     if (this.scheduleForm.valid) {
       const formValues = this.scheduleForm.value;
-      const startStr = formValues.startTime; // Vem do HTML no formato: "YYYY-MM-DDTHH:mm"
+      const startStr = formValues.startTime;
 
-      // Truque de Mestre: Como a consulta dura 1 hora, calculamos o fim automaticamente!
+      // Cálculo automático: Consulta de 1 hora
       const startDate = new Date(startStr);
-      const endDate = new Date(startDate.getTime() + (60 * 60 * 1000)); // Soma 1 hora
+      const endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
       
-      // Formata a data de fim para "YYYY-MM-DDTHH:mm:00"
       const pad = (n: number) => n < 10 ? '0' + n : n;
       const endStr = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:00`;
 
-      // Monta a "encomenda" para o Java
       const payload = {
         professionalId: formValues.professionalId,
-        startTime: startStr + ':00', // Adiciona os segundos para o Java não reclamar
+        startTime: startStr + ':00',
         endTime: endStr,
         reason: formValues.reason
       };
@@ -99,36 +94,31 @@ export class MyAppointmentsComponent implements OnInit {
         next: () => {
           alert('🎉 Consulta agendada com sucesso!');
           this.closeScheduleModal();
-          this.loadAppointments(); // Atualiza a tabela na hora!
+          this.loadAppointments();
         },
         error: (err) => {
           console.error(err);
-          alert('Erro ao agendar: ' + (err.error?.message || 'Verifique se o médico está disponível neste horário.'));
+          alert('Erro ao agendar: ' + (err.error?.message || 'Horário indisponível.'));
         }
       });
     }
   }
 
   cancelAppointment(id: number) {
-    if (confirm('Tem a certeza que deseja desmarcar esta consulta? Esta ação não pode ser desfeita.')) {
-      
+    if (confirm('Tem a certeza que deseja desmarcar esta consulta?')) {
       this.appointmentService.cancelPatientAppointment(id).subscribe({
         next: () => {
           alert('✅ Consulta desmarcada com sucesso!');
-          
-          // ✨ O TRUQUE DE MESTRE: Atualiza o status diretamente na memória!
-          const consultaCancelada = this.myAppointments.find(app => app.id === id);
-          if (consultaCancelada) {
-            consultaCancelada.status = 'CANCELLED';
-          }
-          
+          // Atualização reativa na lista
+          this.myAppointments = this.myAppointments.map(app => 
+            app.id === id ? { ...app, status: 'CANCELLED' } : app
+          );
         },
         error: (err) => {
           console.error(err);
-          alert('Erro ao desmarcar consulta. Tente novamente mais tarde.');
+          alert('Erro ao desmarcar consulta.');
         }
       });
-      
     }
   }
 }

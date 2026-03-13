@@ -72,4 +72,9 @@ public class ProfessionalService {
         // O Hibernate salva automaticamente no fim da transação, mas podemos chamar o save para garantir
         repository.save(professional);
     }
+
+    public Professional getMyProfile(String email) {
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
+    }
 }

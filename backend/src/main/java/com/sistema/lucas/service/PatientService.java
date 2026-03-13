@@ -48,4 +48,9 @@ public class PatientService {
     public void delete(Long id) {
         repository.deleteById(id);
     }
+
+    public Patient getMyProfile(String email) {
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/patients")
@@ -32,5 +33,10 @@ public class PatientController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Patient> getMyProfile(Principal principal) {
+        return ResponseEntity.ok(service.getMyProfile(principal.getName()));
     }
 }

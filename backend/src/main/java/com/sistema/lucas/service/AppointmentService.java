@@ -35,4 +35,12 @@ public class AppointmentService {
         var appointment = new Appointment(professional, patient, dto);
         appointmentRepository.save(appointment);
     }
+
+    public List<Appointment> getTodayAppointments(String email) {
+        return appointmentRepository.findTodayAppointmentsByProfessionalEmail(email);
+    }
+
+    public List<Appointment> getMyAppointments(String email) {
+        return appointmentRepository.findByPatientEmail(email);
+    }
 }

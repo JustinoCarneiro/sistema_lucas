@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 
 import java.util.List;
 
@@ -38,5 +39,12 @@ public class ProfessionalController {
     public ResponseEntity<String> update(@PathVariable Long id, @RequestBody @Valid ProfessionalCreateDTO dto) {
         service.update(id, dto);
         return ResponseEntity.ok("Profissional atualizado com sucesso!");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Professional> getMyProfile(Principal principal) {
+        // O 'Principal' é injetado pelo Spring Security com os dados do Token
+        Professional me = service.getMyProfile(principal.getName());
+        return ResponseEntity.ok(me);
     }
 }
