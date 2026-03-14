@@ -1,3 +1,4 @@
+// backend/src/main/java/com/sistema/lucas/service/AppointmentService.java
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.*;
@@ -24,22 +25,23 @@ public class AppointmentService {
     public void schedule(AppointmentCreateDTO dto, String patientEmail) {
         var professional = professionalRepository.findById(dto.professionalId())
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
-            
-        // ✅ CORREÇÃO: Tratando o Optional<Patient> do findByEmail
         var patient = patientRepository.findByEmail(patientEmail)
             .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
-
-        var appointment = new Appointment(professional, patient, dto);
-        appointmentRepository.save(appointment);
+        appointmentRepository.save(new Appointment(professional, patient, dto));
     }
 
     public List<AppointmentResponseDTO> getMyAppointments(String email) {
         return appointmentRepository.findByPatientEmail(email).stream().map(AppointmentResponseDTO::new).toList();
     }
 
-    // ✅ ADICIONADO: Agenda completa do profissional logado
     public List<AppointmentResponseDTO> getMyProfessionalAppointments(String email) {
         return appointmentRepository.findByProfessionalEmail(email).stream().map(AppointmentResponseDTO::new).toList();
+    }
+
+    // ✅ NOVO: agenda de hoje para o médico logado
+    public List<AppointmentResponseDTO> getTodayAppointments(String email) {
+        return appointmentRepository.findTodayAppointmentsByProfessionalEmail(email)
+            .stream().map(AppointmentResponseDTO::new).toList();
     }
 
     @Transactional
@@ -48,5 +50,21 @@ public class AppointmentService {
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
         appointment.setStatus("CANCELLED");
         appointmentRepository.save(appointment);
+    }
+
+    // ✅ NOVO: marcar falta do paciente
+    @Transactional
+    public void markNoShow(Long id) {
+        var appointment = appointmentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+        appointment.setStatus("NO_SHOW");
+        appointmentRepository.save(appointment);
+    }
+
+    // ✅ NOVO: buscar consulta por ID (necessário para o prontuário)
+    public AppointmentResponseDTO findById(Long id) {
+        return appointmentRepository.findById(id)
+            .map(AppointmentResponseDTO::new)
+            .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
     }
 }

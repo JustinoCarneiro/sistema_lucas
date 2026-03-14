@@ -35,8 +35,8 @@ export class ProfessionalAppointmentsComponent implements OnInit {
     });
   }
 
-  iniciarAtendimento(app: any) { // Nome agora coincide com o .html
-    this.router.navigate(['/panel/medical-record', app.id]);
+  iniciarAtendimento(app: any) {
+    this.router.navigate(['/panel/prontuario', app.id]); // ✅ era /panel/medical-record
   }
 
   marcarFalta(app: any) {

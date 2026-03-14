@@ -20,14 +20,15 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        try {
-            System.out.println("🧹 LIMPANDO BANCO PARA CARGA DE DEMONSTRAÇÃO...");
-            appointmentRepository.deleteAll();
-            professionalRepository.deleteAll();
-            patientRepository.deleteAll();
-            userRepository.deleteAll();
+        // ✅ CORREÇÃO: só popula se o banco estiver completamente vazio
+        if (userRepository.count() > 0) {
+            System.out.println("ℹ️ Banco já populado. Pulando carga de demonstração.");
+            return;
+        }
 
-            // 1. Criar ADMIN (Acesso mestre ao sistema)
+        try {
+            System.out.println("🌱 Carregando dados de demonstração...");
+
             User admin = new User();
             admin.setName("Administrador");
             admin.setEmail("admin@clinica.com");
@@ -36,7 +37,6 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println("✅ Admin criado: admin@clinica.com");
 
-            // 2. Criar Médicos
             Professional house = new Professional();
             house.setName("Dr. Gregory House");
             house.setEmail("house@clinica.com");
@@ -44,7 +44,6 @@ public class DataInitializer implements CommandLineRunner {
             house.setRole(Role.PROFESSIONAL);
             professionalRepository.save(house);
 
-            // 3. Criar Pacientes
             Patient lucas = new Patient();
             lucas.setName("Lucas Silva");
             lucas.setEmail("lucas@email.com");
@@ -52,10 +51,7 @@ public class DataInitializer implements CommandLineRunner {
             lucas.setRole(Role.PATIENT);
             patientRepository.save(lucas);
 
-            // 4. Agenda do Dr. House (Demonstração)
             LocalDateTime hoje = LocalDateTime.now();
-            
-            // Requer o construtor de 5 argumentos adicionado na Appointment.java anteriormente
             appointmentRepository.save(new Appointment(house, lucas, hoje.minusDays(1), "Check-up", "COMPLETED"));
             appointmentRepository.save(new Appointment(house, lucas, hoje.withHour(14).withMinute(0), "Dor lombar", "SCHEDULED"));
 
