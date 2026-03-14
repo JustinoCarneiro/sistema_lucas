@@ -1,94 +1,58 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+// frontend/src/app/pages/appointments/appointments.ts
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppointmentService } from './appointment.service';
-import { ProfessionalService } from '../professionals/professionals.service';   // <-- Importa o serviço de Médicos
-import { PatientService } from '../patients/patients.service'; // <-- Importa o serviço de Pacientes
 
 @Component({
   selector: 'app-appointments',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule],
   templateUrl: './appointments.html',
   styleUrl: './appointments.css'
 })
 export class Appointments implements OnInit {
-  
-  appointmentsList: any[] = [];
-  professionalsList: any[] = [];
-  patientsList: any[] = [];
-  
-  appointmentForm: FormGroup;
-  
   private appointmentService = inject(AppointmentService);
-  private professionalService = inject(ProfessionalService);
-  private patientService = inject(PatientService);
-  private fb = inject(FormBuilder);
-  private cdr = inject(ChangeDetectorRef);
 
-  constructor() {
-    this.appointmentForm = this.fb.group({
-      professionalId: ['', Validators.required],
-      patientId: ['', Validators.required],
-      startTime: ['', Validators.required],
-      endTime: ['', Validators.required],
-      reason: ['']
-    });
-  }
+  consultas: any[] = [];
+  isLoading = true;
+
+  statusLabel: Record<string, string> = {
+    AGENDADA:            'Agendada',
+    CONFIRMADA_PACIENTE: 'Aguardando profissional',
+    CONFIRMADA:          'Confirmada',
+    CONCLUIDA:           'Concluída',
+    CANCELADA:           'Cancelada',
+    FALTA:               'Faltou'
+  };
 
   ngOnInit() {
-    this.loadInitialData();
+    this.carregarConsultas();
   }
 
-  // Carrega tudo ao mesmo tempo!
-  loadInitialData() {
-    this.loadAppointments();
-    this.loadProfessionals();
-    this.loadPatients();
-  }
-
-  loadAppointments() {
-    this.appointmentService.getAppointments().subscribe({
+  carregarConsultas() {
+    this.isLoading = true;
+    this.appointmentService.getConsultas().subscribe({
       next: (data: any) => {
-        this.appointmentsList = data.content ? data.content : data;
-        this.cdr.detectChanges();
+        this.consultas = data.content ?? data;
+        this.isLoading = false;
       },
-      error: (err) => console.error('Erro ao buscar consultas', err)
-    });
-  }
-
-  loadProfessionals() {
-    this.professionalService.getProfessionals().subscribe({
-      next: (data: any) => {
-        this.professionalsList = data.content ? data.content : data;
-        this.cdr.detectChanges();
+      error: (err: any) => {
+        console.error('Erro ao buscar consultas', err);
+        this.isLoading = false;
       }
     });
   }
 
-  loadPatients() {
-    this.patientService.getPatients().subscribe({
-      next: (data: any) => {
-        this.patientsList = data.content ? data.content : data;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  onSubmit() {
-    if (this.appointmentForm.valid) {
-      this.appointmentService.createAppointment(this.appointmentForm.value).subscribe({
-        next: () => {
-          alert('Consulta marcada com sucesso!');
-          this.appointmentForm.reset();
-          this.loadAppointments(); // Atualiza a tabela
-        },
-        error: (err) => {
-          console.error(err);
-          // O nosso backend envia mensagens de erro muito boas (ex: conflito de horário)
-          alert('Erro: ' + (err.error?.message || 'Não foi possível marcar a consulta.'));
-        }
+  cancelar(id: number) {
+    if (confirm('Confirmar cancelamento desta consulta?')) {
+      this.appointmentService.cancelarConsulta(id).subscribe({
+        next: () => this.carregarConsultas(),
+        error: () => alert('Erro ao cancelar a consulta.')
       });
     }
+  }
+
+  labelStatus(status: string): string {
+    return this.statusLabel[status] ?? status;
   }
 }

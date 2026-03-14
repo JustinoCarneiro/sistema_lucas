@@ -31,6 +31,9 @@ services:
       DB_PASS: ${DB_PASS}
       DB_PORT: ${DB_PORT}
       JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}   # ✅ novo
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "8081:8081"
     networks:

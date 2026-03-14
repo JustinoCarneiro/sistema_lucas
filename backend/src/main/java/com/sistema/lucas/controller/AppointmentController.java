@@ -12,49 +12,73 @@ import java.util.List;
 import java.security.Principal;
 
 @RestController
-@RequestMapping("/appointments")
+@RequestMapping("/consultas")
 public class AppointmentController {
 
     @Autowired private AppointmentService service;
 
+    // Apenas pacientes agendam
     @PostMapping
-    public ResponseEntity<String> schedule(@RequestBody @Valid AppointmentCreateDTO dto, Principal principal) {
-        service.schedule(dto, principal.getName());
+    public ResponseEntity<String> agendar(@RequestBody @Valid AppointmentCreateDTO dto, Principal principal) {
+        service.agendar(dto, principal.getName());
         return ResponseEntity.status(201).body("Consulta agendada com sucesso!");
     }
 
-    @GetMapping("/professional/me")
-    public ResponseEntity<List<AppointmentResponseDTO>> getMyProfessionalAppointments(Principal principal) {
-        return ResponseEntity.ok(service.getMyProfessionalAppointments(principal.getName()));
+    // Admin — somente leitura
+    @GetMapping
+    public ResponseEntity<List<AppointmentResponseDTO>> listarTodas() {
+        return ResponseEntity.ok(service.findAll());
     }
 
-    // ✅ NOVO: agenda de hoje (usada pelo componente professional-appointments)
-    @GetMapping("/professional/today")
-    public ResponseEntity<List<AppointmentResponseDTO>> getTodayAppointments(Principal principal) {
-        return ResponseEntity.ok(service.getTodayAppointments(principal.getName()));
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<List<AppointmentResponseDTO>> getMyAppointments(Principal principal) {
-        return ResponseEntity.ok(service.getMyAppointments(principal.getName()));
-    }
-
-    // ✅ NOVO: buscar consulta por ID (usada pelo MedicalRecordComponent)
-    @GetMapping("/{id}")
-    public ResponseEntity<AppointmentResponseDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.findById(id));
-    }
-
+    // Admin — cancelar
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancel(@PathVariable Long id) {
-        service.cancel(id);
+    public ResponseEntity<Void> cancelar(@PathVariable Long id) {
+        service.cancelar(id);
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ NOVO: marcar falta do paciente
-    @PatchMapping("/{id}/no-show")
-    public ResponseEntity<String> markNoShow(@PathVariable Long id) {
-        service.markNoShow(id);
+    // Paciente — suas consultas
+    @GetMapping("/minhas")
+    public ResponseEntity<List<AppointmentResponseDTO>> minhasConsultas(Principal principal) {
+        return ResponseEntity.ok(service.buscarPorPaciente(principal.getName()));
+    }
+
+    // Profissional — agenda do dia
+    @GetMapping("/profissional/hoje")
+    public ResponseEntity<List<AppointmentResponseDTO>> agendaDeHoje(Principal principal) {
+        return ResponseEntity.ok(service.agendaDeHoje(principal.getName()));
+    }
+
+    // Profissional — agenda completa
+    @GetMapping("/profissional/todas")
+    public ResponseEntity<List<AppointmentResponseDTO>> todasDoProf(Principal principal) {
+        return ResponseEntity.ok(service.buscarPorProfissional(principal.getName()));
+    }
+
+    // Prontuário — buscar consulta por ID
+    @GetMapping("/{id}")
+    public ResponseEntity<AppointmentResponseDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarPorId(id));
+    }
+
+    // Profissional — marcar falta
+    @PatchMapping("/{id}/falta")
+    public ResponseEntity<String> marcarFalta(@PathVariable Long id) {
+        service.marcarFalta(id);
         return ResponseEntity.ok("Paciente marcado como faltante.");
+    }
+
+    // Paciente confirma presença
+    @PatchMapping("/{id}/confirmar-paciente")
+    public ResponseEntity<String> confirmarPaciente(@PathVariable Long id, Principal principal) {
+        service.confirmarPaciente(id, principal.getName());
+        return ResponseEntity.ok("Presença confirmada com sucesso!");
+    }
+
+    // Profissional confirma presença
+    @PatchMapping("/{id}/confirmar-profissional")
+    public ResponseEntity<String> confirmarProfissional(@PathVariable Long id, Principal principal) {
+        service.confirmarProfissional(id, principal.getName());
+        return ResponseEntity.ok("Consulta totalmente confirmada!");
     }
 }

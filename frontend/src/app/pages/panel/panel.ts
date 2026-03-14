@@ -22,15 +22,8 @@ export class PanelComponent implements OnInit {
   ngOnInit() {
     this.userRole = this.authService.getUserRole();
 
-    // Redirecionamento inicial baseado na Role
     if (this.router.url === '/panel' || this.router.url === '/panel/') {
-      if (this.userRole === 'PATIENT') {
-        this.router.navigate(['/panel/my-appointments']);
-      } else if (this.userRole === 'ADMIN') {
-        this.router.navigate(['/panel/appointments']); 
-      } else if (this.userRole === 'PROFESSIONAL') {
-        this.router.navigate(['/panel/professional-appointments']);
-      }
+      this.router.navigate(['/panel/dashboard']); // ✅ todos os roles vão para o dashboard
     }
   }
 

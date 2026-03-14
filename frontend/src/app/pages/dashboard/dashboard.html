@@ -1,0 +1,21 @@
+<!-- Substituir o bloco "Agenda de hoje" no dashboard do profissional -->
+<div *ngFor="let c of dados.consultasHoje"
+  class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+  <div>
+    <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
+    <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'HH:mm' }} · {{ $any(c).reason || '—' }}</p>
+  </div>
+  <span class="text-xs font-medium px-2 py-1 rounded-full"
+    [ngClass]="statusClass[$any(c).status]">
+    {{ statusLabel[$any(c).status] }}
+  </span>
+</div>
+
+<!-- Substituir o bloco "Próximas consultas" -->
+<div *ngFor="let c of dados.proximasConsultas | slice:0:5"
+  class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+  <div>
+    <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
+    <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+  </div>
+</div>

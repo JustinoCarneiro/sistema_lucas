@@ -1,0 +1,83 @@
+<!-- frontend/src/app/pages/redefinir-senha/redefinir-senha.html -->
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+  
+      <!-- Cabeçalho -->
+      <div class="p-8 text-center bg-blue-900">
+        <h1 class="text-3xl font-bold text-white mb-2">Sistema Lucas</h1>
+        <p class="text-blue-200">Redefinição de senha</p>
+      </div>
+  
+      <div class="p-8">
+  
+        <!-- Sucesso -->
+        <div *ngIf="sucesso" class="text-center">
+          <div class="text-5xl mb-4">✅</div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Senha redefinida!</h2>
+          <p class="text-gray-500 text-sm">Redirecionando para o login...</p>
+        </div>
+  
+        <!-- Erro de token inválido -->
+        <div *ngIf="!sucesso && erro && !token" class="text-center">
+          <div class="text-5xl mb-4">❌</div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Link inválido</h2>
+          <p class="text-gray-500 text-sm mb-6">{{ erro }}</p>
+          <a routerLink="/login"
+            class="text-blue-600 hover:underline font-medium text-sm">
+            Voltar ao login
+          </a>
+        </div>
+  
+        <!-- Formulário -->
+        <div *ngIf="!sucesso && token">
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Nova senha</h2>
+          <p class="text-gray-500 text-sm mb-6">Digite e confirme sua nova senha.</p>
+  
+          <!-- Mensagem de erro da API -->
+          <div *ngIf="erro"
+            class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+            {{ erro }}
+          </div>
+  
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+  
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nova senha</label>
+              <input type="password" formControlName="novaSenha"
+                placeholder="Mínimo 6 caracteres"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+              <p *ngIf="form.get('novaSenha')?.errors?.['minlength'] && form.get('novaSenha')?.touched"
+                class="text-red-500 text-xs mt-1">
+                A senha deve ter pelo menos 6 caracteres.
+              </p>
+            </div>
+  
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar senha</label>
+              <input type="password" formControlName="confirmarSenha"
+                placeholder="Repita a nova senha"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+              <p *ngIf="form.errors?.['senhasDiferentes'] && form.get('confirmarSenha')?.touched"
+                class="text-red-500 text-xs mt-1">
+                As senhas não coincidem.
+              </p>
+            </div>
+  
+            <button type="submit"
+              [disabled]="form.invalid || isLoading"
+              class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+              {{ isLoading ? 'Salvando...' : 'Redefinir senha' }}
+            </button>
+  
+          </form>
+  
+          <div class="mt-6 text-center">
+            <a routerLink="/login" class="text-sm text-gray-500 hover:text-blue-600 transition">
+              Voltar ao login
+            </a>
+          </div>
+        </div>
+  
+      </div>
+    </div>
+  </div>

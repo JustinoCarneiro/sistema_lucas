@@ -1,9 +1,11 @@
+// frontend/src/app/pages/my-profile/my-profile.ts
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { PatientService } from '../patients/patients.service';
 import { AuthService } from '../../security/auth.service';
-import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-my-profile',
@@ -19,6 +21,7 @@ export class MyProfileComponent implements OnInit {
   profile: any = {};
   userRole: string | null = '';
   isLoading = true;
+  isSaving = false;
   newPassword = '';
 
   ngOnInit() {
@@ -27,51 +30,57 @@ export class MyProfileComponent implements OnInit {
   }
 
   loadData() {
-    // Lógica inteligente: se for médico, não chama o patientService
     if (this.userRole === 'PROFESSIONAL') {
-      this.http.get('http://localhost:8081/professionals/me').subscribe({
-        next: (data) => {
-          this.profile = data;
-          this.isLoading = false;
-        },
-        error: (err) => {
-          console.error('Erro ao carregar perfil médico', err);
-          this.isLoading = false;
-        }
+      this.http.get(`${environment.apiUrl}/professionals/me`).subscribe({
+        next: (data) => { this.profile = data; this.isLoading = false; },
+        error: () => this.isLoading = false
       });
     } else {
       this.patientService.getMyProfile().subscribe({
-        next: (data) => {
-          this.profile = data;
-          this.isLoading = false;
-        },
-        error: (err) => {
-          console.error('Erro ao carregar perfil paciente', err);
-          this.isLoading = false;
-        }
+        next: (data) => { this.profile = data; this.isLoading = false; },
+        error: () => this.isLoading = false
       });
     }
   }
 
   saveProfile() {
-    // Implementaremos a edição de médico no futuro se necessário
+    this.isSaving = true;
+
     if (this.userRole === 'PROFESSIONAL') {
-      alert('Edição de perfil para médicos será implementada no Card 20! 🛠️');
-      return;
+      const payload = {
+        tipoRegistro:     this.profile.tipoRegistro,
+        registroConselho: this.profile.registroConselho,
+        specialty:        this.profile.specialty,
+        newPassword:      this.newPassword || null
+      };
+      this.http.put(`${environment.apiUrl}/professionals/me`, payload).subscribe({
+        next: () => {
+          alert('Perfil atualizado com sucesso!');
+          this.newPassword = '';
+          this.isSaving = false;
+        },
+        error: (err: any) => {
+          alert('Erro: ' + (err.error?.message || 'Tente novamente.'));
+          this.isSaving = false;
+        }
+      });
+    } else {
+      const payload = {
+        phone:       this.profile.phone,
+        insurance:   this.profile.insurance,
+        newPassword: this.newPassword || null
+      };
+      this.patientService.updateMyProfile(payload).subscribe({
+        next: () => {
+          alert('Perfil atualizado com sucesso!');
+          this.newPassword = '';
+          this.isSaving = false;
+        },
+        error: (err: any) => {
+          alert('Erro: ' + (err.error?.message || 'Tente novamente.'));
+          this.isSaving = false;
+        }
+      });
     }
-
-    const payload = {
-      whatsapp: this.profile.whatsapp,
-      healthInsurance: this.profile.healthInsurance,
-      newPassword: this.newPassword
-    };
-
-    this.patientService.updateMyProfile(payload).subscribe({
-      next: () => {
-        alert('Perfil atualizado! ✅');
-        this.newPassword = '';
-      },
-      error: (err) => alert('Erro ao atualizar')
-    });
   }
 }

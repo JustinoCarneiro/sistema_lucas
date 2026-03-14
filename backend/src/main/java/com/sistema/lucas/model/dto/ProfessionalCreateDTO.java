@@ -1,12 +1,15 @@
+// backend/src/main/java/com/sistema/lucas/model/dto/ProfessionalCreateDTO.java
 package com.sistema.lucas.model.dto;
 
+import com.sistema.lucas.model.enums.TipoRegistro;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 
 public record ProfessionalCreateDTO(
-    @NotBlank String name, 
-    @NotBlank @Email String email, 
-    @NotBlank String password, 
-    @NotBlank String crm, 
-    @NotBlank String specialty
+    @NotBlank String name,
+    @NotBlank String email,
+    @NotBlank String password,
+    @NotNull  TipoRegistro tipoRegistro,  
+    @NotBlank String registroConselho,   
+    String specialty
 ) {}

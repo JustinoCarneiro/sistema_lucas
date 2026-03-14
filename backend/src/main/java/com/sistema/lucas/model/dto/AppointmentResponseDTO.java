@@ -2,16 +2,18 @@
 package com.sistema.lucas.model.dto;
 
 import com.sistema.lucas.model.Appointment;
+import com.sistema.lucas.model.enums.StatusConsulta;
 import java.time.LocalDateTime;
 
 public record AppointmentResponseDTO(
     Long id,
-    Long patientId,         
+    Long patientId,
     String professionalName,
     String patientName,
     LocalDateTime startTime,
     String reason,
-    String status
+    StatusConsulta status,
+    boolean podeConfirmarOuCancelar
 ) {
     public AppointmentResponseDTO(Appointment app) {
         this(
@@ -21,7 +23,11 @@ public record AppointmentResponseDTO(
             app.getPatient().getName(),
             app.getDateTime(),
             app.getReason(),
-            app.getStatus()
+            app.getStatus(),
+            // ✅ pode agir se faltam mais de 24h E o status permite
+            LocalDateTime.now().isBefore(app.getDateTime().minusHours(24))
+                && (app.getStatus() == StatusConsulta.AGENDADA
+                    || app.getStatus() == StatusConsulta.CONFIRMADA_PACIENTE)
         );
     }
 }

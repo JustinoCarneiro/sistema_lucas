@@ -8,15 +8,21 @@ import { Patients } from './pages/patients/patients';
 import { Appointments } from './pages/appointments/appointments';
 import { Register } from './pages/register/register';
 import { MyAppointmentsComponent } from './pages/my-appointments/my-appointments';
-import { MyExamsComponent } from './pages/my-exams/my-exams';
+import { MeusDocumentosComponent } from './pages/meus-documentos/meus-documentos';
+import { GestaoDocumentosComponent } from './pages/gestao-documentos/gestao-documentos';
 import { MyProfileComponent } from './pages/my-profile/my-profile';
 import { ProfessionalAppointmentsComponent } from './pages/professional-appointments/professional-appointments';
 import { ProntuarioComponent } from './pages/prontuario/prontuario';
+import { DashboardComponent } from './pages/dashboard/dashboard'; 
+import { EsqueciSenhaComponent } from './pages/esqueci-senha/esqueci-senha';
+import { RedefinirSenhaComponent } from './pages/redefinir-senha/redefinir-senha';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: Register },
+  { path: 'esqueci-senha', component: EsqueciSenhaComponent },
+  { path: 'redefinir-senha', component: RedefinirSenhaComponent },
   {
     path: 'panel',
     component: PanelComponent,
@@ -26,11 +32,12 @@ export const routes: Routes = [
       { path: 'patients', component: Patients },
       { path: 'appointments', component: Appointments },
       { path: 'my-appointments', component: MyAppointmentsComponent },
-      { path: 'my-exams', component: MyExamsComponent },
+      { path: 'meus-documentos', component: MeusDocumentosComponent },
+      { path: 'gestao-documentos', component: GestaoDocumentosComponent },
       { path: 'my-profile', component: MyProfileComponent },
       { path: 'professional-appointments', component: ProfessionalAppointmentsComponent },
-      { path: 'professional-schedule', component: ProfessionalAppointmentsComponent },
-      { path: 'prontuario/:id', component: ProntuarioComponent } // ✅ atualizado
+      { path: 'prontuario/:id', component: ProntuarioComponent },
+      { path: 'dashboard', component: DashboardComponent }
     ]
   }
 ];

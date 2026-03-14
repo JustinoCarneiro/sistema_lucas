@@ -2,6 +2,7 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Prontuario;
+import com.sistema.lucas.model.enums.StatusConsulta; // ✅ import adicionado
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
@@ -29,7 +30,7 @@ public class ProntuarioService {
         var professional = professionalRepository.findByEmail(professionalEmail)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
-        appointment.setStatus("COMPLETED");
+        appointment.setStatus(StatusConsulta.CONCLUIDA);
         appointmentRepository.save(appointment);
 
         var prontuario = new Prontuario();

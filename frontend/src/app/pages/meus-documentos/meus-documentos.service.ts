@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 @Injectable({
   providedIn: 'root'
 })
-export class ExamService {
+export class MeusDocumentosService {
   private http = inject(HttpClient);
 
   // Rota cega: não manda o ID, o Java descobre pelo Token!

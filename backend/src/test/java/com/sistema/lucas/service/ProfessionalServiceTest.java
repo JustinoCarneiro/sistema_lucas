@@ -1,7 +1,9 @@
+// backend/src/test/java/com/sistema/lucas/service/ProfessionalServiceTest.java
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Professional;
 import com.sistema.lucas.model.dto.ProfessionalCreateDTO;
+import com.sistema.lucas.model.enums.TipoRegistro;
 import com.sistema.lucas.repository.ProfessionalRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder; // Adicionado import
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -24,35 +26,41 @@ class ProfessionalServiceTest {
     private ProfessionalRepository professionalRepository;
 
     @Mock
-    private PasswordEncoder passwordEncoder; // ADICIONADO: O Service agora precisa do Encoder!
+    private PasswordEncoder passwordEncoder;
 
     @Test
-    @DisplayName("Não deve cadastrar profissional com CRM duplicado")
-    void cadastrarCrmDuplicado() {
-        // Arrange
-        var dto = new ProfessionalCreateDTO("Dr. House", "house@med.com", "senha123", "12345-SP", "Infectologia");
-        when(professionalRepository.existsByCrm("12345-SP")).thenReturn(true);
+    @DisplayName("Não deve cadastrar profissional com registro duplicado")
+    void cadastrarRegistroDuplicado() {
+        // ✅ DTO atualizado: agora tem tipoRegistro e registroConselho
+        var dto = new ProfessionalCreateDTO(
+            "Dr. House", "house@med.com", "senha123",
+            TipoRegistro.CRM, "12345-SP", "Infectologia"
+        );
 
-        // Act & Assert
+        // ✅ era existsByCrm, agora é existsByRegistroConselho
+        when(professionalRepository.existsByRegistroConselho("12345-SP")).thenReturn(true);
+
         var exception = assertThrows(RuntimeException.class, () -> professionalService.create(dto));
-        assertEquals("Erro: Este CRM já está cadastrado no sistema.", exception.getMessage());
-        
+        assertTrue(exception.getMessage().contains("registro já está cadastrado"));
+
         verify(professionalRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("Deve cadastrar um profissional com sucesso quando os dados são válidos")
     void cadastrarComSucesso() {
-        // Arrange
-        var dto = new ProfessionalCreateDTO("Dr. House", "house@med.com", "senha123", "12345-SP", "Infectologia");
-        
-        when(professionalRepository.existsByCrm(dto.crm())).thenReturn(false);
+        // ✅ DTO atualizado
+        var dto = new ProfessionalCreateDTO(
+            "Dr. House", "house@med.com", "senha123",
+            TipoRegistro.CRM, "12345-SP", "Infectologia"
+        );
+
+        // ✅ era existsByCrm, agora é existsByRegistroConselho
+        when(professionalRepository.existsByRegistroConselho(dto.registroConselho())).thenReturn(false);
         when(passwordEncoder.encode(dto.password())).thenReturn("senhaCriptografada");
 
-        // Act
         assertDoesNotThrow(() -> professionalService.create(dto));
 
-        // Assert
         verify(professionalRepository, times(1)).save(any(Professional.class));
     }
 }
