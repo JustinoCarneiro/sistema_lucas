@@ -1,9 +1,9 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Appointment;
-import com.sistema.lucas.model.AppointmentCreateDTO;
 import com.sistema.lucas.model.Patient;
 import com.sistema.lucas.model.Professional;
+import com.sistema.lucas.model.dto.AppointmentCreateDTO;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.PatientRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;

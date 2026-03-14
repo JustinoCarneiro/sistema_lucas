@@ -1,7 +1,7 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Professional;
-import com.sistema.lucas.model.ProfessionalCreateDTO;
+import com.sistema.lucas.model.dto.ProfessionalCreateDTO;
 import com.sistema.lucas.model.enums.Role;
 import com.sistema.lucas.repository.ProfessionalRepository;
 import org.springframework.beans.factory.annotation.Autowired;

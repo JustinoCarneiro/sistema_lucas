@@ -1,7 +1,7 @@
 package com.sistema.lucas.controller;
 
 import com.sistema.lucas.model.Professional;
-import com.sistema.lucas.model.ProfessionalCreateDTO;
+import com.sistema.lucas.model.dto.ProfessionalCreateDTO;
 import com.sistema.lucas.service.ProfessionalService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

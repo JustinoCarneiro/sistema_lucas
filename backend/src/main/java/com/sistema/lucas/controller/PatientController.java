@@ -1,7 +1,7 @@
 package com.sistema.lucas.controller;
 
 import com.sistema.lucas.model.Patient;
-import com.sistema.lucas.model.PatientCreateDTO;
+import com.sistema.lucas.model.dto.PatientCreateDTO;
 import com.sistema.lucas.service.PatientService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

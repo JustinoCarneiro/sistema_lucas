@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.sistema.lucas.model.dto.AppointmentCreateDTO;
+
 @Entity
 @Table(name = "appointments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor

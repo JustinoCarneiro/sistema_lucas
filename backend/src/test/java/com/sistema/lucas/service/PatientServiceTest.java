@@ -1,7 +1,7 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Patient;
-import com.sistema.lucas.model.PatientCreateDTO;
+import com.sistema.lucas.model.dto.PatientCreateDTO;
 import com.sistema.lucas.repository.PatientRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
