@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 public record AppointmentCreateDTO(
     @NotNull Long professionalId,
-    @NotNull Long patientId,
     @NotNull @Future LocalDateTime dateTime, // Garante que a data seja no futuro
     String reason
 ) {}

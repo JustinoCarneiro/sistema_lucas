@@ -1,9 +1,9 @@
+// backend/src/main/java/com/sistema/lucas/model/Appointment.java
 package com.sistema.lucas.model;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-
 import com.sistema.lucas.model.dto.AppointmentCreateDTO;
 
 @Entity
@@ -24,8 +24,18 @@ public class Appointment {
 
     private LocalDateTime dateTime;
     private String reason;
-    private String status; // Ex: SCHEDULED, COMPLETED, CANCELED
+    private String status;
 
+    // ✅ NOVO CONSTRUTOR: Para uso no DataInitializer (Sem o ID)
+    public Appointment(Professional professional, Patient patient, LocalDateTime dateTime, String reason, String status) {
+        this.professional = professional;
+        this.patient = patient;
+        this.dateTime = dateTime;
+        this.reason = reason;
+        this.status = status;
+    }
+
+    // Construtor para o DTO (Já existente)
     public Appointment(Professional professional, Patient patient, AppointmentCreateDTO dto) {
         this.professional = professional;
         this.patient = patient;

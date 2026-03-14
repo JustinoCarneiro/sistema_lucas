@@ -1,4 +1,3 @@
-// backend/src/main/java/com/sistema/lucas/config/DataInitializer.java
 package com.sistema.lucas.config;
 
 import com.sistema.lucas.model.*;
@@ -22,51 +21,45 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
-            System.out.println("🧹 LIMPANDO BANCO PARA SINCRONIZAÇÃO DE CREDENCIAIS...");
+            System.out.println("🧹 LIMPANDO BANCO PARA CARGA DE DEMONSTRAÇÃO...");
             appointmentRepository.deleteAll();
             professionalRepository.deleteAll();
             patientRepository.deleteAll();
             userRepository.deleteAll();
 
-            // 1. Criar ADMIN
+            // 1. Criar ADMIN (Acesso mestre ao sistema)
             User admin = new User();
             admin.setName("Administrador");
             admin.setEmail("admin@clinica.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setRole(Role.ADMIN);
             userRepository.save(admin);
+            System.out.println("✅ Admin criado: admin@clinica.com");
 
-            // 2. Criar Médico (Gregory House)
-            Professional doc = new Professional();
-            doc.setName("Dr. Gregory House");
-            doc.setEmail("house@clinica.com");
-            doc.setPassword(passwordEncoder.encode("123456"));
-            doc.setCrm("12345-SP");
-            doc.setSpecialty("Infectologia");
-            doc.setRole(Role.PROFESSIONAL);
-            professionalRepository.save(doc);
+            // 2. Criar Médicos
+            Professional house = new Professional();
+            house.setName("Dr. Gregory House");
+            house.setEmail("house@clinica.com");
+            house.setPassword(passwordEncoder.encode("123456"));
+            house.setRole(Role.PROFESSIONAL);
+            professionalRepository.save(house);
 
-            // 3. Criar Paciente (Lucas Silva) - O SEU ACESSO
+            // 3. Criar Pacientes
             Patient lucas = new Patient();
             lucas.setName("Lucas Silva");
             lucas.setEmail("lucas@email.com");
             lucas.setPassword(passwordEncoder.encode("123456"));
-            lucas.setCpf("111.222.333-44");
             lucas.setRole(Role.PATIENT);
             patientRepository.save(lucas);
 
-            // 4. Criar Consulta de Exemplo
-            Appointment app = new Appointment();
-            app.setProfessional(doc);
-            app.setPatient(lucas);
-            app.setDateTime(LocalDateTime.now().plusDays(1));
-            app.setReason("Check-up Geral");
-            app.setStatus("SCHEDULED");
-            appointmentRepository.save(app);
+            // 4. Agenda do Dr. House (Demonstração)
+            LocalDateTime hoje = LocalDateTime.now();
+            
+            // Requer o construtor de 5 argumentos adicionado na Appointment.java anteriormente
+            appointmentRepository.save(new Appointment(house, lucas, hoje.minusDays(1), "Check-up", "COMPLETED"));
+            appointmentRepository.save(new Appointment(house, lucas, hoje.withHour(14).withMinute(0), "Dor lombar", "SCHEDULED"));
 
-            System.out.println("✅ CARGA ÚNICA CONCLUÍDA COM SUCESSO!");
-            System.out.println("👉 LOGIN PACIENTE: lucas@email.com | 123456");
-
+            System.out.println("✅ Dados de demonstração carregados com sucesso!");
         } catch (Exception e) {
             System.err.println("⚠️ Erro na carga: " + e.getMessage());
         }

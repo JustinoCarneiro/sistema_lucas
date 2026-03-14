@@ -1,13 +1,12 @@
 package com.sistema.lucas.controller;
 
 import com.sistema.lucas.model.dto.AppointmentCreateDTO;
-import com.sistema.lucas.model.dto.AppointmentResponseDTO; // Import necessário
+import com.sistema.lucas.model.dto.AppointmentResponseDTO;
 import com.sistema.lucas.service.AppointmentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.security.Principal;
 
@@ -15,29 +14,27 @@ import java.security.Principal;
 @RequestMapping("/appointments")
 public class AppointmentController {
 
-    @Autowired
-    private AppointmentService service;
-
-    @GetMapping
-    public ResponseEntity<List<AppointmentResponseDTO>> getAll() {
-        // Alterado para AppointmentResponseDTO para evitar erro 500 de recursão
-        return ResponseEntity.ok(service.findAll());
-    }
+    @Autowired private AppointmentService service;
 
     @PostMapping
-    public ResponseEntity<String> schedule(@RequestBody @Valid AppointmentCreateDTO dto) {
-        service.schedule(dto);
+    public ResponseEntity<String> schedule(@RequestBody @Valid AppointmentCreateDTO dto, Principal principal) {
+        service.schedule(dto, principal.getName());
         return ResponseEntity.status(201).body("Consulta agendada com sucesso!");
+    }
+
+    @GetMapping("/professional/me")
+    public ResponseEntity<List<AppointmentResponseDTO>> getMyProfessionalAppointments(Principal principal) {
+        return ResponseEntity.ok(service.getMyProfessionalAppointments(principal.getName()));
     }
 
     @GetMapping("/me")
     public ResponseEntity<List<AppointmentResponseDTO>> getMyAppointments(Principal principal) {
-        // O principal.getName() contém o e-mail do utilizador logado extraído do JWT
         return ResponseEntity.ok(service.getMyAppointments(principal.getName()));
     }
 
-    @GetMapping("/professional/today")
-    public ResponseEntity<List<AppointmentResponseDTO>> getTodayAppointments(Principal principal) {
-        return ResponseEntity.ok(service.getTodayAppointments(principal.getName()));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancel(@PathVariable Long id) {
+        service.cancel(id);
+        return ResponseEntity.noContent().build();
     }
 }

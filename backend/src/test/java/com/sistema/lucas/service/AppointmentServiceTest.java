@@ -40,20 +40,22 @@ class AppointmentServiceTest {
     void agendarComSucesso() {
         // Arrange
         Long professionalId = 1L;
-        Long patientId = 1L;
-        var dto = new AppointmentCreateDTO(professionalId, patientId, LocalDateTime.now().plusDays(1), "Consulta de rotina");
+        String patientEmail = "lucas@email.com";
+        // DTO atualizado: removido o patientId conforme o novo contrato
+        var dto = new AppointmentCreateDTO(professionalId, LocalDateTime.now().plusDays(1), "Consulta de rotina");
 
         var professional = new Professional();
         professional.setId(professionalId);
 
         var patient = new Patient();
-        patient.setId(patientId);
+        patient.setEmail(patientEmail);
 
         when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
-        when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
+        // Mock alterado: Agora o service busca por e-mail (Token)
+        when(patientRepository.findByEmail(patientEmail)).thenReturn(Optional.of(patient));
 
-        // Act
-        assertDoesNotThrow(() -> appointmentService.schedule(dto));
+        // Act - Chamada atualizada com o parâmetro de e-mail
+        assertDoesNotThrow(() -> appointmentService.schedule(dto, patientEmail));
 
         // Assert
         verify(appointmentRepository, times(1)).save(any(Appointment.class));
@@ -63,11 +65,12 @@ class AppointmentServiceTest {
     @DisplayName("Deve lançar erro ao agendar com profissional inexistente")
     void erroProfissionalInexistente() {
         // Arrange
-        var dto = new AppointmentCreateDTO(99L, 1L, LocalDateTime.now().plusDays(1), "Razão");
+        String patientEmail = "lucas@email.com";
+        var dto = new AppointmentCreateDTO(99L, LocalDateTime.now().plusDays(1), "Razão");
         when(professionalRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert
-        var exception = assertThrows(RuntimeException.class, () -> appointmentService.schedule(dto));
+        var exception = assertThrows(RuntimeException.class, () -> appointmentService.schedule(dto, patientEmail));
         assertTrue(exception.getMessage().contains("Profissional não encontrado"));
         
         verify(appointmentRepository, never()).save(any());
@@ -78,13 +81,15 @@ class AppointmentServiceTest {
     void erroPacienteInexistente() {
         // Arrange
         Long profId = 1L;
-        var dto = new AppointmentCreateDTO(profId, 88L, LocalDateTime.now().plusDays(1), "Razão");
+        String patientEmail = "inexistente@email.com";
+        var dto = new AppointmentCreateDTO(profId, LocalDateTime.now().plusDays(1), "Razão");
         
         when(professionalRepository.findById(profId)).thenReturn(Optional.of(new Professional()));
-        when(patientRepository.findById(88L)).thenReturn(Optional.empty());
+        // Mock alterado para findByEmail
+        when(patientRepository.findByEmail(patientEmail)).thenReturn(Optional.empty());
 
         // Act & Assert
-        var exception = assertThrows(RuntimeException.class, () -> appointmentService.schedule(dto));
+        var exception = assertThrows(RuntimeException.class, () -> appointmentService.schedule(dto, patientEmail));
         assertTrue(exception.getMessage().contains("Paciente não encontrado"));
         
         verify(appointmentRepository, never()).save(any());

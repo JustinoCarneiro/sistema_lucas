@@ -21,9 +21,9 @@ export class AppointmentService {
     return this.http.get<any>('http://localhost:8081/appointments/me?size=100');
   }
 
-  // Envia o pedido de marcação do paciente (Não precisa do patientId!)
   schedulePatientAppointment(appointmentData: any) {
-    return this.http.post('http://localhost:8081/appointments/me', appointmentData);
+    // Removido o '/me' pois o Controller usa apenas @PostMapping na raiz
+    return this.http.post('http://localhost:8081/appointments', appointmentData);
   }
 
   // Cancela a consulta (o Backend já sabe quem é o paciente pelo Token)

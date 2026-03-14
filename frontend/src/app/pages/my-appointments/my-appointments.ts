@@ -74,22 +74,15 @@ export class MyAppointmentsComponent implements OnInit {
   onSubmitSchedule() {
     if (this.scheduleForm.valid) {
       const formValues = this.scheduleForm.value;
-      const startStr = formValues.startTime;
-
-      // Cálculo automático: Consulta de 1 hora
-      const startDate = new Date(startStr);
-      const endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
       
-      const pad = (n: number) => n < 10 ? '0' + n : n;
-      const endStr = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:00`;
-
+      // O Backend espera 'dateTime' e não 'startTime'
       const payload = {
         professionalId: formValues.professionalId,
-        startTime: startStr + ':00',
-        endTime: endStr,
+        dateTime: formValues.startTime + ':00', // Sincronizado com o DTO Java
         reason: formValues.reason
       };
-
+  
+      // Removemos o cálculo do endTime pois o DTO do Backend não o possui
       this.appointmentService.schedulePatientAppointment(payload).subscribe({
         next: () => {
           alert('🎉 Consulta agendada com sucesso!');
@@ -98,7 +91,7 @@ export class MyAppointmentsComponent implements OnInit {
         },
         error: (err) => {
           console.error(err);
-          alert('Erro ao agendar: ' + (err.error?.message || 'Horário indisponível.'));
+          alert('Erro ao agendar: ' + (err.error?.message || 'Verifique os dados.'));
         }
       });
     }
