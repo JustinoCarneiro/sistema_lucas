@@ -43,10 +43,12 @@ export class ProfessionalsComponent implements OnInit {
     this.isEditing.set(true);
     this.currentProfessionalId.set(prof.id);
     this.professionalForm.patchValue({
-      name: prof.name, email: prof.email,
-      tipoRegistro: prof.tipoRegistro,
+      name:             prof.name,
+      email:            prof.email,
+      tipoRegistro:     prof.tipoRegistro,
       registroConselho: prof.registroConselho,
-      specialty: prof.specialty, password: ''
+      specialty:        prof.specialty,
+      password:         ''
     });
     this.professionalForm.get('password')?.clearValidators();
     this.professionalForm.get('password')?.updateValueAndValidity();
@@ -65,7 +67,7 @@ export class ProfessionalsComponent implements OnInit {
     if (confirm('Tem certeza que deseja remover este profissional?')) {
       this.professionalService.deleteProfessional(id).subscribe({
         next: () => { alert('Profissional removido com sucesso!'); this.loadProfessionals(); },
-        error: (err: any) => alert('Erro ao remover: ' + (err.error?.message || 'Erro.'))
+        error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service
       });
     }
   }
@@ -74,15 +76,24 @@ export class ProfessionalsComponent implements OnInit {
     if (this.professionalForm.valid) {
       const dados = this.professionalForm.value;
       const id = this.currentProfessionalId();
+
       if (this.isEditing() && id) {
         this.professionalService.updateProfessional(id, dados).subscribe({
-          next: () => { alert('Profissional atualizado!'); this.cancelEdit(); this.loadProfessionals(); },
-          error: (err: any) => alert('Erro: ' + (err.error?.message || 'Erro.'))
+          next: () => {
+            alert('Profissional atualizado com sucesso!');
+            this.cancelEdit();
+            this.loadProfessionals();
+          },
+          error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service
         });
       } else {
         this.professionalService.createProfessional(dados).subscribe({
-          next: () => { alert('Profissional cadastrado!'); this.professionalForm.reset({ tipoRegistro: 'CRP' }); this.loadProfessionals(); },
-          error: (err: any) => alert('Erro: ' + (err.error?.message || 'Erro.'))
+          next: () => {
+            alert('Profissional cadastrado com sucesso!');
+            this.professionalForm.reset({ tipoRegistro: 'CRP' });
+            this.loadProfessionals();
+          },
+          error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service
         });
       }
     }

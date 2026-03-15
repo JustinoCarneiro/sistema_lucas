@@ -53,4 +53,12 @@ public class PatientService {
         return repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
     }
+
+    // Adicionar ao PatientService.java
+    @Transactional
+    public void deleteByEmail(String email) {
+        Patient patient = repository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+        repository.delete(patient);
+    }
 }

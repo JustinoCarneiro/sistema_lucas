@@ -65,6 +65,17 @@
         {{ isSaving() ? 'Salvando...' : 'Salvar alterações' }}
       </button>
 
+      <!-- Adicionar ao final do my-profile.html, após o botão de salvar -->
+  <div *ngIf="userRole() === 'PATIENT'" class="mt-4 pt-4 border-t border-gray-100">
+    <button (click)="excluirConta()"
+      class="w-full border border-red-200 text-red-600 hover:bg-red-50 font-medium py-3 rounded-xl transition text-sm">
+      Excluir minha conta
+    </button>
+    <p class="text-xs text-gray-400 text-center mt-2">
+      Esta ação é permanente e não pode ser desfeita.
+    </p>
+  </div>
+
     </div>
   </div>
 </div>

@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 public record ProfessionalCreateDTO(
     @NotBlank String name,
     @NotBlank String email,
-    @NotBlank String password,
+    String password,
     @NotNull  TipoRegistro tipoRegistro,  
     @NotBlank String registroConselho,   
     String specialty

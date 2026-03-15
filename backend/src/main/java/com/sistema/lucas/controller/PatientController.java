@@ -39,4 +39,11 @@ public class PatientController {
     public ResponseEntity<Patient> getMyProfile(Principal principal) {
         return ResponseEntity.ok(service.getMyProfile(principal.getName()));
     }
+
+    // Adicionar ao PatientController.java
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMyConta(Principal principal) {
+        service.deleteByEmail(principal.getName());
+        return ResponseEntity.noContent().build();
+    }
 }
