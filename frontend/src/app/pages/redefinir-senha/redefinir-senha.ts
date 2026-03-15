@@ -1,4 +1,5 @@
-import { Component, inject, OnInit } from '@angular/core';
+// frontend/src/app/pages/redefinir-senha/redefinir-senha.ts
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -19,21 +20,21 @@ export class RedefinirSenhaComponent implements OnInit {
 
   token: string | null = null;
   form: FormGroup;
-  isLoading = false;
-  sucesso = false;
-  erro = '';
+  isLoading = signal(false);
+  sucesso = signal(false);
+  erro = signal('');
 
   constructor() {
     this.form = this.fb.group({
-      novaSenha:        ['', [Validators.required, Validators.minLength(6)]],
-      confirmarSenha:   ['', Validators.required]
+      novaSenha:      ['', [Validators.required, Validators.minLength(6)]],
+      confirmarSenha: ['', Validators.required]
     }, { validators: this.senhasIguais });
   }
 
   ngOnInit() {
     this.token = this.route.snapshot.queryParamMap.get('token');
     if (!this.token) {
-      this.erro = 'Link inválido. Solicite um novo.';
+      this.erro.set('Link inválido. Solicite um novo.');
     }
   }
 
@@ -46,23 +47,25 @@ export class RedefinirSenhaComponent implements OnInit {
   onSubmit() {
     if (this.form.invalid || !this.token) return;
 
-    this.isLoading = true;
-    this.erro = '';
+    this.isLoading.set(true);
+    this.erro.set('');
 
     const payload = {
       token: this.token,
       novaSenha: this.form.value.novaSenha
     };
 
-    this.http.post(`${environment.apiUrl}/auth/redefinir-senha`, payload).subscribe({
+    this.http.post(`${environment.apiUrl}/auth/redefinir-senha`, payload, {
+      responseType: 'text'
+    }).subscribe({
       next: () => {
-        this.sucesso = true;
-        this.isLoading = false;
+        this.sucesso.set(true);
+        this.isLoading.set(false);
         setTimeout(() => this.router.navigate(['/login']), 3000);
       },
       error: (err: any) => {
-        this.erro = err.error?.message || 'Link inválido ou expirado. Solicite um novo.';
-        this.isLoading = false;
+        this.erro.set(err.error || 'Link inválido ou expirado. Solicite um novo.');
+        this.isLoading.set(false);
       }
     });
   }

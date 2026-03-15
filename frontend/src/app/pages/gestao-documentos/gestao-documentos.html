@@ -1,139 +1,111 @@
 <!-- frontend/src/app/pages/gestao-documentos/gestao-documentos.html -->
 <div class="p-8">
 
-    <div class="mb-6 flex justify-between items-end">
-      <div>
-        <h2 class="text-3xl font-bold text-gray-800">Documentos</h2>
-        <p class="text-gray-500">Crie e gerencie documentos para seus pacientes.</p>
-      </div>
-      <button (click)="mostrarFormulario = !mostrarFormulario"
-        class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md">
-        {{ mostrarFormulario ? 'Cancelar' : '+ Novo documento' }}
-      </button>
+  <div class="mb-6 flex justify-between items-end">
+    <div>
+      <h2 class="text-3xl font-bold text-gray-800">Documentos</h2>
+      <p class="text-gray-500">Crie e gerencie documentos para seus pacientes.</p>
     </div>
-  
-    <!-- Formulário -->
-    <div *ngIf="mostrarFormulario"
-      class="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
-      <h3 class="text-lg font-semibold text-gray-700 mb-4">Novo documento</h3>
-  
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Paciente</label>
-          <select [(ngModel)]="form.pacienteId"
-            class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-            <option value="">Selecione...</option>
-            <option *ngFor="let p of pacientes" [value]="p.id">{{ p.name }}</option>
-          </select>
-        </div>
-  
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
-          <select [(ngModel)]="form.tipo"
-            class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-            <option value="">Selecione...</option>
-            <option *ngFor="let t of tiposDocumento" [value]="t.value">{{ t.label }}</option>
-          </select>
-        </div>
-  
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
-          <input type="text" [(ngModel)]="form.titulo"
-            placeholder="Ex: Laudo de avaliação — Janeiro 2025"
-            class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-        </div>
-  
-        <!-- Texto digitado -->
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Conteúdo em texto (opcional se fizer upload de PDF)
-          </label>
-          <textarea [(ngModel)]="form.conteudoTexto" rows="6"
-            placeholder="Digite o conteúdo do documento aqui..."
-            class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none">
-          </textarea>
-        </div>
-  
-        <!-- Upload PDF -->
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Upload de PDF (opcional se digitar o conteúdo)
-          </label>
-          <input type="file" accept="application/pdf" (change)="onArquivoSelecionado($event)"
-            class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-gray-50">
-          <p *ngIf="form.nomeArquivo" class="text-xs text-green-600 mt-1">
-            ✓ {{ form.nomeArquivo }} selecionado
-          </p>
-        </div>
-  
-        <!-- Disponibilizar imediatamente -->
-        <div class="md:col-span-2 flex items-center gap-3">
-          <input type="checkbox" id="disponivel" [(ngModel)]="form.disponivel"
-            class="w-4 h-4 accent-blue-600">
-          <label for="disponivel" class="text-sm text-gray-700">
-            Disponibilizar para o paciente imediatamente
-          </label>
-        </div>
-  
-        <div class="md:col-span-2 flex justify-end">
-          <button (click)="salvar()"
-            class="bg-blue-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">
-            Salvar documento
-          </button>
-        </div>
-  
-      </div>
-    </div>
-  
-    <!-- Lista de documentos -->
-    <div *ngIf="isLoading" class="text-center text-gray-400 py-10">Carregando documentos...</div>
-  
-    <div *ngIf="!isLoading && documentos.length === 0"
-      class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 rounded-2xl text-center text-gray-400">
-      Nenhum documento criado ainda.
-    </div>
-  
-    <div *ngIf="!isLoading && documentos.length > 0"
-      class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Título</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Tipo</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Paciente</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Data</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Visível</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let doc of documentos" class="border-t border-gray-100 hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium text-gray-800">{{ doc.titulo }}</td>
-            <td class="px-4 py-3 text-gray-600">{{ tiposLabel[doc.tipo] }}</td>
-            <td class="px-4 py-3 text-gray-600">{{ doc.nomePaciente }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ doc.criadoEm | date:'dd/MM/yyyy' }}</td>
-            <td class="px-4 py-3">
-              <span class="text-xs font-medium px-2 py-1 rounded-full"
-                [ngClass]="doc.disponivel
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-500'">
-                {{ doc.disponivel ? 'Sim' : 'Não' }}
-              </span>
-            </td>
-            <td class="px-4 py-3 flex gap-3">
-              <button (click)="alterarDisponibilidade(doc)"
-                class="text-xs text-blue-600 hover:text-blue-900 font-medium transition">
-                {{ doc.disponivel ? 'Ocultar' : 'Disponibilizar' }}
-              </button>
-              <button (click)="excluir(doc.id)"
-                class="text-xs text-red-600 hover:text-red-900 font-medium transition">
-                Excluir
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  
+    <button (click)="mostrarFormulario.set(!mostrarFormulario())"
+      class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md">
+      {{ mostrarFormulario() ? 'Cancelar' : '+ Novo documento' }}
+    </button>
   </div>
+
+  <div *ngIf="mostrarFormulario()"
+    class="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Novo documento</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Paciente</label>
+        <select [(ngModel)]="form.pacienteId"
+          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <option value="">Selecione...</option>
+          <option *ngFor="let p of pacientes()" [value]="p.id">{{ p.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
+        <select [(ngModel)]="form.tipo"
+          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <option value="">Selecione...</option>
+          <option *ngFor="let t of tiposDocumento" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+        <input type="text" [(ngModel)]="form.titulo" placeholder="Ex: Laudo de avaliação — Janeiro 2025"
+          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Conteúdo em texto (opcional)</label>
+        <textarea [(ngModel)]="form.conteudoTexto" rows="6" placeholder="Digite o conteúdo..."
+          class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none">
+        </textarea>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Upload de PDF (opcional)</label>
+        <input type="file" accept="application/pdf" (change)="onArquivoSelecionado($event)"
+          class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-gray-50">
+        <p *ngIf="form.nomeArquivo" class="text-xs text-green-600 mt-1">✓ {{ form.nomeArquivo }}</p>
+      </div>
+      <div class="md:col-span-2 flex items-center gap-3">
+        <input type="checkbox" id="disponivel" [(ngModel)]="form.disponivel" class="w-4 h-4 accent-blue-600">
+        <label for="disponivel" class="text-sm text-gray-700">Disponibilizar para o paciente imediatamente</label>
+      </div>
+      <div class="md:col-span-2 flex justify-end">
+        <button (click)="salvar()"
+          class="bg-blue-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">
+          Salvar documento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="text-center text-gray-400 py-10">Carregando documentos...</div>
+
+  <div *ngIf="!isLoading() && documentos().length === 0"
+    class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 rounded-2xl text-center text-gray-400">
+    Nenhum documento criado ainda.
+  </div>
+
+  <div *ngIf="!isLoading() && documentos().length > 0"
+    class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Título</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Tipo</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Paciente</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Data</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Visível</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of documentos()" class="border-t border-gray-100 hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium text-gray-800">{{ doc.titulo }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ tiposLabel[doc.tipo] }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ doc.nomePaciente }}</td>
+          <td class="px-4 py-3 text-gray-500">{{ doc.criadoEm | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-3">
+            <span class="text-xs font-medium px-2 py-1 rounded-full"
+              [ngClass]="doc.disponivel ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
+              {{ doc.disponivel ? 'Sim' : 'Não' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 flex gap-3">
+            <button (click)="alterarDisponibilidade(doc)"
+              class="text-xs text-blue-600 hover:text-blue-900 font-medium transition">
+              {{ doc.disponivel ? 'Ocultar' : 'Disponibilizar' }}
+            </button>
+            <button (click)="excluir(doc.id)"
+              class="text-xs text-red-600 hover:text-red-900 font-medium transition">
+              Excluir
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

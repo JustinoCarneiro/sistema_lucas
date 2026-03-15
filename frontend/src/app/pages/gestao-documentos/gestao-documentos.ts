@@ -1,5 +1,5 @@
 // frontend/src/app/pages/gestao-documentos/gestao-documentos.ts
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentoService } from '../documentos/documento.service';
@@ -15,20 +15,15 @@ export class GestaoDocumentosComponent implements OnInit {
   private documentoService = inject(DocumentoService);
   private patientService = inject(PatientService);
 
-  documentos: any[] = [];
-  pacientes: any[] = [];
-  isLoading = true;
-  mostrarFormulario = false;
+  documentos = signal<any[]>([]);
+  pacientes = signal<any[]>([]);
+  isLoading = signal(true);
+  mostrarFormulario = signal(false);
 
-  // Formulário
   form = {
-    pacienteId: '',
-    tipo: '',
-    titulo: '',
-    conteudoTexto: '',
-    nomeArquivo: '',
-    arquivoBase64: '',
-    disponivel: true
+    pacienteId: '', tipo: '', titulo: '',
+    conteudoTexto: '', nomeArquivo: '',
+    arquivoBase64: '', disponivel: true
   };
 
   tiposDocumento = [
@@ -41,67 +36,48 @@ export class GestaoDocumentosComponent implements OnInit {
   ];
 
   tiposLabel: Record<string, string> = {
-    LAUDO_PSICOLOGICO:    'Laudo Psicológico',
-    RELATORIO_EVOLUCAO:   'Relatório de Evolução',
-    ENCAMINHAMENTO:       'Encaminhamento',
-    ATESTADO:             'Atestado',
-    AVALIACAO_PSICOLOGICA:'Avaliação Psicológica',
-    RECEITA_PRESCRICAO:   'Receita / Prescrição'
+    LAUDO_PSICOLOGICO: 'Laudo Psicológico', RELATORIO_EVOLUCAO: 'Relatório de Evolução',
+    ENCAMINHAMENTO: 'Encaminhamento', ATESTADO: 'Atestado',
+    AVALIACAO_PSICOLOGICA: 'Avaliação Psicológica', RECEITA_PRESCRICAO: 'Receita / Prescrição'
   };
 
-  ngOnInit() {
-    this.carregarDocumentos();
-    this.carregarPacientes();
-  }
+  ngOnInit() { this.carregarDocumentos(); this.carregarPacientes(); }
 
   carregarDocumentos() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.documentoService.dosProfissional().subscribe({
-      next: (data) => { this.documentos = data; this.isLoading = false; },
-      error: () => this.isLoading = false
+      next: (data) => { this.documentos.set(data); this.isLoading.set(false); },
+      error: () => this.isLoading.set(false)
     });
   }
 
   carregarPacientes() {
     this.patientService.getPatients().subscribe({
-      next: (data: any) => this.pacientes = data.content ?? data
+      next: (data: any) => this.pacientes.set(data.content ?? data)
     });
   }
 
   onArquivoSelecionado(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      alert('Apenas arquivos PDF são aceitos.');
-      return;
-    }
-
+    if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); return; }
     this.form.nomeArquivo = file.name;
     const reader = new FileReader();
-    reader.onload = () => {
-      // Remove o prefixo "data:application/pdf;base64,"
-      const base64 = (reader.result as string).split(',')[1];
-      this.form.arquivoBase64 = base64;
-    };
+    reader.onload = () => { this.form.arquivoBase64 = (reader.result as string).split(',')[1]; };
     reader.readAsDataURL(file);
   }
 
   salvar() {
     if (!this.form.pacienteId || !this.form.tipo || !this.form.titulo) {
-      alert('Preencha paciente, tipo e título.');
-      return;
+      alert('Preencha paciente, tipo e título.'); return;
     }
     if (!this.form.conteudoTexto && !this.form.arquivoBase64) {
-      alert('Adicione um texto ou faça upload de um PDF.');
-      return;
+      alert('Adicione um texto ou faça upload de um PDF.'); return;
     }
-
     this.documentoService.criar(this.form).subscribe({
       next: () => {
         alert('Documento criado com sucesso!');
-        this.mostrarFormulario = false;
+        this.mostrarFormulario.set(false);
         this.resetForm();
         this.carregarDocumentos();
       },
@@ -111,9 +87,7 @@ export class GestaoDocumentosComponent implements OnInit {
 
   alterarDisponibilidade(doc: any) {
     this.documentoService.alterarDisponibilidade(doc.id, !doc.disponivel).subscribe({
-      next: () => {
-        doc.disponivel = !doc.disponivel;
-      },
+      next: () => this.carregarDocumentos(),
       error: () => alert('Erro ao alterar disponibilidade.')
     });
   }

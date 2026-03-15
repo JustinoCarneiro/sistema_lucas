@@ -1,5 +1,5 @@
 // frontend/src/app/pages/register/register.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -14,6 +14,9 @@ import { AuthService } from '../../security/auth.service';
 })
 export class Register {
   registerForm: FormGroup;
+  errorMessage = signal('');
+  isLoading = signal(false);
+
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
@@ -29,27 +32,40 @@ export class Register {
   }
 
   onSubmit() {
-    if (this.registerForm.valid) {
-      const { name, email, password, cpf, whatsapp } = this.registerForm.value;
-  
-      const payload = {
-        name,
-        email,
-        password,
-        cpf,
-        phone: whatsapp, // ✅ o campo no backend se chama phone
-        role: 'PATIENT'
-      };
-  
-      this.authService.registerPatient(payload).subscribe({
-        next: () => {
-          alert('🎉 Conta criada com sucesso! Faça login para continuar.');
-          this.router.navigate(['/login']);
-        },
-        error: (err) => {
-          alert('Erro ao criar conta: ' + (err || 'Verifique os dados informados.'));
-        }
-      });
+    this.errorMessage.set('');
+
+    if (this.registerForm.invalid) {
+      this.errorMessage.set('Preencha todos os campos corretamente.');
+      return;
     }
+
+    this.isLoading.set(true);
+
+    const { name, email, password, cpf, whatsapp } = this.registerForm.value;
+
+    const payload = {
+      name,
+      email,
+      password,
+      cpf,
+      phone: whatsapp,
+      role: 'PATIENT'
+    };
+
+    this.authService.registerPatient(payload).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        alert('Conta criada com sucesso! Faça login para continuar.');
+        this.router.navigate(['/login']);
+      },
+      error: (mensagem: any) => {
+        this.errorMessage.set(
+          typeof mensagem === 'string'
+            ? mensagem
+            : 'Erro ao criar conta. Verifique os dados.'
+        );
+        this.isLoading.set(false);
+      }
+    });
   }
 }

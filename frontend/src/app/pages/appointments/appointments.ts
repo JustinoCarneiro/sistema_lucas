@@ -1,5 +1,5 @@
 // frontend/src/app/pages/appointments/appointments.ts
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppointmentService } from './appointment.service';
 
@@ -13,33 +13,22 @@ import { AppointmentService } from './appointment.service';
 export class Appointments implements OnInit {
   private appointmentService = inject(AppointmentService);
 
-  consultas: any[] = [];
-  isLoading = true;
+  consultas = signal<any[]>([]);
+  isLoading = signal(true);
 
   statusLabel: Record<string, string> = {
-    AGENDADA:            'Agendada',
-    CONFIRMADA_PACIENTE: 'Aguardando profissional',
-    CONFIRMADA:          'Confirmada',
-    CONCLUIDA:           'Concluída',
-    CANCELADA:           'Cancelada',
-    FALTA:               'Faltou'
+    AGENDADA: 'Agendada', CONFIRMADA_PACIENTE: 'Aguardando profissional',
+    CONFIRMADA: 'Confirmada', CONCLUIDA: 'Concluída',
+    CANCELADA: 'Cancelada', FALTA: 'Faltou'
   };
 
-  ngOnInit() {
-    this.carregarConsultas();
-  }
+  ngOnInit() { this.carregarConsultas(); }
 
   carregarConsultas() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.appointmentService.getConsultas().subscribe({
-      next: (data: any) => {
-        this.consultas = data.content ?? data;
-        this.isLoading = false;
-      },
-      error: (err: any) => {
-        console.error('Erro ao buscar consultas', err);
-        this.isLoading = false;
-      }
+      next: (data: any) => { this.consultas.set(data.content ?? data); this.isLoading.set(false); },
+      error: (err: any) => { console.error(err); this.isLoading.set(false); }
     });
   }
 

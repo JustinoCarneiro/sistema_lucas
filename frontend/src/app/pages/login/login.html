@@ -1,6 +1,6 @@
 <!-- frontend/src/app/pages/login/login.html -->
 <div class="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
-  <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/50 backdrop-blur-sm">
+  <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/50">
 
     <!-- Logo -->
     <div class="text-center mb-10">
@@ -16,15 +16,15 @@
       <p class="text-gray-500 mt-2 font-medium">Acesso seguro ao seu portal de saúde</p>
     </div>
 
-    <!-- Mensagem de erro -->
-    <div *ngIf="errorMessage"
+    <!-- Mensagem de erro — usa signal com () -->
+    <div *ngIf="errorMessage()"
       class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-r-lg flex items-center shadow-sm">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd"
           d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
           clip-rule="evenodd" />
       </svg>
-      {{ errorMessage }}
+      {{ errorMessage() }}
     </div>
 
     <!-- Formulário -->
@@ -48,23 +48,21 @@
           class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200">
       </div>
 
-      <!-- Lembrar-me + Esqueceu a senha -->
-      <div class="flex items-center justify-between text-sm mt-2 mb-2">
+      <div class="flex items-center justify-between text-sm">
         <label class="flex items-center text-gray-600 cursor-pointer gap-2">
           <input type="checkbox"
-            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-200">
           Lembrar-me
         </label>
-        <!-- ✅ link ativo para recuperação de senha -->
         <a routerLink="/esqueci-senha"
           class="text-blue-600 hover:text-blue-800 font-medium hover:underline">
           Esqueceu a senha?
         </a>
       </div>
 
-      <button type="submit" [disabled]="loginForm.invalid"
+      <button type="submit" [disabled]="loginForm.invalid || isLoading()"
         class="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-lg shadow-blue-500/30 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:shadow-none">
-        Entrar no sistema
+        {{ isLoading() ? 'Entrando...' : 'Entrar no sistema' }}
       </button>
 
     </form>

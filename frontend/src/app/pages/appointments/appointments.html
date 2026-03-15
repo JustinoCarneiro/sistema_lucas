@@ -5,9 +5,11 @@
     <p class="text-gray-500 mt-1">Visualize e gerencie todas as consultas da clínica</p>
   </div>
 
-  <div *ngIf="isLoading" class="text-center text-gray-400 py-10">Carregando consultas...</div>
+  <div *ngIf="isLoading()" class="text-center text-gray-400 py-10 animate-pulse">
+    Carregando consultas...
+  </div>
 
-  <div *ngIf="!isLoading" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+  <div *ngIf="!isLoading()" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 border-b border-gray-200">
         <tr>
@@ -20,10 +22,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngIf="consultas.length === 0">
+        <tr *ngIf="consultas().length === 0">
           <td colspan="6" class="text-center text-gray-400 py-8">Nenhuma consulta encontrada.</td>
         </tr>
-        <tr *ngFor="let c of consultas" class="border-t border-gray-100 hover:bg-gray-50">
+        <tr *ngFor="let c of consultas()" class="border-t border-gray-100 hover:bg-gray-50">
           <td class="px-4 py-3 font-medium text-gray-800">{{ c.patientName }}</td>
           <td class="px-4 py-3 text-gray-600">{{ c.professionalName }}</td>
           <td class="px-4 py-3 text-gray-600">{{ c.startTime | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -32,19 +34,22 @@
             <span class="text-xs font-medium px-2 py-1 rounded-full"
               [ngClass]="{
                 'bg-blue-100 text-blue-700':     c.status === 'AGENDADA',
-                'bg-green-100 text-green-700':   c.status === 'CONCLUIDA',
+                'bg-yellow-100 text-yellow-700': c.status === 'CONFIRMADA_PACIENTE',
+                'bg-green-100 text-green-700':   c.status === 'CONFIRMADA' || c.status === 'CONCLUIDA',
                 'bg-red-100 text-red-700':       c.status === 'CANCELADA',
-                'bg-yellow-100 text-yellow-700': c.status === 'FALTA'
+                'bg-orange-100 text-orange-700': c.status === 'FALTA'
               }">
               {{ labelStatus(c.status) }}
             </span>
           </td>
           <td class="px-4 py-3">
-            <button *ngIf="c.status === 'AGENDADA'" (click)="cancelar(c.id)"
+            <button *ngIf="c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PACIENTE' || c.status === 'CONFIRMADA'"
+              (click)="cancelar(c.id)"
               class="text-xs text-red-600 hover:text-red-800 font-medium transition">
               Cancelar
             </button>
-            <span *ngIf="c.status !== 'AGENDADA'" class="text-xs text-gray-300">—</span>
+            <span *ngIf="c.status !== 'AGENDADA' && c.status !== 'CONFIRMADA_PACIENTE' && c.status !== 'CONFIRMADA'"
+              class="text-xs text-gray-300">—</span>
           </td>
         </tr>
       </tbody>

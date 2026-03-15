@@ -1,9 +1,9 @@
-import { Component, inject } from '@angular/core';
+// frontend/src/app/pages/login/login.ts
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../security/auth.service';
-import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -13,7 +13,8 @@ import { RouterModule } from '@angular/router';
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  errorMessage: string = ''; // Variável para exibir erro na tela
+  errorMessage = signal('');
+  isLoading = signal(false);
 
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -21,27 +22,35 @@ export class LoginComponent {
 
   constructor() {
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      email:    ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
   }
 
   onSubmit() {
-    if (this.loginForm.valid) {
-      this.authService.login(this.loginForm.value) 
-        .subscribe({
-          next: (response: any) => {
-            localStorage.setItem('token', response.token);
-            this.router.navigate(['/panel']); 
-          },
-          error: (msg: string) => {
-            // 'msg' agora vem mastigada pelo catchError do AuthService
-            this.errorMessage = msg; 
-            console.error('Falha no login:', msg);
-          }
-        });
-    } else {
-      this.errorMessage = 'Preencha os campos corretamente!';
+    this.errorMessage.set('');
+
+    if (this.loginForm.invalid) {
+      this.errorMessage.set('Preencha os campos corretamente.');
+      return;
     }
+
+    this.isLoading.set(true);
+
+    this.authService.login(this.loginForm.value).subscribe({
+      next: (response: any) => {
+        localStorage.setItem('token', response.token);
+        this.isLoading.set(false);
+        this.router.navigate(['/panel']);
+      },
+      error: (mensagem: any) => {
+        this.errorMessage.set(
+          typeof mensagem === 'string'
+            ? mensagem
+            : 'E-mail ou senha inválidos.'
+        );
+        this.isLoading.set(false);
+      }
+    });
   }
 }

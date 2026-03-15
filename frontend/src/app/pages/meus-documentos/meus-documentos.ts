@@ -1,5 +1,5 @@
 // frontend/src/app/pages/meus-documentos/meus-documentos.ts
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentoService } from '../documentos/documento.service';
 
@@ -12,22 +12,19 @@ import { DocumentoService } from '../documentos/documento.service';
 export class MeusDocumentosComponent implements OnInit {
   private documentoService = inject(DocumentoService);
 
-  documentos: any[] = [];
-  isLoading = true;
+  documentos = signal<any[]>([]);
+  isLoading = signal(true);
 
   tiposLabel: Record<string, string> = {
-    LAUDO_PSICOLOGICO:    'Laudo Psicológico',
-    RELATORIO_EVOLUCAO:   'Relatório de Evolução',
-    ENCAMINHAMENTO:       'Encaminhamento',
-    ATESTADO:             'Atestado',
-    AVALIACAO_PSICOLOGICA:'Avaliação Psicológica',
-    RECEITA_PRESCRICAO:   'Receita / Prescrição'
+    LAUDO_PSICOLOGICO: 'Laudo Psicológico', RELATORIO_EVOLUCAO: 'Relatório de Evolução',
+    ENCAMINHAMENTO: 'Encaminhamento', ATESTADO: 'Atestado',
+    AVALIACAO_PSICOLOGICA: 'Avaliação Psicológica', RECEITA_PRESCRICAO: 'Receita / Prescrição'
   };
 
   ngOnInit() {
     this.documentoService.meusDocs().subscribe({
-      next: (data) => { this.documentos = data; this.isLoading = false; },
-      error: () => this.isLoading = false
+      next: (data) => { this.documentos.set(data); this.isLoading.set(false); },
+      error: () => this.isLoading.set(false)
     });
   }
 

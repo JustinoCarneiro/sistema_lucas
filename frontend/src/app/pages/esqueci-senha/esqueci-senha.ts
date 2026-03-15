@@ -1,5 +1,5 @@
 // frontend/src/app/pages/esqueci-senha/esqueci-senha.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -17,8 +17,8 @@ export class EsqueciSenhaComponent {
   private fb = inject(FormBuilder);
 
   form: FormGroup;
-  isLoading = false;
-  enviado = false;
+  isLoading = signal(false);
+  enviado = signal(false);
 
   constructor() {
     this.form = this.fb.group({
@@ -29,17 +29,19 @@ export class EsqueciSenhaComponent {
   onSubmit() {
     if (this.form.invalid) return;
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.http.post(`${environment.apiUrl}/auth/esqueci-senha`, this.form.value).subscribe({
+    this.http.post(`${environment.apiUrl}/auth/esqueci-senha`, this.form.value, {
+      responseType: 'text'
+    }).subscribe({
       next: () => {
-        this.enviado = true;
-        this.isLoading = false;
+        this.enviado.set(true);
+        this.isLoading.set(false);
       },
       error: () => {
         // Mesmo em erro mostramos sucesso — não revelamos se o e-mail existe
-        this.enviado = true;
-        this.isLoading = false;
+        this.enviado.set(true);
+        this.isLoading.set(false);
       }
     });
   }

@@ -1,5 +1,5 @@
 // frontend/src/app/pages/my-profile/my-profile.ts
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -18,68 +18,56 @@ export class MyProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private http = inject(HttpClient);
 
-  profile: any = {};
-  userRole: string | null = '';
-  isLoading = true;
-  isSaving = false;
+  profile = signal<any>({});
+  userRole = signal<string | null>(null);
+  isLoading = signal(true);
+  isSaving = signal(false);
   newPassword = '';
 
   ngOnInit() {
-    this.userRole = this.authService.getUserRole();
+    this.userRole.set(this.authService.getUserRole());
     this.loadData();
   }
 
   loadData() {
-    if (this.userRole === 'PROFESSIONAL') {
+    if (this.userRole() === 'PROFESSIONAL') {
       this.http.get(`${environment.apiUrl}/professionals/me`).subscribe({
-        next: (data) => { this.profile = data; this.isLoading = false; },
-        error: () => this.isLoading = false
+        next: (data) => { this.profile.set(data); this.isLoading.set(false); },
+        error: () => this.isLoading.set(false)
       });
     } else {
       this.patientService.getMyProfile().subscribe({
-        next: (data) => { this.profile = data; this.isLoading = false; },
-        error: () => this.isLoading = false
+        next: (data) => { this.profile.set(data); this.isLoading.set(false); },
+        error: () => this.isLoading.set(false)
       });
     }
   }
 
-  saveProfile() {
-    this.isSaving = true;
+  updateProfile(key: string, value: any) {
+    this.profile.update(p => ({ ...p, [key]: value }));
+  }
 
-    if (this.userRole === 'PROFESSIONAL') {
+  saveProfile() {
+    this.isSaving.set(true);
+
+    if (this.userRole() === 'PROFESSIONAL') {
+      const p = this.profile();
       const payload = {
-        tipoRegistro:     this.profile.tipoRegistro,
-        registroConselho: this.profile.registroConselho,
-        specialty:        this.profile.specialty,
+        tipoRegistro:     p.tipoRegistro,
+        registroConselho: p.registroConselho,
+        specialty:        p.specialty,
         newPassword:      this.newPassword || null
       };
       this.http.put(`${environment.apiUrl}/professionals/me`, payload).subscribe({
-        next: () => {
-          alert('Perfil atualizado com sucesso!');
-          this.newPassword = '';
-          this.isSaving = false;
-        },
-        error: (err: any) => {
-          alert('Erro: ' + (err.error?.message || 'Tente novamente.'));
-          this.isSaving = false;
-        }
+        next: () => { alert('Perfil atualizado com sucesso!'); this.newPassword = ''; this.isSaving.set(false); },
+        error: (err: any) => { alert('Erro: ' + (err.error?.message || 'Tente novamente.')); this.isSaving.set(false); }
       });
     } else {
-      const payload = {
-        phone:       this.profile.phone,
-        insurance:   this.profile.insurance,
-        newPassword: this.newPassword || null
-      };
+      const p = this.profile();
+      const payload = { phone: p.phone, insurance: p.insurance, newPassword: this.newPassword || null };
       this.patientService.updateMyProfile(payload).subscribe({
-        next: () => {
-          alert('Perfil atualizado com sucesso!');
-          this.newPassword = '';
-          this.isSaving = false;
-        },
-        error: (err: any) => {
-          alert('Erro: ' + (err.error?.message || 'Tente novamente.'));
-          this.isSaving = false;
-        }
+        next: () => { alert('Perfil atualizado com sucesso!'); this.newPassword = ''; this.isSaving.set(false); },
+        error: (err: any) => { alert('Erro: ' + (err.error?.message || 'Tente novamente.')); this.isSaving.set(false); }
       });
     }
   }

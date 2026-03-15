@@ -1,5 +1,5 @@
 // frontend/src/app/pages/professional-appointments/professional-appointments.ts
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -15,43 +15,33 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  appointments: any[] = [];
-  isLoading = true;
+  appointments = signal<any[]>([]);
+  isLoading = signal(true);
   today = new Date();
 
   statusLabel: Record<string, string> = {
-    AGENDADA:            'Agendada',
-    CONFIRMADA_PACIENTE: 'Confirmada pelo paciente',
-    CONFIRMADA:          'Confirmada',
-    CONCLUIDA:           'Concluída',
-    CANCELADA:           'Cancelada',
-    FALTA:               'Faltou'
+    AGENDADA: 'Agendada', CONFIRMADA_PACIENTE: 'Confirmada pelo paciente',
+    CONFIRMADA: 'Confirmada', CONCLUIDA: 'Concluída',
+    CANCELADA: 'Cancelada', FALTA: 'Faltou'
   };
 
   statusClass: Record<string, string> = {
-    AGENDADA:            'bg-blue-100 text-blue-700',
-    CONFIRMADA_PACIENTE: 'bg-yellow-100 text-yellow-700',
-    CONFIRMADA:          'bg-green-100 text-green-700',
-    CONCLUIDA:           'bg-gray-100 text-gray-600',
-    CANCELADA:           'bg-red-100 text-red-700',
-    FALTA:               'bg-orange-100 text-orange-700'
+    AGENDADA: 'bg-blue-100 text-blue-700', CONFIRMADA_PACIENTE: 'bg-yellow-100 text-yellow-700',
+    CONFIRMADA: 'bg-green-100 text-green-700', CONCLUIDA: 'bg-gray-100 text-gray-600',
+    CANCELADA: 'bg-red-100 text-red-700', FALTA: 'bg-orange-100 text-orange-700'
   };
 
-  ngOnInit() {
-    this.fetchTodayAppointments();
-  }
+  ngOnInit() { this.fetchTodayAppointments(); }
 
   fetchTodayAppointments() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.http.get<any[]>(`${environment.apiUrl}/consultas/profissional/hoje`).subscribe({
-      next: (data) => { this.appointments = data; this.isLoading = false; },
-      error: (err) => { console.error('Erro ao buscar agenda de hoje:', err); this.isLoading = false; }
+      next: (data) => { this.appointments.set(data); this.isLoading.set(false); },
+      error: () => this.isLoading.set(false)
     });
   }
 
-  iniciarAtendimento(app: any) {
-    this.router.navigate(['/panel/prontuario', app.id]);
-  }
+  iniciarAtendimento(app: any) { this.router.navigate(['/panel/prontuario', app.id]); }
 
   confirmarConsulta(app: any) {
     if (confirm(`Confirmar a consulta de ${app.patientName}?`)) {
@@ -63,8 +53,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   }
 
   marcarFalta(app: any) {
-    const nome = app.patientName || 'Paciente';
-    if (confirm(`Confirmar que o paciente ${nome} não compareceu?`)) {
+    if (confirm(`Confirmar que ${app.patientName} não compareceu?`)) {
       this.http.patch(`${environment.apiUrl}/consultas/${app.id}/falta`, {}).subscribe({
         next: () => { alert('Paciente marcado como faltante.'); this.fetchTodayAppointments(); },
         error: () => alert('Erro ao registrar falta.')

@@ -1,21 +1,254 @@
-<!-- Substituir o bloco "Agenda de hoje" no dashboard do profissional -->
-<div *ngFor="let c of dados.consultasHoje"
-  class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-  <div>
-    <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
-    <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'HH:mm' }} · {{ $any(c).reason || '—' }}</p>
-  </div>
-  <span class="text-xs font-medium px-2 py-1 rounded-full"
-    [ngClass]="statusClass[$any(c).status]">
-    {{ statusLabel[$any(c).status] }}
-  </span>
-</div>
+<!-- frontend/src/app/pages/dashboard/dashboard.html -->
+<div class="p-6">
 
-<!-- Substituir o bloco "Próximas consultas" -->
-<div *ngFor="let c of dados.proximasConsultas | slice:0:5"
-  class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-  <div>
-    <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
-    <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+  <div *ngIf="isLoading()" class="text-center text-gray-400 py-20 animate-pulse">
+    Carregando dashboard...
+  </div>
+
+  <div *ngIf="!isLoading() && dados()">
+
+    <!-- ===================== ADMIN ===================== -->
+    <div *ngIf="userRole() === 'ADMIN'">
+      <h1 class="text-2xl font-bold text-gray-800 mb-6">Visão Geral</h1>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Profissionais cadastrados</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.totalProfissionais }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Pacientes cadastrados</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.totalPacientes }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Consultas hoje</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.consultasHoje }}</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-700 mb-5">Consultas por status</h2>
+        <div class="space-y-4">
+          <div *ngFor="let entry of statusEntries()" class="flex items-center gap-4">
+            <span class="w-28 text-sm text-gray-600 text-right flex-shrink-0">
+              {{ statusLabel[entry[0]] }}
+            </span>
+            <div class="flex-1 bg-gray-100 rounded-full h-7 overflow-hidden">
+              <div class="h-7 rounded-full flex items-center pl-3 transition-all duration-500"
+                [ngClass]="barClass(entry[0])"
+                [style.width]="barWidth(entry[1])">
+                <span class="text-xs font-bold text-white" *ngIf="entry[1] > 0">{{ entry[1] }}</span>
+              </div>
+            </div>
+            <span class="w-8 text-sm font-semibold text-gray-700 flex-shrink-0">{{ entry[1] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== PROFISSIONAL ===================== -->
+    <div *ngIf="userRole() === 'PROFESSIONAL'">
+      <h1 class="text-2xl font-bold text-gray-800 mb-6">Meu Painel</h1>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Consultas hoje</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.consultasHoje?.length || 0 }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Próximas agendadas</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.proximasConsultas?.length || 0 }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Pacientes ativos</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.totalPacientes || 0 }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Agenda de hoje -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h2 class="text-base font-semibold text-gray-700 mb-4">Agenda de hoje</h2>
+          <div *ngIf="dados()?.consultasHoje?.length === 0" class="text-sm text-gray-400 text-center py-4">
+            Nenhuma consulta para hoje.
+          </div>
+          <div *ngFor="let c of dados()?.consultasHoje"
+            class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
+              <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'HH:mm' }} · {{ $any(c).reason || '—' }}</p>
+            </div>
+            <span class="text-xs font-medium px-2 py-1 rounded-full"
+              [ngClass]="statusClass[$any(c).status]">
+              {{ statusLabel[$any(c).status] }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Próximas consultas -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h2 class="text-base font-semibold text-gray-700 mb-4">Próximas consultas</h2>
+          <div *ngIf="dados()?.proximasConsultas?.length === 0" class="text-sm text-gray-400 text-center py-4">
+            Nenhuma consulta futura agendada.
+          </div>
+          <div *ngFor="let c of dados()?.proximasConsultas | slice:0:5"
+            class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
+              <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Últimos prontuários -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h2 class="text-base font-semibold text-gray-700 mb-4">Últimos prontuários</h2>
+          <div *ngIf="dados()?.ultimosProntuarios?.length === 0" class="text-sm text-gray-400 text-center py-4">
+            Nenhum prontuário registrado ainda.
+          </div>
+          <div *ngFor="let p of dados()?.ultimosProntuarios"
+            class="py-2 border-b border-gray-100 last:border-0">
+            <p class="text-sm font-medium text-gray-800">{{ $any(p).patient?.name }}</p>
+            <p class="text-xs text-gray-400">{{ $any(p).criadoEm | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p class="text-xs text-gray-500 mt-1 line-clamp-1">{{ $any(p).notas }}</p>
+          </div>
+        </div>
+
+        <!-- Documentos recentes -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h2 class="text-base font-semibold text-gray-700 mb-4">Documentos recentes</h2>
+          <div *ngIf="dados()?.documentosRecentes?.length === 0" class="text-sm text-gray-400 text-center py-4">
+            Nenhum documento criado ainda.
+          </div>
+          <div *ngFor="let d of dados()?.documentosRecentes"
+            class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ $any(d).titulo }}</p>
+              <p class="text-xs text-gray-400">
+                {{ $any(d).paciente?.name }} · {{ $any(d).criadoEm | date:'dd/MM/yyyy' }}
+              </p>
+            </div>
+            <span class="text-xs font-medium px-2 py-1 rounded-full"
+              [ngClass]="$any(d).disponivel ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
+              {{ $any(d).disponivel ? 'Visível' : 'Rascunho' }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================== PACIENTE ===================== -->
+    <div *ngIf="userRole() === 'PATIENT'">
+      <h1 class="text-2xl font-bold text-gray-800 mb-6">Meu Painel</h1>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Consultas realizadas</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.totalRealizadas || 0 }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Consultas agendadas</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.totalAgendadas || 0 }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <p class="text-sm text-gray-500 mb-1">Documentos disponíveis</p>
+          <p class="text-4xl font-bold text-blue-900">{{ dados()?.documentosDisponiveis?.length || 0 }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Próxima consulta -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h2 class="text-base font-semibold text-gray-700 mb-4">Próxima consulta</h2>
+
+          <div *ngIf="!proximaConsulta()" class="text-sm text-gray-400 text-center py-4">
+            Nenhuma consulta agendada.
+            <a routerLink="/panel/my-appointments"
+              class="block mt-2 text-blue-600 hover:underline font-medium">
+              Agendar agora →
+            </a>
+          </div>
+
+          <div *ngIf="proximaConsulta()" class="space-y-2">
+            <p class="text-2xl font-bold text-blue-900">
+              {{ proximaConsulta().dateTime | date:'dd/MM/yyyy' }}
+            </p>
+            <p class="text-lg text-gray-700">{{ proximaConsulta().dateTime | date:'HH:mm' }}</p>
+            <p class="text-sm text-gray-500">{{ proximaConsulta().professional?.name }}</p>
+            <p class="text-sm text-gray-500">Motivo: {{ proximaConsulta().reason || '—' }}</p>
+
+            <button
+              *ngIf="proximaConsulta().status === 'AGENDADA' && proximaConsulta().podeConfirmarOuCancelar"
+              (click)="confirmarNoDashboard(proximaConsulta().id)"
+              class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded-lg transition">
+              Confirmar presença
+            </button>
+
+            <span *ngIf="proximaConsulta().status === 'CONFIRMADA_PACIENTE'"
+              class="mt-3 block text-center text-sm text-yellow-600 font-medium py-2 rounded-lg bg-yellow-50 border border-yellow-200">
+              Aguardando confirmação do profissional
+            </span>
+
+            <span *ngIf="proximaConsulta().status === 'CONFIRMADA'"
+              class="mt-3 block text-center text-sm text-green-600 font-medium py-2 rounded-lg bg-green-50 border border-green-200">
+              ✓ Consulta confirmada
+            </span>
+          </div>
+        </div>
+
+        <!-- Perfil resumido -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <div class="flex justify-between items-start mb-4">
+            <h2 class="text-base font-semibold text-gray-700">Meus dados</h2>
+            <a routerLink="/panel/my-profile" class="text-xs text-blue-600 hover:underline">Editar</a>
+          </div>
+          <div *ngIf="dados()?.perfil" class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Nome</span>
+              <span class="font-medium text-gray-800">{{ dados()?.perfil?.nome }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">E-mail</span>
+              <span class="font-medium text-gray-800">{{ dados()?.perfil?.email }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Telefone</span>
+              <span class="font-medium text-gray-800">{{ dados()?.perfil?.telefone }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Convênio</span>
+              <span class="font-medium text-gray-800">{{ dados()?.perfil?.convenio }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documentos recentes -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 md:col-span-2">
+          <div class="flex justify-between items-start mb-4">
+            <h2 class="text-base font-semibold text-gray-700">Documentos recentes</h2>
+            <a routerLink="/panel/meus-documentos" class="text-xs text-blue-600 hover:underline">Ver todos</a>
+          </div>
+          <div *ngIf="dados()?.documentosDisponiveis?.length === 0"
+            class="text-sm text-gray-400 text-center py-4">
+            Nenhum documento disponível ainda.
+          </div>
+          <div *ngFor="let d of dados()?.documentosDisponiveis"
+            class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ $any(d).titulo }}</p>
+              <p class="text-xs text-gray-400">
+                {{ tiposLabel[$any(d).tipo] }} · {{ $any(d).criadoEm | date:'dd/MM/yyyy' }}
+              </p>
+            </div>
+            <span class="text-xs text-blue-600 font-medium">{{ $any(d).nomeProfissional }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
