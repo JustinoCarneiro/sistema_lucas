@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder; // Importar o encoder
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sistema.lucas.model.dto.PatientUpdateDTO;
 
 import java.util.List;
 
@@ -60,5 +61,21 @@ public class PatientService {
         Patient patient = repository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
         repository.delete(patient);
+    }
+
+    // Adicionar ao PatientService.java
+    @Transactional
+    public void updateMyProfile(String email, PatientUpdateDTO dto) {
+        Patient patient = repository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        if (dto.phone() != null)     patient.setPhone(dto.phone());
+        if (dto.insurance() != null) patient.setInsurance(dto.insurance());
+
+        if (dto.newPassword() != null && !dto.newPassword().trim().isEmpty()) {
+            patient.setPassword(passwordEncoder.encode(dto.newPassword()));
+        }
+
+        repository.save(patient);
     }
 }

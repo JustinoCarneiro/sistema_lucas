@@ -35,9 +35,10 @@ public class SecurityConfigurations {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ libera preflight CORS
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/auth/esqueci-senha").permitAll()  
+                    .requestMatchers(HttpMethod.POST, "/auth/esqueci-senha").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/redefinir-senha").permitAll()
                     .anyRequest().authenticated()
                 )
@@ -49,16 +50,19 @@ public class SecurityConfigurations {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permite o acesso vindo do seu frontend Docker (porta 80)
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200", // Angular CLI rodando localmente
-                "http://localhost",      // Frontend rodando no Docker (porta 80 oculta)
-                "http://localhost:80"    // Frontend rodando no Docker (porta 80 explícita)
+            "http://localhost:4200",
+            "http://localhost",
+            "http://localhost:80"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH" // ✅ PATCH adicionado
+        ));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", "Content-Type", "X-Requested-With"
+        ));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

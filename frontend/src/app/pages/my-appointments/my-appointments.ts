@@ -78,13 +78,19 @@ export class MyAppointmentsComponent implements OnInit {
   onSubmitSchedule() {
     if (this.scheduleForm.valid) {
       const payload = {
-        professionalId: this.scheduleForm.value.professionalId,
-        dateTime: this.scheduleForm.value.startTime + ':00',
-        reason: this.scheduleForm.value.reason
+        professionalId: Number(this.scheduleForm.value.professionalId), // ✅ cast para número
+        dateTime:       this.scheduleForm.value.startTime + ':00',
+        reason:         this.scheduleForm.value.reason
       };
+  
       this.appointmentService.agendarConsulta(payload).subscribe({
-        next: () => { alert('Consulta agendada com sucesso!'); this.isScheduling.set(false); this.scheduleForm.reset(); this.loadAppointments(); },
-        error: (err: any) => alert('Erro: ' + (err.error?.message || 'Verifique os dados.'))
+        next: () => {
+          alert('Consulta agendada com sucesso!');
+          this.isScheduling.set(false);
+          this.scheduleForm.reset();
+          this.loadAppointments();
+        },
+        error: (msg: string) => alert('Erro: ' + msg)
       });
     }
   }

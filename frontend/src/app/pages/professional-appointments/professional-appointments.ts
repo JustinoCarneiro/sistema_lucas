@@ -15,38 +15,75 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  appointments = signal<any[]>([]);
-  isLoading = signal(true);
+  abaAtiva = signal<'hoje' | 'proximas'>('hoje');
+  consultasHoje = signal<any[]>([]);
+  proximasConsultas = signal<any[]>([]);
+  isLoadingHoje = signal(true);
+  isLoadingProximas = signal(true);
   today = new Date();
 
   statusLabel: Record<string, string> = {
-    AGENDADA: 'Agendada', CONFIRMADA_PACIENTE: 'Confirmada pelo paciente',
-    CONFIRMADA: 'Confirmada', CONCLUIDA: 'Concluída',
-    CANCELADA: 'Cancelada', FALTA: 'Faltou'
+    AGENDADA:            'Agendada',
+    CONFIRMADA_PACIENTE: 'Confirmada pelo paciente',
+    CONFIRMADA:          'Confirmada',
+    CONCLUIDA:           'Concluída',
+    CANCELADA:           'Cancelada',
+    FALTA:               'Faltou'
   };
 
   statusClass: Record<string, string> = {
-    AGENDADA: 'bg-blue-100 text-blue-700', CONFIRMADA_PACIENTE: 'bg-yellow-100 text-yellow-700',
-    CONFIRMADA: 'bg-green-100 text-green-700', CONCLUIDA: 'bg-gray-100 text-gray-600',
-    CANCELADA: 'bg-red-100 text-red-700', FALTA: 'bg-orange-100 text-orange-700'
+    AGENDADA:            'bg-blue-100 text-blue-700',
+    CONFIRMADA_PACIENTE: 'bg-yellow-100 text-yellow-700',
+    CONFIRMADA:          'bg-green-100 text-green-700',
+    CONCLUIDA:           'bg-gray-100 text-gray-600',
+    CANCELADA:           'bg-red-100 text-red-700',
+    FALTA:               'bg-orange-100 text-orange-700'
   };
 
-  ngOnInit() { this.fetchTodayAppointments(); }
+  ngOnInit() {
+    this.carregarHoje();
+    this.carregarProximas();
+  }
 
-  fetchTodayAppointments() {
-    this.isLoading.set(true);
+  carregarHoje() {
+    this.isLoadingHoje.set(true);
     this.http.get<any[]>(`${environment.apiUrl}/consultas/profissional/hoje`).subscribe({
-      next: (data) => { this.appointments.set(data); this.isLoading.set(false); },
-      error: () => this.isLoading.set(false)
+      next: (data) => { this.consultasHoje.set(data); this.isLoadingHoje.set(false); },
+      error: () => this.isLoadingHoje.set(false)
     });
   }
 
-  iniciarAtendimento(app: any) { this.router.navigate(['/panel/prontuario', app.id]); }
+  carregarProximas() {
+    this.isLoadingProximas.set(true);
+    this.http.get<any[]>(`${environment.apiUrl}/consultas/profissional/todas`).subscribe({
+      next: (data) => {
+        // Filtra apenas futuras com status que permitem ação
+        const futuras = data.filter((c: any) =>
+          new Date(c.startTime) > new Date() &&
+          (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PACIENTE')
+        );
+        this.proximasConsultas.set(futuras);
+        this.isLoadingProximas.set(false);
+      },
+      error: () => this.isLoadingProximas.set(false)
+    });
+  }
+
+  iniciarAtendimento(app: any) {
+    this.router.navigate(['/panel/prontuario', app.id]);
+  }
 
   confirmarConsulta(app: any) {
     if (confirm(`Confirmar a consulta de ${app.patientName}?`)) {
-      this.http.patch(`${environment.apiUrl}/consultas/${app.id}/confirmar-profissional`, {}).subscribe({
-        next: () => { alert('Consulta confirmada!'); this.fetchTodayAppointments(); },
+      this.http.patch(
+        `${environment.apiUrl}/consultas/${app.id}/confirmar-profissional`, {},
+        { responseType: 'text' }
+      ).subscribe({
+        next: () => {
+          alert('Consulta confirmada!');
+          this.carregarHoje();
+          this.carregarProximas();
+        },
         error: (err: any) => alert('Erro: ' + (err.error?.message || 'Não foi possível confirmar.'))
       });
     }
@@ -54,8 +91,15 @@ export class ProfessionalAppointmentsComponent implements OnInit {
 
   marcarFalta(app: any) {
     if (confirm(`Confirmar que ${app.patientName} não compareceu?`)) {
-      this.http.patch(`${environment.apiUrl}/consultas/${app.id}/falta`, {}).subscribe({
-        next: () => { alert('Paciente marcado como faltante.'); this.fetchTodayAppointments(); },
+      this.http.patch(
+        `${environment.apiUrl}/consultas/${app.id}/falta`, {},
+        { responseType: 'text' }
+      ).subscribe({
+        next: () => {
+          alert('Paciente marcado como faltante.');
+          this.carregarHoje();
+          this.carregarProximas();
+        },
         error: () => alert('Erro ao registrar falta.')
       });
     }
