@@ -13,6 +13,9 @@ FROM nginx:alpine
 # ou dist/sistema-lucas. Vamos copiar o conteúdo da pasta gerada:
 COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
 
+COPY generate-env.sh /generate-env.sh
+RUN chmod +x /generate-env.sh
+
 # Configuração para evitar erro 404 no refresh (SPA)
 RUN echo 'server { \
     listen 80; \
@@ -24,4 +27,4 @@ RUN echo 'server { \
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/generate-env.sh"]
