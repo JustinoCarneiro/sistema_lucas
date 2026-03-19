@@ -15,6 +15,7 @@ import { AuthService } from '../../security/auth.service';
 export class Register {
   registerForm: FormGroup;
   errorMessage = signal('');
+  successMessage = signal('');
   isLoading = signal(false);
 
   private authService = inject(AuthService);
@@ -72,10 +73,14 @@ export class Register {
     };
 
     this.authService.registerPatient(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isLoading.set(false);
-        alert('Conta criada com sucesso! Faça login para continuar.');
-        this.router.navigate(['/login']);
+        this.successMessage.set(res || 'Paciente registrado com sucesso! Verifique seu e-mail para confirmar a conta.');
+        
+        // Pequeno atraso para o usuário ler a mensagem antes do redirecionamento
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 3000);
       },
       error: (mensagem: any) => {
         this.errorMessage.set(

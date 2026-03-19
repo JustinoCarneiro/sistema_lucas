@@ -2,7 +2,7 @@ import { defineConfig } from "cypress";
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost',
+    baseUrl: 'http://lucas.institutomelvin.org:8082',
     supportFile: 'cypress/support/e2e.ts',
     video: true,
     viewportWidth: 1280,

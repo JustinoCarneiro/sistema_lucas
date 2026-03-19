@@ -28,6 +28,7 @@ public class AuthController {
     @Autowired private UserRepository userRepository;
     @Autowired private PatientRepository patientRepository; // ✅ NOVO
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private com.sistema.lucas.security.service.EmailVerificationService emailVerificationService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
@@ -53,8 +54,21 @@ public class AuthController {
         newPatient.setRole(Role.PATIENT);
         newPatient.setCpf(data.cpf());     // ✅ novo
         newPatient.setPhone(data.phone()); // ✅ novo
+        newPatient.setVerified(false);
         patientRepository.save(newPatient);
 
-        return ResponseEntity.status(201).body("Paciente registrado com sucesso!");
+        // ✅ Envia e-mail de verificação
+        emailVerificationService.createAndSendVerificationEmail(newPatient);
+
+        return ResponseEntity.status(201).body("Paciente registrado com sucesso! Verifique seu e-mail para confirmar a conta.");
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verify(@RequestParam("token") String token) {
+        String result = emailVerificationService.verifyToken(token);
+        if (result.contains("sucesso")) {
+            return ResponseEntity.ok(result);
+        }
+        return ResponseEntity.badRequest().body(result);
     }
 }

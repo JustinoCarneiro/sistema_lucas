@@ -28,6 +28,7 @@ public class User implements UserDetails { // <-- 1. Adicionado implements UserD
     private String name;
     private String email;
     private String password;
+    private boolean verified = false;
 
     @Enumerated(EnumType.STRING)
     private Role role;

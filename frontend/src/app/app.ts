@@ -1,9 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { VerificationBanner } from './components/verification-banner/verification-banner';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, VerificationBanner],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

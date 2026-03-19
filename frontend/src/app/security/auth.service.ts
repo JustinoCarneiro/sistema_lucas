@@ -43,6 +43,23 @@ export class AuthService {
     }
   }
 
+  isVerified(): boolean {
+    const token = localStorage.getItem('token');
+    if (!token) return true;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.verified === true;
+    } catch {
+      return true;
+    }
+  }
+
+  verifyEmail(token: string) {
+    return this.http.get(`${environment.apiUrl}/auth/verify?token=${token}`, {
+      responseType: 'text'
+    });
+  }
+
   logout() {
     localStorage.removeItem('token');
     this.router.navigate(['/login']);

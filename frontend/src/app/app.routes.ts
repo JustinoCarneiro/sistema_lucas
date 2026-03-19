@@ -16,11 +16,13 @@ import { MedicalRecordComponent } from './pages/medical-record/medical-record';
 import { DashboardComponent } from './pages/dashboard/dashboard'; 
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password';
+import { VerifyEmail } from './pages/verify-email/verify-email';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: Register },
+  { path: 'verify-email', component: VerifyEmail },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
   {
