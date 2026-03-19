@@ -27,4 +27,4 @@ RUN echo 'server { \
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-CMD ["/generate-env.sh"]
+CMD ["/bin/sh", "/generate-env.sh"]

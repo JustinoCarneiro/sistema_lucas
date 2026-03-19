@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Cria a pasta de assets se ela não existir
+mkdir -p /usr/share/nginx/html/assets
+
 # Cria/sobrescreve o env.js dinamicamente de acordo com o ambiente
 cat <<EOF > /usr/share/nginx/html/assets/env.js
 (function(window) {

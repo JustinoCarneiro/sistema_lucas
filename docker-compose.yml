@@ -33,6 +33,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_PORT: ${DB_PORT}
       JWT_SECRET: ${JWT_SECRET}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       MAIL_USERNAME: ${MAIL_USERNAME} # ✅ novo
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       FRONTEND_URL: ${FRONTEND_URL}
@@ -49,7 +50,7 @@ services:
     container_name: lucas-web
     restart: always
     environment:
-      - API_URL=http://lucas-api:8081 # Nome do serviço no network do docker
+      - API_URL=${API_URL} # Pega do .env (ex: https://lucas.institutomelvin.org/api)
     ports:
       - "8082:80"
     networks:
