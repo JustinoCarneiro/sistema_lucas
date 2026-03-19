@@ -1,16 +1,22 @@
-// frontend/src/app/pages/meus-documentos/meus-documentos.ts
+// frontend/src/app/pages/my-documents/my-documents.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DocumentoService } from '../documentos/documento.service';
+import { DocumentoService } from '../documents/document.service';
+import { ExportService } from '../export/export.service';
 
 @Component({
-  selector: 'app-meus-documentos',
+  selector: 'app-my-documents',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './meus-documentos.html'
+  templateUrl: './my-documents.html'
 })
-export class MeusDocumentosComponent implements OnInit {
+export class MyDocumentsComponent implements OnInit {
   private documentoService = inject(DocumentoService);
+  private exportService = inject(ExportService);
+
+  exportarDados() {
+    this.exportService.exportPatient();
+  }
 
   documentos = signal<any[]>([]);
   isLoading = signal(true);

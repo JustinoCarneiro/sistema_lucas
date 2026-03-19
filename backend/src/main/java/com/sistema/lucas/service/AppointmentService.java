@@ -19,6 +19,7 @@ public class AppointmentService {
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private ProfessionalRepository professionalRepository;
     @Autowired private PatientRepository patientRepository;
+    @Autowired private UserRepository userRepository;
     @Autowired private EmailTemplateService emailTemplateService;
 
     // ─── Leitura ─────────────────────────────────────────────────────────────
@@ -40,10 +41,15 @@ public class AppointmentService {
             .stream().map(AppointmentResponseDTO::new).toList();
     }
 
-    public AppointmentResponseDTO buscarPorId(Long id) {
-        return appointmentRepository.findById(id)
-            .map(AppointmentResponseDTO::new)
+    public AppointmentResponseDTO buscarPorId(Long id, String email) {
+        var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+            
+        // 🛡️ Segurança (IDOR): Apenas paciente logado ou o médico logado podem ver isso
+        if (!consulta.getPatient().getEmail().equals(email) && !consulta.getProfessional().getEmail().equals(email)) {
+            throw new RuntimeException("Operação de Segurança: Acesso negado (IDOR). Você não pode vasculhar informações de terceiros.");
+        }
+        return new AppointmentResponseDTO(consulta);
     }
 
     // ─── Agendamento ─────────────────────────────────────────────────────────
@@ -64,9 +70,19 @@ public class AppointmentService {
     // ─── Cancelamento ────────────────────────────────────────────────────────
 
     @Transactional
-    public void cancelar(Long id) {
+    public void cancelar(Long id, String email) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+            
+        // 🛡️ Segurança (IDOR) - Permitir Paciente, Profissional ou ADMIN
+        var usuarioAcao = userRepository.findByEmail(email);
+        boolean isOwner = consulta.getPatient().getEmail().equals(email) || consulta.getProfessional().getEmail().equals(email);
+        boolean isAdmin = usuarioAcao != null && usuarioAcao.getRole() == com.sistema.lucas.model.enums.Role.ADMIN;
+
+        if (!isOwner && !isAdmin) {
+            throw new RuntimeException("Operação de Segurança: Tentativa de cancelamento malicioso bloqueada.");
+        }
+        
         consulta.setStatus(StatusConsulta.CANCELADA);
         appointmentRepository.save(consulta);
         emailTemplateService.notificarConsultaCancelada(consulta); // ✅ e-mail
@@ -75,9 +91,14 @@ public class AppointmentService {
     // ─── Falta ───────────────────────────────────────────────────────────────
 
     @Transactional
-    public void marcarFalta(Long id) {
+    public void marcarFalta(Long id, String emailProfissional) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+            
+        // 🛡️ Segurança (IDOR)
+        if (!consulta.getProfessional().getEmail().equals(emailProfissional)) {
+            throw new RuntimeException("Operação de Segurança: Você não é o médico dessa consulta.");
+        }
         consulta.setStatus(StatusConsulta.FALTA);
         appointmentRepository.save(consulta);
     }

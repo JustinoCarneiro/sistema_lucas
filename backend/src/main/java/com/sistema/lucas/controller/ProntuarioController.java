@@ -17,8 +17,8 @@ public class ProntuarioController {
     @Autowired private ProntuarioService service;
 
     @GetMapping("/paciente/{patientId}")
-    public ResponseEntity<List<Prontuario>> getByPaciente(@PathVariable Long patientId) {
-        return ResponseEntity.ok(service.getByPatientId(patientId));
+    public ResponseEntity<List<Prontuario>> getByPaciente(@PathVariable Long patientId, Principal principal) {
+        return ResponseEntity.ok(service.getByPatientId(patientId, principal.getName()));
     }
 
     @PostMapping

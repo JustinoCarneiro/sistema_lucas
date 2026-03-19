@@ -8,21 +8,21 @@ import { Patients } from './pages/patients/patients';
 import { Appointments } from './pages/appointments/appointments';
 import { Register } from './pages/register/register';
 import { MyAppointmentsComponent } from './pages/my-appointments/my-appointments';
-import { MeusDocumentosComponent } from './pages/meus-documentos/meus-documentos';
-import { GestaoDocumentosComponent } from './pages/gestao-documentos/gestao-documentos';
+import { MyDocumentsComponent } from './pages/my-documents/my-documents';
+import { DocumentManagementComponent } from './pages/document-management/document-management';
 import { MyProfileComponent } from './pages/my-profile/my-profile';
 import { ProfessionalAppointmentsComponent } from './pages/professional-appointments/professional-appointments';
-import { ProntuarioComponent } from './pages/prontuario/prontuario';
+import { MedicalRecordComponent } from './pages/medical-record/medical-record';
 import { DashboardComponent } from './pages/dashboard/dashboard'; 
-import { EsqueciSenhaComponent } from './pages/esqueci-senha/esqueci-senha';
-import { RedefinirSenhaComponent } from './pages/redefinir-senha/redefinir-senha';
+import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password';
+import { ResetPasswordComponent } from './pages/reset-password/reset-password';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: Register },
-  { path: 'esqueci-senha', component: EsqueciSenhaComponent },
-  { path: 'redefinir-senha', component: RedefinirSenhaComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   {
     path: 'panel',
     component: PanelComponent,
@@ -32,11 +32,11 @@ export const routes: Routes = [
       { path: 'patients', component: Patients },
       { path: 'appointments', component: Appointments },
       { path: 'my-appointments', component: MyAppointmentsComponent },
-      { path: 'meus-documentos', component: MeusDocumentosComponent },
-      { path: 'gestao-documentos', component: GestaoDocumentosComponent },
+      { path: 'my-documents', component: MyDocumentsComponent },
+      { path: 'document-management', component: DocumentManagementComponent },
       { path: 'my-profile', component: MyProfileComponent },
       { path: 'professional-appointments', component: ProfessionalAppointmentsComponent },
-      { path: 'prontuario/:id', component: ProntuarioComponent },
+      { path: 'medical-record/:id', component: MedicalRecordComponent },
       { path: 'dashboard', component: DashboardComponent }
     ]
   }

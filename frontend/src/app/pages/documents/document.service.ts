@@ -1,4 +1,4 @@
-// frontend/src/app/pages/documentos/documento.service.ts
+// frontend/src/app/pages/documents/document.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';

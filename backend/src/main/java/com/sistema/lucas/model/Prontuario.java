@@ -1,6 +1,7 @@
 // backend/src/main/java/com/sistema/lucas/model/Prontuario.java
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class Prontuario {
     private Professional professional;
 
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String notas;
 
     private LocalDateTime criadoEm;

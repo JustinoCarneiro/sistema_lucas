@@ -18,9 +18,11 @@ public class DocumentoService {
     @Autowired private DocumentoRepository documentoRepository;
     @Autowired private PatientRepository patientRepository;
     @Autowired private ProfessionalRepository professionalRepository;
+    @Autowired private AuditLogService auditLogService;
 
     // Paciente — só vê documentos disponibilizados
     public List<DocumentoResponseDTO> buscarDosPaciente(String emailPaciente) {
+        auditLogService.log(emailPaciente, "VISUALIZACAO_LISTA", "Documento", null, "Paciente visualizou sua lista de documentos");
         return documentoRepository
             .findByPacienteEmailAndDisponivelTrueOrderByCriadoEmDesc(emailPaciente)
             .stream().map(DocumentoResponseDTO::new).toList();
@@ -28,6 +30,7 @@ public class DocumentoService {
 
     // Profissional — vê todos os seus documentos
     public List<DocumentoResponseDTO> buscarDoProfissional(String emailProfissional) {
+        auditLogService.log(emailProfissional, "VISUALIZACAO_LISTA", "Documento", null, "Profissional visualizou sua lista de documentos criados");
         return documentoRepository
             .findByProfissionalEmailOrderByCriadoEmDesc(emailProfissional)
             .stream().map(DocumentoResponseDTO::new).toList();
@@ -35,6 +38,7 @@ public class DocumentoService {
 
     // Profissional — vê documentos de um paciente específico
     public List<DocumentoResponseDTO> buscarPorPaciente(Long pacienteId, String emailProfissional) {
+        auditLogService.log(emailProfissional, "VISUALIZACAO_LISTA_PACIENTE", "Documento", pacienteId, "Profissional visualizou documentos do paciente ID: " + pacienteId);
         return documentoRepository
             .findByPacienteIdAndProfissionalEmailOrderByCriadoEmDesc(pacienteId, emailProfissional)
             .stream().map(DocumentoResponseDTO::new).toList();
@@ -57,6 +61,19 @@ public class DocumentoService {
         var profissional = professionalRepository.findByEmail(emailProfissional)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
+        // 🛡️ Segurança: Validação de Malware de PDF via Magic Bytes e Sizing Lock
+        if (arquivoBase64 != null && !arquivoBase64.trim().isEmpty()) {
+            String cleanBase64 = arquivoBase64.replaceAll("\\s+", ""); // sanitiza
+            if (!cleanBase64.startsWith("JVBERi0") && !cleanBase64.startsWith("JVBERiA")) {
+                throw new RuntimeException("Operação de Segurança: Arquivo rejeitado. A carga base64 não corresponde à assinatura física de um arquivo PDF.");
+            }
+            // Math: 5MB ~= 6.6MB in Base64 characters length
+            if (cleanBase64.length() > 7_000_000) {
+                throw new RuntimeException("Operação de Segurança: Arquivo excede o limite drástico permitido de 5MB.");
+            }
+            arquivoBase64 = cleanBase64;
+        }
+
         var doc = new Documento();
         doc.setTipo(tipo);
         doc.setTitulo(titulo);
@@ -67,7 +84,9 @@ public class DocumentoService {
         doc.setProfissional(profissional);
         doc.setDisponivel(disponivel);
 
-        return new DocumentoResponseDTO(documentoRepository.save(doc));
+        Documento saved = documentoRepository.save(doc);
+        auditLogService.log(emailProfissional, "CRIACAO", "Documento", saved.getId(), "Criou documento: " + titulo);
+        return new DocumentoResponseDTO(saved);
     }
 
     // Disponibilizar ou retirar acesso do paciente
@@ -82,6 +101,7 @@ public class DocumentoService {
 
         doc.setDisponivel(disponivel);
         documentoRepository.save(doc);
+        auditLogService.log(emailProfissional, "ALTERAR_VISIBILIDADE", "Documento", id, "Alterou disponibilidade para: " + disponivel);
     }
 
     // Excluir
@@ -95,5 +115,6 @@ public class DocumentoService {
         }
 
         documentoRepository.delete(doc);
+        auditLogService.log(emailProfissional, "EXCLUSAO", "Documento", id, "Excluiu documento ID: " + id);
     }
 }

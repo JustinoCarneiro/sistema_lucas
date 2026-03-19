@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { DashboardService } from './dashboard.service';
 import { AuthService } from '../../security/auth.service';
 import { AppointmentService } from '../appointments/appointment.service';
+import { ExportService } from '../export/export.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,6 +17,17 @@ export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
   private authService = inject(AuthService);
   private appointmentService = inject(AppointmentService);
+  private exportService = inject(ExportService);
+
+  exportar(tipo?: string) {
+    const role = this.userRole();
+    if (role === 'ADMIN') {
+      if (tipo === 'patients') this.exportService.exportPatients();
+      else if (tipo === 'professionals') this.exportService.exportProfessionals();
+      else this.exportService.exportAdmin();
+    }
+    if (role === 'PROFESSIONAL') this.exportService.exportProfessional();
+  }
 
   userRole = signal<string | null>(null);
   dados = signal<any>(null);

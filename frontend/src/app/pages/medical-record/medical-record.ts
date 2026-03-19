@@ -1,8 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+// frontend/src/app/pages/medical-record/medical-record.ts
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-medical-record',
@@ -16,42 +18,46 @@ export class MedicalRecordComponent implements OnInit {
   private router = inject(Router);
 
   appointmentId: string | null = '';
-  currentPatientName = 'Carregando...';
-  newNotes = '';
-  history: any[] = [];
+  nomePaciente = signal('Carregando...');
+  novasNotas = '';
+  historico = signal<any[]>([]);
+  isLoading = signal(true);
 
   ngOnInit() {
-    // Pega o ID da consulta pela URL (Ex: /panel/medical-record/5)
     this.appointmentId = this.route.snapshot.paramMap.get('id');
-    this.loadRecordData();
+    this.carregarDados();
   }
 
-  loadRecordData() {
-    this.http.get<any>(`http://localhost:8081/appointments/${this.appointmentId}`).subscribe({
-      next: (app) => {
-        this.currentPatientName = app.patientName;
-        this.loadHistory(app.patientId);
-      }
+  carregarDados() {
+    this.http.get<any>(`${environment.apiUrl}/consultas/${this.appointmentId}`).subscribe({
+      next: (consulta) => {
+        this.nomePaciente.set(consulta.patientName);
+        this.carregarHistorico(consulta.patientId);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
     });
   }
 
-  loadHistory(patientId: number) {
-    this.http.get<any[]>(`http://localhost:8081/medical-records/patient/${patientId}`).subscribe({
-      next: (data) => this.history = data
+  carregarHistorico(patientId: number) {
+    this.http.get<any[]>(`${environment.apiUrl}/prontuarios/paciente/${patientId}`).subscribe({
+      next: (data) => this.historico.set(data),
+      error: (err) => console.error('Erro ao carregar histórico:', err)
     });
   }
 
-  saveMedicalRecord() {
-    const payload = {
-      appointmentId: this.appointmentId,
-      notes: this.newNotes
-    };
-
-    this.http.post('http://localhost:8081/medical-records', payload).subscribe({
+  salvarProntuario() {
+    if (!this.novasNotas.trim()) {
+      alert('Por favor, preencha as anotações antes de salvar.');
+      return;
+    }
+    const payload = { appointmentId: this.appointmentId, notas: this.novasNotas };
+    this.http.post(`${environment.apiUrl}/prontuarios`, payload).subscribe({
       next: () => {
         alert('Prontuário salvo com sucesso! Atendimento finalizado.');
         this.router.navigate(['/panel/professional-appointments']);
-      }
+      },
+      error: (err: any) => alert('Erro ao salvar prontuário: ' + (err.error?.message || 'Tente novamente.'))
     });
   }
 }

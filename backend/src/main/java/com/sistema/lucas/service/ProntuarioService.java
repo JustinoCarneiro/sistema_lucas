@@ -2,7 +2,7 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Prontuario;
-import com.sistema.lucas.model.enums.StatusConsulta; // ✅ import adicionado
+import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
@@ -17,8 +17,10 @@ public class ProntuarioService {
     @Autowired private ProntuarioRepository prontuarioRepository;
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private ProfessionalRepository professionalRepository;
+    @Autowired private AuditLogService auditLogService;
 
-    public List<Prontuario> getByPatientId(Long patientId) {
+    public List<Prontuario> getByPatientId(Long patientId, String userEmail) {
+        auditLogService.log(userEmail, "VISUALIZACAO", "Prontuario", patientId, "Visualizou histórico de prontuários do paciente ID: " + patientId);
         return prontuarioRepository.findByPatientIdOrderByCriadoEmDesc(patientId);
     }
 
@@ -39,6 +41,8 @@ public class ProntuarioService {
         prontuario.setProfessional(professional);
         prontuario.setNotas(notas);
 
-        return prontuarioRepository.save(prontuario);
+        Prontuario saved = prontuarioRepository.save(prontuario);
+        auditLogService.log(professionalEmail, "CRIACAO", "Prontuario", saved.getId(), "Criou prontuário para consulta ID: " + appointmentId);
+        return saved;
     }
 }

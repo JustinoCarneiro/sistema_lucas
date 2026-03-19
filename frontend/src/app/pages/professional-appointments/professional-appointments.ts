@@ -70,7 +70,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   }
 
   iniciarAtendimento(app: any) {
-    this.router.navigate(['/panel/prontuario', app.id]);
+    this.router.navigate(['/panel/medical-record', app.id]);
   }
 
   confirmarConsulta(app: any) {

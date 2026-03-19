@@ -1,4 +1,4 @@
-// frontend/src/app/pages/redefinir-senha/redefinir-senha.ts
+// frontend/src/app/pages/reset-password/reset-password.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -7,12 +7,12 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 @Component({
-  selector: 'app-redefinir-senha',
+  selector: 'app-reset-password',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './redefinir-senha.html'
+  templateUrl: './reset-password.html'
 })
-export class RedefinirSenhaComponent implements OnInit {
+export class ResetPasswordComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private http = inject(HttpClient);

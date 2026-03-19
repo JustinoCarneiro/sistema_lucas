@@ -30,10 +30,10 @@ public class AppointmentController {
         return ResponseEntity.ok(service.findAll());
     }
 
-    // Admin — cancelar
+    // Todas as ações vinculadas passam o token autenticado agora!
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelar(@PathVariable Long id) {
-        service.cancelar(id);
+    public ResponseEntity<Void> cancelar(@PathVariable Long id, Principal principal) {
+        service.cancelar(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
 
@@ -57,14 +57,14 @@ public class AppointmentController {
 
     // Prontuário — buscar consulta por ID
     @GetMapping("/{id}")
-    public ResponseEntity<AppointmentResponseDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(service.buscarPorId(id));
+    public ResponseEntity<AppointmentResponseDTO> buscarPorId(@PathVariable Long id, Principal principal) {
+        return ResponseEntity.ok(service.buscarPorId(id, principal.getName()));
     }
 
     // Profissional — marcar falta
     @PatchMapping("/{id}/falta")
-    public ResponseEntity<String> marcarFalta(@PathVariable Long id) {
-        service.marcarFalta(id);
+    public ResponseEntity<String> marcarFalta(@PathVariable Long id, Principal principal) {
+        service.marcarFalta(id, principal.getName());
         return ResponseEntity.ok("Paciente marcado como faltante.");
     }
 

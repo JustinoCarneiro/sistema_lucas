@@ -1,17 +1,17 @@
-// frontend/src/app/pages/gestao-documentos/gestao-documentos.ts
+// frontend/src/app/pages/document-management/document-management.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DocumentoService } from '../documentos/documento.service';
+import { DocumentoService } from '../documents/document.service';
 import { PatientService } from '../patients/patients.service';
 
 @Component({
-  selector: 'app-gestao-documentos',
+  selector: 'app-document-management',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './gestao-documentos.html'
+  templateUrl: './document-management.html'
 })
-export class GestaoDocumentosComponent implements OnInit {
+export class DocumentManagementComponent implements OnInit {
   private documentoService = inject(DocumentoService);
   private patientService = inject(PatientService);
 

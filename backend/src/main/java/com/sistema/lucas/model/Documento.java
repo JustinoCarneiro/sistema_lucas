@@ -1,6 +1,7 @@
 // backend/src/main/java/com/sistema/lucas/model/Documento.java
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import com.sistema.lucas.model.enums.TipoDocumento;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,6 +23,7 @@ public class Documento {
 
     // Para documentos digitados diretamente
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String conteudoTexto;
 
     // Para upload de PDF — armazena o nome original do arquivo
@@ -29,6 +31,7 @@ public class Documento {
 
     // Conteúdo do PDF em Base64
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String arquivoBase64;
 
     @ManyToOne

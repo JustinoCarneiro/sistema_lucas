@@ -1,4 +1,4 @@
-// frontend/src/app/pages/esqueci-senha/esqueci-senha.ts
+// frontend/src/app/pages/forgot-password/forgot-password.ts
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -7,12 +7,12 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 @Component({
-  selector: 'app-esqueci-senha',
+  selector: 'app-forgot-password',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './esqueci-senha.html'
+  templateUrl: './forgot-password.html'
 })
-export class EsqueciSenhaComponent {
+export class ForgotPasswordComponent {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
 

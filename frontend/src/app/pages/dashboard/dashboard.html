@@ -9,7 +9,23 @@
 
     <!-- ===================== ADMIN ===================== -->
     <div *ngIf="userRole() === 'ADMIN'">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">Visão Geral</h1>
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Visão Geral</h1>
+        <div class="flex flex-wrap gap-2">
+          <button (click)="exportar('patients')"
+            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+            Exportar Pacientes
+          </button>
+          <button (click)="exportar('professionals')"
+            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+            Exportar Profissionais
+          </button>
+          <button (click)="exportar()"
+            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm font-medium">
+            Exportar Relatório Geral
+          </button>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -35,8 +51,7 @@
             </span>
             <div class="flex-1 bg-gray-100 rounded-full h-7 overflow-hidden">
               <div class="h-7 rounded-full flex items-center pl-3 transition-all duration-500"
-                [ngClass]="barClass(entry[0])"
-                [style.width]="barWidth(entry[1])">
+                [ngClass]="barClass(entry[0])" [style.width]="barWidth(entry[1])">
                 <span class="text-xs font-bold text-white" *ngIf="entry[1] > 0">{{ entry[1] }}</span>
               </div>
             </div>
@@ -48,7 +63,13 @@
 
     <!-- ===================== PROFISSIONAL ===================== -->
     <div *ngIf="userRole() === 'PROFESSIONAL'">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">Meu Painel</h1>
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Meu Painel</h1>
+        <button (click)="exportar()"
+          class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm font-medium">
+          Exportar Meus Atendimentos
+        </button>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -79,8 +100,7 @@
               <p class="text-sm font-medium text-gray-800">{{ $any(c).patient?.name }}</p>
               <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'HH:mm' }} · {{ $any(c).reason || '—' }}</p>
             </div>
-            <span class="text-xs font-medium px-2 py-1 rounded-full"
-              [ngClass]="statusClass[$any(c).status]">
+            <span class="text-xs font-medium px-2 py-1 rounded-full" [ngClass]="statusClass[$any(c).status]">
               {{ statusLabel[$any(c).status] }}
             </span>
           </div>
@@ -107,8 +127,7 @@
           <div *ngIf="dados()?.ultimosProntuarios?.length === 0" class="text-sm text-gray-400 text-center py-4">
             Nenhum prontuário registrado ainda.
           </div>
-          <div *ngFor="let p of dados()?.ultimosProntuarios"
-            class="py-2 border-b border-gray-100 last:border-0">
+          <div *ngFor="let p of dados()?.ultimosProntuarios" class="py-2 border-b border-gray-100 last:border-0">
             <p class="text-sm font-medium text-gray-800">{{ $any(p).patient?.name }}</p>
             <p class="text-xs text-gray-400">{{ $any(p).criadoEm | date:'dd/MM/yyyy HH:mm' }}</p>
             <p class="text-xs text-gray-500 mt-1 line-clamp-1">{{ $any(p).notas }}</p>
@@ -141,7 +160,9 @@
 
     <!-- ===================== PACIENTE ===================== -->
     <div *ngIf="userRole() === 'PATIENT'">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">Meu Painel</h1>
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Meu Painel</h1>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -166,8 +187,7 @@
 
           <div *ngIf="!proximaConsulta()" class="text-sm text-gray-400 text-center py-4">
             Nenhuma consulta agendada.
-            <a routerLink="/panel/my-appointments"
-              class="block mt-2 text-blue-600 hover:underline font-medium">
+            <a routerLink="/panel/my-appointments" class="block mt-2 text-blue-600 hover:underline font-medium">
               Agendar agora →
             </a>
           </div>
@@ -180,8 +200,7 @@
             <p class="text-sm text-gray-500">{{ proximaConsulta().professional?.name }}</p>
             <p class="text-sm text-gray-500">Motivo: {{ proximaConsulta().reason || '—' }}</p>
 
-            <button
-              *ngIf="proximaConsulta().status === 'AGENDADA' && proximaConsulta().podeConfirmarOuCancelar"
+            <button *ngIf="proximaConsulta().status === 'AGENDADA' && proximaConsulta().podeConfirmarOuCancelar"
               (click)="confirmarNoDashboard(proximaConsulta().id)"
               class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded-lg transition">
               Confirmar presença
@@ -229,10 +248,9 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 md:col-span-2">
           <div class="flex justify-between items-start mb-4">
             <h2 class="text-base font-semibold text-gray-700">Documentos recentes</h2>
-            <a routerLink="/panel/meus-documentos" class="text-xs text-blue-600 hover:underline">Ver todos</a>
+            <a routerLink="/panel/my-documents" class="text-xs text-blue-600 hover:underline">Ver todos</a>
           </div>
-          <div *ngIf="dados()?.documentosDisponiveis?.length === 0"
-            class="text-sm text-gray-400 text-center py-4">
+          <div *ngIf="dados()?.documentosDisponiveis?.length === 0" class="text-sm text-gray-400 text-center py-4">
             Nenhum documento disponível ainda.
           </div>
           <div *ngFor="let d of dados()?.documentosDisponiveis"
