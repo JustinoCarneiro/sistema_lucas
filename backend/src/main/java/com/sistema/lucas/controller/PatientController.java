@@ -1,11 +1,11 @@
 // backend/src/main/java/com/sistema/lucas/controller/PatientController.java
 package com.sistema.lucas.controller;
 
-import com.sistema.lucas.model.dto.PatientCreateDTO;
+
 import com.sistema.lucas.model.dto.PatientResponseDTO;
 import com.sistema.lucas.model.dto.PatientUpdateDTO;
 import com.sistema.lucas.service.PatientService;
-import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
