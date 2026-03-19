@@ -1,59 +1,83 @@
 # Documentação Técnica: Sistema Lucas
 
-Esta documentação fornece uma visão detalhada da arquitetura, camadas de segurança e diretrizes de escalabilidade do Sistema Lucas (Prontuário Eletrônico e Gestão Clínica).
+Esta documentação fornece uma visão detalhada da arquitetura, camadas de segurança e diretrizes de infraestrutura do Sistema Lucas (Prontuário Eletrônico e Gestão Clínica).
 
-## 1. Visão Geral do Sistema
-O Sistema Lucas é uma plataforma web para gestão de clínicas e consultórios, focada em segurança de dados sensíveis e conformidade com a LGPD. Atende três perfis de usuário: **Admin**, **Profissional de Saúde** e **Paciente**.
+---
 
-## 2. Arquitetura de Alto Nível
-O sistema segue o padrão **Monolito Modular** com separação clara entre Frontend e Backend.
+## 🚀 1. Visão Geral do Sistema
+O Sistema Lucas é uma plataforma web para gestão de clínicas e consultórios, com foco em segurança de dados sensíveis e conformidade com a LGPD. 
 
-- **Frontend**: Single Page Application (SPA) desenvolvida em Angular.
-- **Backend**: API RESTful desenvolvida com Java/Spring Boot.
-- **Banco de Dados**: PostgreSQL para persistência relacional.
-- **Infraestrutura**: Containerização com Docker Compose.
+### Perfis de Usuário:
+*   **Admin**: Gestão total de usuários, profissionais e logs.
+*   **Profissional**: Gestão de agenda, prontuários e documentos dos pacientes.
+*   **Paciente**: Consulta de agendamentos e verificação de conta.
 
-## 3. Backend (Spring Boot)
-Organizado em camadas para garantir a separação de responsabilidades (SoC):
+---
 
-### Camadas:
-- **`model`**: Entidades JPA que representam o esquema do banco de dados.
-- **`repository`**: Interfaces que utilizam Spring Data JPA para acesso ao banco.
-- **`service`**: Camada de lógica de negócio, onde residem as regras de validação e processamento.
-- **`controller`**: Endpoints REST que gerenciam as requisições HTTP.
-- **`config`**: Configurações do Spring (Security, CORS, Data Initializer).
-- **[security](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/security/config/SecurityConfigurations.java#30-48)**: Implementação de JWT, filtros de autenticação e RBAC.
+## 🛠️ 2. Arquitetura e Tecnologias
+O sistema utiliza uma arquitetura de **Monolito Modular** containerizado, garantindo isolamento entre os serviços.
 
-### Segurança e Privacidade:
-- **Criptografia AES-256**: Aplicada via [EncryptionConverter](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/config/jpa/EncryptionConverter.java#12-52) em campos sensíveis (`notas` de prontuário e arquivos de documentos) diretamente no nível de persistência.
-- **Log de Auditoria**: Sistema que rastreia `visualizações` e `exportações` de dados, registrando usuário, timestamp e entidade afetada.
-- **RBAC (Role-Based Access Control)**: Controle rigoroso de acesso baseado em Roles (`ADMIN`, `PROFESSIONAL`, `PATIENT`).
+*   **Frontend**: Angular 18+ com Tailwind CSS e Signals (reatividade performática).
+*   **Backend**: Spring Boot 3.4+ (Java 21) seguindo padrões RESTful.
+*   **Banco de Dados**: PostgreSQL 15 (Persistência Relacional).
+*   **Infraestrutura**: Docker Compose para orquestração de containers.
 
-## 4. Frontend (Angular)
-Arquitetura baseada em componentes reativos e design responsivo.
+---
 
-- **Framework**: Angular 18+.
-- **Estilização**: Tailwind CSS (utilitários para UI premium e responsiva).
-- **Gerenciamento de Estado**: Signals para reatividade performática.
-- **Roteamento**: Guards para proteção de rotas privadas.
+## 🔐 3. Segurança e Privacidade (Foco LGPD)
+A segurança é o pilar central do Sistema Lucas, implementada em múltiplas camadas:
 
-## 5. Modelo de Dados (ER)
-As principais entidades são:
-- [User](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/User.java#16-102): Base para autenticação.
-- [Professional](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/Professional.java#9-38) / [Patient](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/Patient.java#11-58): Especializações de [User](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/User.java#16-102).
-- [Appointment](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/Appointment.java#10-49): Gestão de horários.
-- [Prontuario](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/Prontuario.java#9-41): Registro clínico (criptografado).
-- [Documento](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/Documento.java#10-55): Gestão de laudos e exames (criptografado).
-- [AuditLog](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/model/AuditLog.java#7-31): Rastro de segurança.
+### 3.1 Proteção de Acesso
+*   **Autenticação**: Stateless via **JWT (JSON Web Token)** com expiração configurável.
+*   **Hashing de Senhas**: Utilização do algoritmo **Argon2id** (vencedor do Password Hashing Competition), oferecendo proteção superior contra ataques de força bruta e dicionário.
+*   **RBAC (Role-Based Access Control)**: Controle de acesso granular baseado em permissões (@PreAuthorize) no nível de endpoint.
 
-## 6. Guia de Escalabilidade e Manutenibilidade
+### 3.2 Proteção de Dados (Data-at-Rest)
+*   **Criptografia AES**: Dados sensíveis (como `notas` de prontuário e arquivos de documentos) são criptografados antes de serem salvos no banco.
+    *   **Algoritmo**: AES-128 (configurável para AES-256).
+    *   **Implementação**: Via [EncryptionConverter.java](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/config/jpa/EncryptionConverter.java), garantindo criptografia transparente no nível de persistência.
 
-### Manutenibilidade:
-1. **Testes Automatizados**: Manter a cobertura com Cypress (E2E) para fluxos críticos.
-2. **Documentação Interna**: Utilizar Javadoc para métodos complexos na camada de `service`.
-3. **Padrão de Código**: Seguir as convenções de nomes e estrutura de pacotes já estabelecidas no projeto.
+### 3.3 Verificação de Identidade
+*   **Fluxo de E-mail**: Novas contas são criadas com o status `verified = false`. O sistema envia automaticamente um e-mail com um token único de verificação (expira em 24h).
+*   **Banner Informativo**: O frontend exibe um aviso visual para usuários com e-mail ainda não validado.
 
-### Escalabilidade:
-1. **Banco de Dados**: Migrar para instâncias gerenciadas (ex: RDS) e utilizar réplicas de leitura se o volume de exportações crescer.
-2. **Stateless API**: Como usamos JWT, o backend pode ser escalado horizontalmente por trás de um Load Balancer.
-3. **Micro-serviços**: Se o módulo de `Exportação` ou [Documentos](file:///home/marcos/Applications/sistema_lucas/frontend/src/app/pages/document-management/document-management.ts#74-81) (OCR/Processamento) tornar-se gargalo, eles estão prontos para serem extraídos como serviços independentes.
+### 3.4 Rastreabilidade e Auditoria
+*   **Audit Log**: Todas as visualizações e exportações de dados sensíveis são registradas em uma tabela de auditoria dedicada, capturando:
+    *   ID do Usuário executor.
+    *   Entidade acessada.
+    *   Timestamp da operação.
+
+---
+
+## 🆕 4. Novas Funcionalidades
+*   **Registro de Pacientes**: Formulário completo com máscaras (CPF, WhatsApp) e validação em tempo real.
+*   **Verificação de E-mail**: Integração com Mailtrap/SMTP para validação segura de novas contas.
+*   **Notificações In-page**: Feedback de sucesso e erro via Signals, eliminando alertas pop-up intrusivos.
+*   **Roteamento SPA Seguro**: Configuração Nginx customizada com `try_files` para garantir funcionamento perfeito das rotas Angular em ambiente Docker.
+
+---
+
+## 🐳 5. Infraestrutura e Deploy
+O projeto está pronto para produção com suporte a builds internos seguros.
+
+### Scripts de Deploy:
+*   **`deploy.sh`**: Realiza o build **dentro do Docker** (multi-stage). Compila o Java e o Angular em ambientes isolados e atualiza os containers.
+*   **`push-and-deploy.sh`**: Script para desenvolvedores. Envia as alterações via `rsync` para o servidor e dispara o `deploy.sh` via SSH.
+
+### Como rodar localmente:
+1.  Configure o arquivo `.env` com suas credenciais.
+2.  Execute `docker compose up -d --build`.
+
+---
+
+## ✅ 6. Qualidade e Testes
+O sistema conta com uma suite de testes automatizados de ponta a ponta:
+*   **Cypress (E2E)**: Localizado em `frontend/cypress/e2e/`. 
+    *   Cobre registro de sucesso, validações de erro, exibição de banner e fluxo de callback de verificação.
+*   **JUnit (Integração)**: Localizado em `backend/src/test/`.
+    *   Cobre endpoints de autenticação e lógica de tokens.
+
+---
+
+> [!TIP]
+> Em produção, certifique-se de configurar o **Nginx** como proxy reverso para lidar com SSL (HTTPS) e redirecionamento de portas.
