@@ -11,7 +11,7 @@
   </div>
 
   <div *ngIf="patientsList().length > 0"
-    class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
@@ -19,8 +19,7 @@
           <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">E-mail</th>
           <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">CPF</th>
           <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">WhatsApp</th>
-          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Convênio</th>
-          <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Ação</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ações</th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-100">
@@ -36,8 +35,7 @@
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">{{ patient.email }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ patient.cpf || '—' }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ patient.phone || '—' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ patient.insurance || '—' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-right">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
             <button (click)="deletePaciente(patient.id, patient.name)"
               class="text-sm text-red-600 hover:text-red-900 font-medium transition">
               Remover
@@ -46,5 +44,70 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div *ngIf="patientsList().length > 0" class="md:hidden space-y-4">
+    <div *ngFor="let patient of patientsList()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+          {{ patient.name.charAt(0) }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-base font-bold text-gray-800 truncate">{{ patient.name }}</p>
+          <p class="text-sm text-gray-500 truncate">{{ patient.email }}</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 pt-3 mt-1 gap-2">
+        <button (click)="openDetails(patient)" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+          Ver detalhes
+        </button>
+        <button (click)="deletePaciente(patient.id, patient.name)" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
+          Remover
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Identificacao Modal -->
+  <div *ngIf="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" (click)="closeDetails()">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
+      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      
+      <div class="flex items-center gap-4 mb-6 pt-2">
+        <div class="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+          {{ selectedItem.name.charAt(0) }}
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800">{{ selectedItem.name }}</h3>
+          <p class="text-sm text-gray-500">Paciente</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">E-mail</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.email }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">CPF</p>
+            <p class="text-sm font-medium text-gray-800">{{ selectedItem.cpf || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">WhatsApp</p>
+            <p class="text-sm font-medium text-gray-800">{{ selectedItem.phone || '—' }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-8">
+        <button (click)="closeDetails()" class="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold py-3 px-4 rounded-xl transition">
+          Fechar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

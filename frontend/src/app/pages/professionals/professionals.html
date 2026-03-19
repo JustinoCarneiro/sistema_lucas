@@ -1,13 +1,17 @@
 <!-- frontend/src/app/pages/professionals/professionals.html -->
 <div class="p-8">
-  <div class="mb-8 flex justify-between items-end">
+  <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
     <div>
       <h2 class="text-3xl font-bold text-gray-800">Corpo Clínico</h2>
       <p class="text-gray-500 font-medium">Gerencie os profissionais de saúde cadastrados no sistema.</p>
     </div>
+    <button *ngIf="!isEditing()" (click)="mostrarFormulario.set(!mostrarFormulario())"
+      class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md w-full sm:w-auto">
+      {{ mostrarFormulario() ? 'Cancelar' : '+ Novo profissional' }}
+    </button>
   </div>
 
-  <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+  <div *ngIf="mostrarFormulario()" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
     <h3 class="text-lg font-bold text-gray-700 mb-4">
       {{ isEditing() ? 'Editar Profissional' : 'Novo Profissional' }}
     </h3>
@@ -22,7 +26,7 @@
         <input type="email" formControlName="email" placeholder="profissional@clinica.com"
           class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
       </div>
-      <div class="md:col-span-2 grid grid-cols-3 gap-3">
+      <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de registro</label>
           <select formControlName="tipoRegistro"
@@ -32,7 +36,7 @@
             <option value="OUTRO">Outro</option>
           </select>
         </div>
-        <div class="col-span-2">
+        <div class="sm:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1">Número do registro</label>
           <input type="text" formControlName="registroConselho" placeholder="Ex: CRP-06 123456"
             class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
@@ -50,20 +54,20 @@
         <input type="password" formControlName="password" placeholder="••••••••"
           class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
       </div>
-      <div class="md:col-span-2 flex gap-3 justify-end">
+      <div class="md:col-span-2 flex flex-col sm:flex-row gap-3 justify-end mt-2">
         <button *ngIf="isEditing()" type="button" (click)="cancelEdit()"
-          class="px-6 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition font-medium">
+          class="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition font-medium">
           Cancelar
         </button>
         <button type="submit" [disabled]="professionalForm.invalid"
-          class="bg-blue-900 text-white font-bold py-2 px-6 rounded-xl hover:bg-blue-800 transition disabled:opacity-50">
-          {{ isEditing() ? 'Salvar alterações' : 'Cadastrar profissional' }}
+          class="w-full sm:w-auto bg-blue-900 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-blue-800 transition disabled:opacity-50">
+          {{ isEditing() ? 'Salvar alterações' : 'Cadastrar' }}
         </button>
       </div>
     </form>
   </div>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
@@ -98,6 +102,77 @@
     </table>
     <div *ngIf="professionals().length === 0" class="p-10 text-center text-gray-400">
       Nenhum profissional cadastrado no sistema.
+    </div>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="md:hidden space-y-4">
+    <div *ngFor="let prof of professionals()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+          {{ prof.name.charAt(0) }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-base font-bold text-gray-800 truncate">{{ prof.name }}</p>
+          <p class="text-sm text-gray-500 truncate">{{ prof.specialty || 'Sem especialidade' }}</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 pt-3 mt-1 gap-2">
+        <button (click)="openDetails(prof)" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+          Ver detalhes
+        </button>
+        <div class="flex gap-3">
+          <button (click)="editProfessional(prof)" class="text-sm font-semibold text-gray-500 hover:text-blue-600 transition">
+            Editar
+          </button>
+          <button (click)="deleteProfessional(prof.id)" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="professionals().length === 0" class="p-10 text-center text-gray-400 bg-white rounded-2xl border border-gray-200">
+      Nenhum profissional cadastrado no sistema.
+    </div>
+  </div>
+
+  <!-- Identificacao Modal -->
+  <div *ngIf="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" (click)="closeDetails()">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
+      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      
+      <div class="flex items-center gap-4 mb-6 pt-2">
+        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+          {{ selectedItem.name.charAt(0) }}
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800">{{ selectedItem.name }}</h3>
+          <p class="text-sm text-gray-500">Profissional</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Especialidade</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.specialty || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Registro ({{ selectedItem.tipoRegistro }})</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.registroConselho || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">E-mail</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.email || '—' }}</p>
+        </div>
+      </div>
+      
+      <div class="mt-8">
+        <button (click)="closeDetails()" class="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold py-3 px-4 rounded-xl transition">
+          Fechar
+        </button>
+      </div>
     </div>
   </div>
 </div>

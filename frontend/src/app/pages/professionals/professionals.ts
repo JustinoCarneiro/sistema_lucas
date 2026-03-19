@@ -17,6 +17,16 @@ export class ProfessionalsComponent implements OnInit {
   professionals = signal<any[]>([]);
   isEditing = signal(false);
   currentProfessionalId = signal<number | null>(null);
+  mostrarFormulario = signal(false);
+  selectedItem: any = null;
+
+  openDetails(item: any) {
+    this.selectedItem = item;
+  }
+
+  closeDetails() {
+    this.selectedItem = null;
+  }
   professionalForm: FormGroup;
 
   constructor() {
@@ -41,6 +51,7 @@ export class ProfessionalsComponent implements OnInit {
 
   editProfessional(prof: any) {
     this.isEditing.set(true);
+    this.mostrarFormulario.set(true);
     this.currentProfessionalId.set(prof.id);
     this.professionalForm.patchValue({
       name:             prof.name,
@@ -57,6 +68,7 @@ export class ProfessionalsComponent implements OnInit {
 
   cancelEdit() {
     this.isEditing.set(false);
+    this.mostrarFormulario.set(false);
     this.currentProfessionalId.set(null);
     this.professionalForm.reset({ tipoRegistro: 'CRP' });
     this.professionalForm.get('password')?.setValidators([Validators.required]);
@@ -91,6 +103,7 @@ export class ProfessionalsComponent implements OnInit {
           next: () => {
             alert('Profissional cadastrado com sucesso!');
             this.professionalForm.reset({ tipoRegistro: 'CRP' });
+            this.mostrarFormulario.set(false);
             this.loadProfessionals();
           },
           error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service

@@ -27,9 +27,17 @@ export class PatientService {
 
   updateMyProfile(data: any) {
     return this.http.put(`${environment.apiUrl}/patients/me`, {
-      phone:       data.phone,
-      insurance:   data.insurance,
-      newPassword: data.newPassword || null
+      name:                  data.name,
+      email:                 data.email,
+      cpf:                   data.cpf,
+      phone:                 data.phone,
+      birthDate:             data.birthDate,
+      emergencyContactName:  data.emergencyContactName,
+      emergencyContactPhone: data.emergencyContactPhone,
+      gender:                data.gender,
+      allergies:        data.allergies,
+      address:          data.address,
+      newPassword:      data.newPassword || null
     }, { responseType: 'text' }).pipe(
       catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
     );

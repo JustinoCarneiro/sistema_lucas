@@ -15,6 +15,15 @@ export class Appointments implements OnInit {
 
   consultas = signal<any[]>([]);
   isLoading = signal(true);
+  selectedItem: any = null;
+
+  openDetails(item: any) {
+    this.selectedItem = item;
+  }
+
+  closeDetails() {
+    this.selectedItem = null;
+  }
 
   statusLabel: Record<string, string> = {
     AGENDADA: 'Agendada', CONFIRMADA_PACIENTE: 'Aguardando profissional',

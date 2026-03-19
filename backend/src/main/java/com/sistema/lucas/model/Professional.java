@@ -17,4 +17,21 @@ public class Professional extends User {
     private String registroConselho;   // ✅ era crm — número do CRM/CRP
 
     private String specialty;
+
+    private String cpf;
+    private String phone;
+    private java.time.LocalDate birthDate;
+    private String gender;
+    private String address;
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeProfessional() {
+        if (this.registroConselho != null) {
+            this.registroConselho = this.registroConselho.trim().toUpperCase();
+        }
+        if (this.specialty != null) {
+            this.specialty = this.specialty.trim();
+        }
+    }
 }

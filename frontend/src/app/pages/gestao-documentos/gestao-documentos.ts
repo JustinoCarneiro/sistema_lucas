@@ -19,6 +19,34 @@ export class GestaoDocumentosComponent implements OnInit {
   pacientes = signal<any[]>([]);
   isLoading = signal(true);
   mostrarFormulario = signal(false);
+  selectedItem: any = null;
+
+  openDetails(item: any) {
+    this.selectedItem = item;
+  }
+
+  closeDetails() {
+    this.selectedItem = null;
+  }
+
+  abrirPdf(base64: string, nomeArquivo: string) {
+    if (!base64) return;
+    try {
+      const cleanBase64 = base64.replace(/\s/g, '');
+      const byteCharacters = atob(cleanBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(blob);
+      window.open(fileURL, '_blank');
+    } catch (e) {
+      alert('Não foi possível abrir o PDF. Arquivo possivelmente corrompido.');
+      console.error(e);
+    }
+  }
 
   form = {
     pacienteId: '', tipo: '', titulo: '',

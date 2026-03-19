@@ -38,6 +38,26 @@ public class User implements UserDetails { // <-- 1. Adicionado implements UserD
         this.role = role;
     }
 
+    @PrePersist
+    @PreUpdate
+    public void normalizeUser() {
+        if (this.name != null) {
+            this.name = this.name.trim().replaceAll("\\s+", " ");
+            String[] words = this.name.split(" ");
+            StringBuilder sb = new StringBuilder();
+            for (String w : words) {
+                if (!w.isEmpty()) {
+                    sb.append(Character.toUpperCase(w.charAt(0)))
+                      .append(w.substring(1).toLowerCase()).append(" ");
+                }
+            }
+            this.name = sb.toString().trim();
+        }
+        if (this.email != null) {
+            this.email = this.email.trim().toLowerCase();
+        }
+    }
+
     // --- 2. MÉTODOS OBRIGATÓRIOS DO SPRING SECURITY ---
 
     @Override

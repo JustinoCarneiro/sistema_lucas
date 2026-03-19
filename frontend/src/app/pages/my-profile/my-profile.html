@@ -1,34 +1,52 @@
 <!-- frontend/src/app/pages/my-profile/my-profile.html -->
-<div class="p-8 max-w-2xl mx-auto">
+<div class="p-4 sm:p-8 max-w-2xl mx-auto">
   <h2 class="text-3xl font-bold text-gray-800 mb-6">Meu Perfil</h2>
 
   <div *ngIf="isLoading()" class="text-blue-600 animate-pulse">Carregando dados...</div>
 
-  <div *ngIf="!isLoading()" class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+  <div *ngIf="!isLoading()" class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
     <div class="grid grid-cols-1 gap-6">
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-sm font-semibold text-gray-500 uppercase">Nome completo</label>
-          <p class="text-lg font-medium text-gray-800 p-2 bg-gray-50 rounded">{{ profile().name }}</p>
+          <input type="text" [value]="profile().name || ''"
+            (input)="updateProfile('name', $any($event.target).value)"
+            class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-800">
         </div>
         <div>
           <label class="block text-sm font-semibold text-gray-500 uppercase">E-mail</label>
-          <p class="text-lg font-medium text-gray-800 p-2 bg-gray-50 rounded">{{ profile().email }}</p>
+          <input type="email" [value]="profile().email || ''"
+            (input)="updateProfile('email', $any($event.target).value)"
+            class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-800">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-500 uppercase">CPF</label>
+          <input type="text" [value]="profile().cpf ? applyCpfMask(profile().cpf) : ''"
+            (input)="updateProfile('cpf', $any($event.target).value)"
+            class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-800">
         </div>
       </div>
 
       <hr>
 
       <div *ngIf="userRole() === 'PROFESSIONAL'" class="grid grid-cols-1 gap-4">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-gray-500 uppercase">Tipo de registro</label>
-            <p class="text-lg font-medium text-gray-800 p-2 bg-gray-50 rounded">{{ profile().tipoRegistro }}</p>
+            <select [value]="profile().tipoRegistro || ''"
+              (change)="updateProfile('tipoRegistro', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-gray-800">
+              <option value="CRM">CRM</option>
+              <option value="CRP">CRP</option>
+              <option value="OUTRO">OUTRO</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-500 uppercase">Número do registro</label>
-            <p class="text-lg font-medium text-gray-800 p-2 bg-gray-50 rounded">{{ profile().registroConselho }}</p>
+            <input type="text" [value]="profile().registroConselho || ''"
+              (input)="updateProfile('registroConselho', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-800">
           </div>
         </div>
         <div>
@@ -39,25 +57,75 @@
         </div>
       </div>
 
-      <div *ngIf="userRole() === 'PATIENT'" class="grid grid-cols-1 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">WhatsApp</label>
-          <input type="text" [value]="profile().phone"
-            (input)="updateProfile('phone', $any($event.target).value)"
-            class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+      <div class="grid grid-cols-1 gap-4 mt-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">WhatsApp</label>
+            <input type="text" [value]="profile().phone || ''" placeholder="(11) 99999-0000"
+              (input)="updateProfile('phone', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Data de Nascimento</label>
+            <input type="date" [value]="profile().birthDate || ''"
+              (input)="updateProfile('birthDate', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Gênero</label>
+            <select [value]="profile().gender || ''"
+              (change)="updateProfile('gender', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <option value="">Selecione...</option>
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+              <option value="OUTRO">Outro / Prefiro não dizer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Endereço completo (com CEP)</label>
+            <input type="text" [value]="profile().address || ''" placeholder="Av. Exemplo, 123 - Cidade/UF"
+              (input)="updateProfile('address', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="userRole() === 'PATIENT'" class="grid grid-cols-1 gap-4 mt-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Contato de Emergência - Nome</label>
+            <input type="text" [value]="profile().emergencyContactName || ''" placeholder="Nome"
+              (input)="updateProfile('emergencyContactName', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Contato de Emergência - Telefone</label>
+            <input type="text" [value]="profile().emergencyContactPhone || ''" placeholder="(11) 99999-9999"
+              (input)="updateProfile('emergencyContactPhone', $any($event.target).value)"
+              class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+        </div>
+
         <div>
-          <label class="block text-sm font-medium text-gray-700">Plano de saúde</label>
-          <input type="text" [value]="profile().insurance"
-            (input)="updateProfile('insurance', $any($event.target).value)"
-            class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          <label class="block text-sm font-medium text-gray-700">Alergias / Uso de medicamentos</label>
+          <textarea [value]="profile().allergies || ''"
+            (input)="updateProfile('allergies', $any($event.target).value)" rows="2"
+            class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Possui alergias ou toma medicamentos de uso contínuo?"></textarea>
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700">Nova senha (deixe em branco para não alterar)</label>
-        <input type="password" [(ngModel)]="newPassword" placeholder="••••••••"
-          class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+      <div class="mt-2">
+        <button (click)="openPasswordModal()" 
+          class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition shadow-sm border border-slate-300">
+          🔑 Alterar minha senha
+        </button>
+      </div>
       </div>
 
       <button (click)="saveProfile()" [disabled]="isSaving()"
@@ -76,6 +144,40 @@
     </p>
   </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Senha -->
+<div *ngIf="showPasswordModal()" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-xl border border-gray-100">
+    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Alterar Senha</h3>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+        <input type="password" [(ngModel)]="modalNewPassword" placeholder="••••••••"
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+        <input type="password" [(ngModel)]="modalConfirmPassword" placeholder="••••••••"
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+          [class.border-red-500]="passwordMismatch()">
+        <p *ngIf="passwordMismatch()" class="text-red-500 text-xs mt-1 font-medium">As senhas não coincidem.</p>
+        <p *ngIf="modalNewPassword.length > 0 && modalNewPassword.length < 6" class="text-orange-500 text-xs mt-1 font-medium">A senha deve ter pelo menos 6 caracteres.</p>
+      </div>
+    </div>
+
+    <div class="mt-8 flex gap-3">
+      <button (click)="closePasswordModal()" 
+        class="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-bold">
+        Cancelar
+      </button>
+      <button (click)="confirmPasswordChange()" [disabled]="!isPasswordValid()"
+        class="flex-1 py-3 rounded-xl bg-blue-900 text-white hover:bg-blue-800 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+        Atualizar
+      </button>
     </div>
   </div>
 </div>

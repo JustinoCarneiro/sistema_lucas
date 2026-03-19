@@ -76,8 +76,7 @@ public class DataInitializer implements CommandLineRunner {
             lucas.setPassword(passwordEncoder.encode("123456"));
             lucas.setRole(Role.PATIENT);
             lucas.setCpf("111.222.333-44");
-            lucas.setPhone("11999990001");
-            lucas.setInsurance("Unimed");
+            lucas.setPhone("11888889999");
             patientRepository.save(lucas);
 
             Patient maria = new Patient();
@@ -86,8 +85,7 @@ public class DataInitializer implements CommandLineRunner {
             maria.setPassword(passwordEncoder.encode("123456"));
             maria.setRole(Role.PATIENT);
             maria.setCpf("222.333.444-55");
-            maria.setPhone("11999990002");
-            maria.setInsurance("Bradesco Saúde");
+            maria.setPhone("11999998888");
             patientRepository.save(maria);
 
             Patient joao = new Patient();

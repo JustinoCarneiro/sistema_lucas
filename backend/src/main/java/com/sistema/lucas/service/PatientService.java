@@ -69,8 +69,31 @@ public class PatientService {
         Patient patient = repository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
 
-        if (dto.phone() != null)     patient.setPhone(dto.phone());
-        if (dto.insurance() != null) patient.setInsurance(dto.insurance());
+        if (dto.name() != null && !dto.name().trim().isEmpty()) {
+            patient.setName(dto.name());
+        }
+
+        if (dto.email() != null && !dto.email().trim().isEmpty() && !dto.email().equals(patient.getEmail())) {
+            if (repository.existsByEmail(dto.email())) {
+                throw new RuntimeException("Erro: E-mail já cadastrado por outro usuário.");
+            }
+            patient.setEmail(dto.email());
+        }
+
+        if (dto.cpf() != null && !dto.cpf().trim().isEmpty() && !dto.cpf().equals(patient.getCpf())) {
+            if (repository.existsByCpf(dto.cpf())) {
+                throw new RuntimeException("Erro: CPF já cadastrado por outro usuário.");
+            }
+            patient.setCpf(dto.cpf());
+        }
+
+        if (dto.phone() != null) patient.setPhone(dto.phone());
+        if (dto.birthDate() != null) patient.setBirthDate(dto.birthDate());
+        if (dto.emergencyContactName() != null) patient.setEmergencyContactName(dto.emergencyContactName());
+        if (dto.emergencyContactPhone() != null) patient.setEmergencyContactPhone(dto.emergencyContactPhone());
+        if (dto.gender() != null) patient.setGender(dto.gender());
+        if (dto.allergies() != null) patient.setAllergies(dto.allergies());
+        if (dto.address() != null) patient.setAddress(dto.address());
 
         if (dto.newPassword() != null && !dto.newPassword().trim().isEmpty()) {
             patient.setPassword(passwordEncoder.encode(dto.newPassword()));

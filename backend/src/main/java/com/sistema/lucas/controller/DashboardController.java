@@ -108,7 +108,6 @@ public class DashboardController {
             perfil.put("nome", p.getName());
             perfil.put("email", p.getEmail());
             perfil.put("telefone", p.getPhone() != null ? p.getPhone() : "—");
-            perfil.put("convenio", p.getInsurance() != null ? p.getInsurance() : "—");
             dados.put("perfil", perfil);
         });
 

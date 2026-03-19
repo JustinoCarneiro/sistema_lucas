@@ -55,14 +55,14 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
-            <input type="text" formControlName="cpf"
+            <input type="text" formControlName="cpf" (input)="applyCpfMask($event)"
               placeholder="000.000.000-00"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
-            <input type="text" formControlName="whatsapp"
-              placeholder="11999990000"
+            <input type="text" formControlName="whatsapp" (input)="applyPhoneMask($event)"
+              placeholder="(11) 99999-0000"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
           </div>
         </div>

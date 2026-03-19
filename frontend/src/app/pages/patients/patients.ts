@@ -14,6 +14,15 @@ export class Patients implements OnInit {
   private patientService = inject(PatientService);
 
   patientsList = signal<any[]>([]);
+  selectedItem: any = null;
+
+  openDetails(item: any) {
+    this.selectedItem = item;
+  }
+
+  closeDetails() {
+    this.selectedItem = null;
+  }
 
   ngOnInit() { this.loadPatients(); }
 

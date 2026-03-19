@@ -9,7 +9,7 @@
     Carregando consultas...
   </div>
 
-  <div *ngIf="!isLoading()" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+  <div *ngIf="!isLoading()" class="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 border-b border-gray-200">
         <tr>
@@ -54,5 +54,89 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div *ngIf="!isLoading()" class="md:hidden space-y-4">
+    <div *ngFor="let c of consultas()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-base font-bold text-gray-800 truncate">{{ c.patientName }}</p>
+          <p class="text-sm text-gray-500 truncate">{{ c.startTime | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+      </div>
+      <div>
+        <span class="text-xs font-medium px-2 py-1 rounded-full"
+          [ngClass]="{
+            'bg-blue-100 text-blue-700':     c.status === 'AGENDADA',
+            'bg-yellow-100 text-yellow-700': c.status === 'CONFIRMADA_PACIENTE',
+            'bg-green-100 text-green-700':   c.status === 'CONFIRMADA' || c.status === 'CONCLUIDA',
+            'bg-red-100 text-red-700':       c.status === 'CANCELADA',
+            'bg-orange-100 text-orange-700': c.status === 'FALTA'
+          }">
+          {{ labelStatus(c.status) }}
+        </span>
+      </div>
+      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 pt-3 mt-1 gap-2">
+        <button (click)="openDetails(c)" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+          Ver detalhes
+        </button>
+        <button *ngIf="c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PACIENTE' || c.status === 'CONFIRMADA'" (click)="cancelar(c.id)" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
+          Cancelar
+        </button>
+      </div>
+    </div>
+    <div *ngIf="consultas().length === 0" class="p-10 text-center text-gray-400 bg-white rounded-2xl border border-gray-200">
+      Nenhuma consulta encontrada.
+    </div>
+  </div>
+
+  <!-- Identificacao Modal -->
+  <div *ngIf="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" (click)="closeDetails()">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
+      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      
+      <div class="flex items-center gap-4 mb-6 pt-2">
+        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800">Consulta</h3>
+          <p class="text-sm text-gray-500">{{ labelStatus(selectedItem.status) }}</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Paciente</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.patientName }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Profissional</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.professionalName }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Data e Hora</p>
+            <p class="text-sm font-medium text-gray-800">{{ selectedItem.startTime | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Motivo</p>
+          <p class="text-sm font-medium text-gray-800">{{ selectedItem.reason || '—' }}</p>
+        </div>
+      </div>
+      
+      <div class="mt-8">
+        <button (click)="closeDetails()" class="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold py-3 px-4 rounded-xl transition">
+          Fechar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

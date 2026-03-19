@@ -29,9 +29,24 @@ export class MeusDocumentosComponent implements OnInit {
   }
 
   baixarPdf(doc: any) {
-    const link = document.createElement('a');
-    link.href = 'data:application/pdf;base64,' + doc.arquivoBase64;
-    link.download = doc.nomeArquivo || 'documento.pdf';
-    link.click();
+    if (!doc.arquivoBase64) return;
+    try {
+      const cleanBase64 = doc.arquivoBase64.replace(/\s/g, '');
+      const byteCharacters = atob(cleanBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = fileURL;
+      link.download = doc.nomeArquivo || 'documento.pdf';
+      link.click();
+      URL.revokeObjectURL(fileURL);
+    } catch (e) {
+      alert('Erro ao tentar baixar arquivo PDF.');
+    }
   }
 }

@@ -1,13 +1,13 @@
 <!-- frontend/src/app/pages/my-appointments/my-appointments.html -->
-<div class="p-6">
+<div class="p-4 sm:p-6">
 
-  <div class="mb-6 flex justify-between items-end">
+  <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
     <div>
       <h1 class="text-2xl font-bold text-gray-800">Minhas Consultas</h1>
       <p class="text-gray-500 mt-1">Gerencie e acompanhe seus agendamentos</p>
     </div>
     <button (click)="isScheduling.set(!isScheduling())"
-      class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md">
+      class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md w-full sm:w-auto">
       {{ isScheduling() ? 'Cancelar' : '+ Agendar consulta' }}
     </button>
   </div>
@@ -34,9 +34,9 @@
         <input type="text" formControlName="reason" placeholder="Ex: Consulta inicial"
           class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
       </div>
-      <div class="md:col-span-3 flex justify-end">
+      <div class="md:col-span-3 flex justify-end mt-2">
         <button type="submit" [disabled]="scheduleForm.invalid"
-          class="bg-blue-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition disabled:opacity-50">
+          class="w-full sm:w-auto bg-blue-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
           Agendar
         </button>
       </div>

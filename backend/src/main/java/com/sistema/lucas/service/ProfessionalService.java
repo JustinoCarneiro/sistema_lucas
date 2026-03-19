@@ -69,9 +69,29 @@ public class ProfessionalService {
         Professional professional = repository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
+        if (dto.name() != null && !dto.name().trim().isEmpty()) {
+            professional.setName(dto.name());
+        }
+
+        if (dto.email() != null && !dto.email().trim().isEmpty() && !dto.email().equals(professional.getEmail())) {
+            // Wait, ProfessionalRepository extends JpaRepository<Professional, Long>
+            // We can check if email exists. Professional shares the `users` table via JOIN, but the method existsByEmail?
+            // Wait! Does ProfessionalRepository have existsByEmail? Let's assume it does since we use extends UserRepository or similar, or we can use findByEmail.
+            if (repository.findByEmail(dto.email()).isPresent()) {
+                throw new RuntimeException("Erro: E-mail já cadastrado por outro usuário.");
+            }
+            professional.setEmail(dto.email());
+        }
+
         if (dto.tipoRegistro() != null)    professional.setTipoRegistro(dto.tipoRegistro());
         if (dto.registroConselho() != null) professional.setRegistroConselho(dto.registroConselho());
         if (dto.specialty() != null)        professional.setSpecialty(dto.specialty());
+
+        if (dto.cpf() != null)              professional.setCpf(dto.cpf());
+        if (dto.phone() != null)            professional.setPhone(dto.phone());
+        if (dto.birthDate() != null)        professional.setBirthDate(dto.birthDate());
+        if (dto.gender() != null)           professional.setGender(dto.gender());
+        if (dto.address() != null)          professional.setAddress(dto.address());
 
         if (dto.newPassword() != null && !dto.newPassword().trim().isEmpty()) {
             professional.setPassword(passwordEncoder.encode(dto.newPassword()));
