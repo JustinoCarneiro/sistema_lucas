@@ -38,12 +38,13 @@ public class EmailVerificationService {
 
         String verifyUrl = frontendUrl + "/verify-email?token=" + token;
         
-        String assunto = "Verifique seu e-mail — Sistema Lucas";
+        String assunto = "Verifique seu e-mail — Projeto Lucas";
         String corpo = "<h1>Olá " + user.getName() + "!</h1>" +
-                "<p>Obrigado por se cadastrar no Sistema Lucas. Por favor, clique no link abaixo para verificar seu e-mail:</p>" +
+                "<p>Obrigado por se cadastrar no Projeto Lucas. Por favor, clique no link abaixo para verificar seu e-mail:</p>" +
+                "<br><p>Link expirará em 24 horas.</p>" +
                 "<p><a href=\"" + verifyUrl + "\" style=\"background-color: #1e3a8a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;\">Verificar E-mail</a></p>" +
                 "<p>Se o botão não funcionar, copie e cole este link no seu navegador: <br>" + verifyUrl + "</p>" +
-                "<br><p>Atenciosamente,<br>Equipe Sistema Lucas</p>";
+                "<br><p>Atenciosamente,<br>Equipe Projeto Lucas</p>";
 
         emailService.enviar(user.getEmail(), assunto, corpo);
     }

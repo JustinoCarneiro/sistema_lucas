@@ -90,7 +90,7 @@ public class PasswordResetService {
                     <tr>
                       <td style="background:#1e3a5f;padding:28px 32px;">
                         <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Recuperação de senha</h1>
-                        <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Sistema Lucas — Gestão Clínica</p>
+                        <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Projeto Lucas — Gestão Clínica</p>
                       </td>
                     </tr>
 
@@ -132,6 +132,6 @@ public class PasswordResetService {
             </html>
             """.formatted(nome, link);
 
-        emailService.enviar(email, "Recuperação de senha — Sistema Lucas", html);
+        emailService.enviar(email, "Recuperação de senha — Projeto Lucas", html);
     }
 }

@@ -18,6 +18,6 @@ fi
 
 echo "🚀 Rodando o script de deploy no servidor remoto..."
 
-ssh $SERVER_USER@$SERVER_IP "cd $SERVER_PATH && chmod +x deploy.sh && ./deploy.sh"
+ssh $SERVER_USER@$SERVER_IP "cd $SERVER_PATH && chmod +x deploy.sh && ./deploy.sh && echo '--- LOGS DO BACKEND ---' && sleep 10 && docker logs lucas-api --tail 50"
 
 echo "✨ Processo concluído com sucesso!"

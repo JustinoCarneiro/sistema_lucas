@@ -221,7 +221,7 @@ public class EmailTemplateService {
                     <tr>
                       <td style="background:%s;padding:28px 32px;">
                         <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">%s</h1>
-                        <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Sistema Lucas — Gestão Clínica</p>
+                        <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Projeto Lucas — Gestão Clínica</p>
                       </td>
                     </tr>
 

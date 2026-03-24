@@ -1,11 +1,11 @@
-# Documentação Técnica: Sistema Lucas
+# Documentação Técnica: Projeto Lucas
 
-Esta documentação fornece uma visão detalhada da arquitetura, camadas de segurança e diretrizes de infraestrutura do Sistema Lucas (Prontuário Eletrônico e Gestão Clínica).
+Esta documentação fornece uma visão detalhada da arquitetura, camadas de segurança e diretrizes de infraestrutura do Projeto Lucas (Prontuário Eletrônico e Gestão Clínica).
 
 ---
 
 ## 🚀 1. Visão Geral do Sistema
-O Sistema Lucas é uma plataforma web para gestão de clínicas e consultórios, com foco em segurança de dados sensíveis e conformidade com a LGPD. 
+O Projeto Lucas é uma plataforma web para gestão de clínicas e consultórios, com foco em segurança de dados sensíveis e conformidade com a LGPD. 
 
 ### Perfis de Usuário:
 *   **Admin**: Gestão total de usuários, profissionais e logs.

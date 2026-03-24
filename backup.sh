@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# --- script de backup para o sistema lucas ---
+# --- script de backup para o projeto lucas ---
 # este script gera um dump do banco postgres e mantém os últimos 7 arquivos
 
 BACKUP_DIR="./backups"
