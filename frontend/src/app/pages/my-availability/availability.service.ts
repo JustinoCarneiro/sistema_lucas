@@ -39,6 +39,13 @@ export class AvailabilityService {
     );
   }
 
+  // Paciente — dias da semana que o profissional atende
+  getWorkingDays(professionalId: number) {
+    return this.http.get<string[]>(
+      `${environment.apiUrl}/disponibilidade/${professionalId}/working-days`
+    );
+  }
+
   private parseError(err: HttpErrorResponse): string {
     try {
       const body = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;

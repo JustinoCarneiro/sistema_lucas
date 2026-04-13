@@ -27,8 +27,27 @@ export class MyAppointmentsComponent implements OnInit {
   selectedProfessional = signal<any>(null);
   selectedDate = signal('');
   selectedSlot = signal<any>(null);
+  workingDays = signal<string[]>([]);
+  availableDates = signal<{value: string, label: string}[]>([]);
+  dateErrorMessage = signal('');
 
   scheduleForm: FormGroup;
+
+  dayNames: Record<string, string> = {
+    'MONDAY': 'Segunda-feira',
+    'TUESDAY': 'Terça-feira',
+    'WEDNESDAY': 'Quarta-feira',
+    'THURSDAY': 'Quinta-feira',
+    'FRIDAY': 'Sexta-feira',
+    'SATURDAY': 'Sábado',
+    'SUNDAY': 'Domingo'
+  };
+
+  // Mapeamento JS (0-6) para DayOfWeek (MONDAY-SUNDAY)
+  // JS: 0=Sunday, 1=Monday... 6=Saturday
+  jsToEnum: Record<number, string> = {
+    0: 'SUNDAY', 1: 'MONDAY', 2: 'TUESDAY', 3: 'WEDNESDAY', 4: 'THURSDAY', 5: 'FRIDAY', 6: 'SATURDAY'
+  };
 
   statusLabel: Record<string, string> = {
     AGENDADA: 'Agendada', CONFIRMADA_PROFISSIONAL: 'Aguardando paciente',
@@ -75,21 +94,58 @@ export class MyAppointmentsComponent implements OnInit {
     this.selectedDate.set('');
     this.selectedSlot.set(null);
     this.availableSlots.set([]);
+    this.workingDays.set([]);
+    this.dateErrorMessage.set('');
     this.scheduleForm.patchValue({ date: '', slot: '' });
+
+    if (profId) {
+      this.availabilityService.getWorkingDays(Number(profId)).subscribe({
+        next: (days) => {
+          this.workingDays.set(days);
+          this.generateAvailableDates(days);
+        }
+      });
+    }
+  }
+
+  generateAvailableDates(days: string[]) {
+    const dates: {value: string, label: string}[] = [];
+    const today = new Date();
+    
+    // Gerar para os próximos 30 dias
+    for (let i = 1; i <= 30; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      const dayOfWeekEnum = this.jsToEnum[d.getDay()];
+      
+      if (days.includes(dayOfWeekEnum)) {
+        const value = d.toISOString().split('T')[0];
+        // Formata: "segunda-feira 12/04"
+        const label = d.toLocaleDateString('pt-BR', { 
+          weekday: 'long', 
+          day: '2-digit', 
+          month: '2-digit' 
+        });
+        dates.push({ value, label });
+      }
+    }
+    this.availableDates.set(dates);
   }
 
   onDateChange() {
-    const date = this.scheduleForm.value.date;
+    const dateStr = this.scheduleForm.value.date;
     const profId = this.scheduleForm.value.professionalId;
 
-    if (!date || !profId) return;
+    if (!dateStr || !profId) return;
 
-    this.selectedDate.set(date);
+    // A validação agora é implícita pois o dropdown só tem datas válidas,
+    // mas mantemos o reset de slots e o carregamento.
+    this.dateErrorMessage.set('');
+    this.selectedDate.set(dateStr);
     this.selectedSlot.set(null);
     this.scheduleForm.patchValue({ slot: '' });
     this.isLoadingSlots.set(true);
 
-    this.availabilityService.getSlots(Number(profId), date).subscribe({
+    this.availabilityService.getSlots(Number(profId), dateStr).subscribe({
       next: (slots: any[]) => {
         this.availableSlots.set(slots);
         this.isLoadingSlots.set(false);
@@ -154,5 +210,12 @@ export class MyAppointmentsComponent implements OnInit {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split('T')[0];
+  }
+
+  // Calcula a data máxima para agendamento (1 mês a partir de hoje)
+  get maxDate(): string {
+    const max = new Date();
+    max.setMonth(max.getMonth() + 1);
+    return max.toISOString().split('T')[0];
   }
 }

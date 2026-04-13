@@ -36,6 +36,15 @@ public class AvailabilityService {
         return professionalRepository.findAllById(ids);
     }
 
+    public List<DayOfWeek> getWorkingDays(Long professionalId) {
+        return availabilityRepository.findByProfessionalId(professionalId)
+            .stream()
+            .map(ProfessionalAvailability::getDayOfWeek)
+            .distinct()
+            .sorted()
+            .toList();
+    }
+
     // ─── CRUD ────────────────────────────────────────────────────────────────
 
     @Transactional

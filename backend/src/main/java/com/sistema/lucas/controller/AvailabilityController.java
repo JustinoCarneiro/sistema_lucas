@@ -60,6 +60,12 @@ public class AvailabilityController {
         return ResponseEntity.ok(result);
     }
 
+    // Paciente — buscar dias da semana que o profissional atende
+    @GetMapping("/{professionalId}/working-days")
+    public ResponseEntity<List<DayOfWeek>> getWorkingDays(@PathVariable Long professionalId) {
+        return ResponseEntity.ok(service.getWorkingDays(professionalId));
+    }
+
     // Paciente — buscar slots disponíveis para um profissional em uma data
     @GetMapping("/{professionalId}/slots")
     public ResponseEntity<List<SlotDTO>> slotsDisponiveis(
