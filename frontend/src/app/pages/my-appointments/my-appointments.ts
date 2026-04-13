@@ -3,7 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppointmentService } from '../appointments/appointment.service';
-import { ProfessionalService } from '../professionals/professionals.service';
+import { AvailabilityService } from '../my-availability/availability.service';
 
 @Component({
   selector: 'app-my-appointments',
@@ -14,23 +14,30 @@ import { ProfessionalService } from '../professionals/professionals.service';
 })
 export class MyAppointmentsComponent implements OnInit {
   private appointmentService = inject(AppointmentService);
-  private professionalService = inject(ProfessionalService);
+  private availabilityService = inject(AvailabilityService);
   private fb = inject(FormBuilder);
 
   myAppointments = signal<any[]>([]);
   professionals = signal<any[]>([]);
+  availableSlots = signal<any[]>([]);
   isLoading = signal(true);
   isScheduling = signal(false);
+  isLoadingSlots = signal(false);
+
+  selectedProfessional = signal<any>(null);
+  selectedDate = signal('');
+  selectedSlot = signal<any>(null);
+
   scheduleForm: FormGroup;
 
   statusLabel: Record<string, string> = {
-    AGENDADA: 'Agendada', CONFIRMADA_PACIENTE: 'Aguardando profissional',
+    AGENDADA: 'Agendada', CONFIRMADA_PROFISSIONAL: 'Aguardando paciente',
     CONFIRMADA: 'Confirmada', CONCLUIDA: 'Concluída',
     CANCELADA: 'Cancelada', FALTA: 'Faltou'
   };
 
   statusClass: Record<string, string> = {
-    AGENDADA: 'bg-blue-100 text-blue-700', CONFIRMADA_PACIENTE: 'bg-yellow-100 text-yellow-700',
+    AGENDADA: 'bg-blue-100 text-blue-700', CONFIRMADA_PROFISSIONAL: 'bg-yellow-100 text-yellow-700',
     CONFIRMADA: 'bg-green-100 text-green-700', CONCLUIDA: 'bg-gray-100 text-gray-600',
     CANCELADA: 'bg-red-100 text-red-700', FALTA: 'bg-orange-100 text-orange-700'
   };
@@ -38,7 +45,8 @@ export class MyAppointmentsComponent implements OnInit {
   constructor() {
     this.scheduleForm = this.fb.group({
       professionalId: ['', Validators.required],
-      startTime: ['', Validators.required],
+      date: ['', Validators.required],
+      slot: ['', Validators.required],
       reason: ['']
     });
   }
@@ -54,9 +62,48 @@ export class MyAppointmentsComponent implements OnInit {
   }
 
   loadProfessionals() {
-    this.professionalService.getProfessionals().subscribe({
-      next: (r: any) => this.professionals.set(r.content ?? r ?? [])
+    // Carrega apenas profissionais com disponibilidade configurada
+    this.availabilityService.getProfissionaisDisponiveis().subscribe({
+      next: (r: any) => this.professionals.set(r ?? [])
     });
+  }
+
+  onProfessionalChange() {
+    const profId = this.scheduleForm.value.professionalId;
+    const prof = this.professionals().find((p: any) => p.id == profId);
+    this.selectedProfessional.set(prof || null);
+    this.selectedDate.set('');
+    this.selectedSlot.set(null);
+    this.availableSlots.set([]);
+    this.scheduleForm.patchValue({ date: '', slot: '' });
+  }
+
+  onDateChange() {
+    const date = this.scheduleForm.value.date;
+    const profId = this.scheduleForm.value.professionalId;
+
+    if (!date || !profId) return;
+
+    this.selectedDate.set(date);
+    this.selectedSlot.set(null);
+    this.scheduleForm.patchValue({ slot: '' });
+    this.isLoadingSlots.set(true);
+
+    this.availabilityService.getSlots(Number(profId), date).subscribe({
+      next: (slots: any[]) => {
+        this.availableSlots.set(slots);
+        this.isLoadingSlots.set(false);
+      },
+      error: () => {
+        this.availableSlots.set([]);
+        this.isLoadingSlots.set(false);
+      }
+    });
+  }
+
+  selectSlot(slot: any) {
+    this.selectedSlot.set(slot);
+    this.scheduleForm.patchValue({ slot: slot.startTime });
   }
 
   confirmar(id: number) {
@@ -76,22 +123,36 @@ export class MyAppointmentsComponent implements OnInit {
   }
 
   onSubmitSchedule() {
-    if (this.scheduleForm.valid) {
+    if (this.scheduleForm.valid && this.selectedSlot()) {
+      const slot = this.selectedSlot();
+      const date = this.scheduleForm.value.date;
+
       const payload = {
-        professionalId: Number(this.scheduleForm.value.professionalId), // ✅ cast para número
-        dateTime:       this.scheduleForm.value.startTime + ':00',
-        reason:         this.scheduleForm.value.reason
+        professionalId: Number(this.scheduleForm.value.professionalId),
+        dateTime: `${date}T${slot.startTime}`,
+        reason: this.scheduleForm.value.reason
       };
-  
+
       this.appointmentService.agendarConsulta(payload).subscribe({
         next: () => {
           alert('Consulta agendada com sucesso!');
           this.isScheduling.set(false);
           this.scheduleForm.reset();
+          this.selectedProfessional.set(null);
+          this.selectedDate.set('');
+          this.selectedSlot.set(null);
+          this.availableSlots.set([]);
           this.loadAppointments();
         },
         error: (msg: string) => alert('Erro: ' + msg)
       });
     }
+  }
+
+  // Calcula a data mínima para agendamento (amanhã)
+  get minDate(): string {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
   }
 }

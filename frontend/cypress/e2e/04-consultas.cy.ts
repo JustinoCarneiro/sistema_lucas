@@ -21,7 +21,7 @@ describe('04 — Consultas (Agendamento, Confirmação, Cancelamento)', () => {
     cy.contains('Agendar consulta', { timeout: 10000 }).click();
     cy.contains('Nova consulta').should('be.visible');
     cy.get('select').should('exist'); // Select de profissionais
-    cy.get('input[type="datetime-local"]').should('exist');
+    cy.contains('Escolha o profissional').should('exist');
   });
 
   it('Paciente — consultas exibem labels de status', () => {

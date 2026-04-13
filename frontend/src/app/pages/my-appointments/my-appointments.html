@@ -12,36 +12,88 @@
     </button>
   </div>
 
+  <!-- ══════════ FORMULÁRIO DE AGENDAMENTO GUIADO ══════════ -->
   <div *ngIf="isScheduling()"
     class="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
     <h2 class="text-base font-semibold text-gray-700 mb-4">Nova consulta</h2>
-    <form [formGroup]="scheduleForm" (ngSubmit)="onSubmitSchedule()" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Profissional</label>
-        <select formControlName="professionalId"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          <option value="">Selecione...</option>
-          <option *ngFor="let p of professionals()" [value]="p.id">{{ p.name }}</option>
+    <form [formGroup]="scheduleForm" (ngSubmit)="onSubmitSchedule()">
+
+      <!-- Etapa 1: Selecionar profissional -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">1. Escolha o profissional</label>
+        <select formControlName="professionalId" (change)="onProfessionalChange()"
+          class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <option value="">Selecione um profissional...</option>
+          <option *ngFor="let p of professionals()" [value]="p.id">
+            {{ p.name }} {{ p.specialty ? '— ' + p.specialty : '' }}
+          </option>
         </select>
+        <p *ngIf="professionals().length === 0" class="text-xs text-orange-500 mt-1">
+          Nenhum profissional disponível no momento.
+        </p>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Data e hora</label>
-        <input type="datetime-local" formControlName="startTime"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+
+      <!-- Etapa 2: Selecionar data -->
+      <div *ngIf="selectedProfessional()" class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">2. Escolha a data</label>
+        <input type="date" formControlName="date" (change)="onDateChange()" [min]="minDate"
+          class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+
+      <!-- Etapa 3: Selecionar horário -->
+      <div *ngIf="selectedDate()" class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">3. Escolha o horário disponível</label>
+
+        <div *ngIf="isLoadingSlots()" class="text-sm text-gray-400 py-4 animate-pulse">
+          Buscando horários disponíveis...
+        </div>
+
+        <div *ngIf="!isLoadingSlots() && availableSlots().length === 0"
+          class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-sm text-orange-700">
+          <p class="font-medium">Nenhum horário disponível nesta data.</p>
+          <p class="text-xs mt-1">O profissional pode não atender neste dia da semana ou os horários já estão ocupados.</p>
+        </div>
+
+        <div *ngIf="!isLoadingSlots() && availableSlots().length > 0" class="flex flex-wrap gap-2">
+          <button *ngFor="let slot of availableSlots()" type="button"
+            (click)="selectSlot(slot)"
+            class="px-4 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200"
+            [ngClass]="selectedSlot()?.startTime === slot.startTime
+              ? 'bg-blue-900 text-white border-blue-900 shadow-md'
+              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'">
+            {{ slot.startTime.substring(0, 5) }} – {{ slot.endTime.substring(0, 5) }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Motivo (opcional) -->
+      <div *ngIf="selectedSlot()" class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Motivo (opcional)</label>
         <input type="text" formControlName="reason" placeholder="Ex: Consulta inicial"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
       </div>
-      <div class="md:col-span-3 flex justify-end mt-2">
-        <button type="submit" [disabled]="scheduleForm.invalid"
+
+      <!-- Resumo e botão de confirmação -->
+      <div *ngIf="selectedSlot()"
+        class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+        <p class="text-sm font-semibold text-blue-900 mb-1">Resumo do agendamento</p>
+        <p class="text-sm text-blue-700">
+          <span class="font-medium">{{ selectedProfessional()?.name }}</span>
+          · {{ selectedDate() | date:'dd/MM/yyyy' }}
+          · {{ selectedSlot()?.startTime?.substring(0, 5) }} – {{ selectedSlot()?.endTime?.substring(0, 5) }}
+        </p>
+      </div>
+
+      <div *ngIf="selectedSlot()" class="flex justify-end">
+        <button type="submit"
           class="w-full sm:w-auto bg-blue-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
-          Agendar
+          Confirmar agendamento
         </button>
       </div>
     </form>
   </div>
+
+  <!-- ══════════ LISTA DE CONSULTAS ══════════ -->
 
   <div *ngIf="isLoading()" class="text-center text-gray-400 py-10 animate-pulse">
     Carregando consultas...
@@ -73,27 +125,34 @@
           <span class="font-medium">{{ c.professionalName }}</span>
           <span *ngIf="c.reason"> · {{ c.reason }}</span>
         </p>
-        <p *ngIf="!c.podeConfirmarOuCancelar && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PACIENTE')"
+        <p *ngIf="!c.podeConfirmarOuCancelar && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL')"
           class="text-xs text-orange-500 mt-1">
           ⚠️ Prazo de confirmação/cancelamento encerrado (menos de 24h)
         </p>
       </div>
-      <div class="flex gap-2 flex-shrink-0 flex-wrap">
-        <button *ngIf="c.status === 'AGENDADA' && c.podeConfirmarOuCancelar"
+      <div class="flex gap-2 shrink-0 flex-wrap">
+        <!-- Paciente confirma — só quando profissional já confirmou -->
+        <button *ngIf="c.status === 'CONFIRMADA_PROFISSIONAL' && c.podeConfirmarOuCancelar"
           (click)="confirmar(c.id)"
           class="text-sm font-medium px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition">
           Confirmar presença
         </button>
-        <span *ngIf="c.status === 'CONFIRMADA_PACIENTE'"
-          class="text-sm text-yellow-600 font-medium px-4 py-2 rounded-lg bg-yellow-50 border border-yellow-200">
+
+        <!-- Aguardando profissional -->
+        <span *ngIf="c.status === 'AGENDADA'"
+          class="text-sm text-blue-600 font-medium px-4 py-2 rounded-lg bg-blue-50 border border-blue-200">
           Aguardando profissional
         </span>
+
+        <!-- Confirmada -->
         <span *ngIf="c.status === 'CONFIRMADA'"
           class="text-sm text-green-600 font-medium px-4 py-2 rounded-lg bg-green-50 border border-green-200">
           ✓ Confirmada
         </span>
+
+        <!-- Cancelar -->
         <button
-          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PACIENTE') && c.podeConfirmarOuCancelar"
+          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL') && c.podeConfirmarOuCancelar"
           (click)="cancelar(c.id)"
           class="text-sm font-medium px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition">
           Cancelar
@@ -101,4 +160,5 @@
       </div>
     </div>
   </div>
+
 </div>

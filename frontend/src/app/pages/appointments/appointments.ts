@@ -26,8 +26,9 @@ export class Appointments implements OnInit {
   }
 
   statusLabel: Record<string, string> = {
-    AGENDADA: 'Agendada', CONFIRMADA_PACIENTE: 'Aguardando profissional',
-    CONFIRMADA: 'Confirmada', CONCLUIDA: 'Concluída',
+    'AGENDADA': 'Agendada',
+    'CONFIRMADA_PROFISSIONAL': 'Aguardando paciente',
+    'CONFIRMADA': 'Confirmada', CONCLUIDA: 'Concluída',
     CANCELADA: 'Cancelada', FALTA: 'Faltou'
   };
 

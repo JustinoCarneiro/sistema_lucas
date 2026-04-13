@@ -27,7 +27,7 @@ public record AppointmentResponseDTO(
             // ✅ pode agir se faltam mais de 24h E o status permite
             LocalDateTime.now().isBefore(app.getDateTime().minusHours(24))
                 && (app.getStatus() == StatusConsulta.AGENDADA
-                    || app.getStatus() == StatusConsulta.CONFIRMADA_PACIENTE)
+                    || app.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL)
         );
     }
 }

@@ -12,7 +12,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Configuration
 public class DataInitializer implements CommandLineRunner {
@@ -23,6 +25,7 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private ProntuarioRepository prontuarioRepository;
     @Autowired private DocumentoRepository documentoRepository;
+    @Autowired private ProfessionalAvailabilityRepository availabilityRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
@@ -42,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEmail("admin@clinica.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setRole(Role.ADMIN);
+            admin.setVerified(true);
             userRepository.save(admin);
 
             // ─── PROFISSIONAIS ───────────────────────────────────────────────
@@ -52,6 +56,7 @@ public class DataInitializer implements CommandLineRunner {
             ana.setEmail("ana@clinica.com");
             ana.setPassword(passwordEncoder.encode("123456"));
             ana.setRole(Role.PROFESSIONAL);
+            ana.setVerified(true);
             ana.setTipoRegistro(TipoRegistro.CRP);
             ana.setRegistroConselho("CRP-06 123456");
             ana.setSpecialty("Psicologia Clínica");
@@ -63,10 +68,34 @@ public class DataInitializer implements CommandLineRunner {
             carlos.setEmail("carlos@clinica.com");
             carlos.setPassword(passwordEncoder.encode("123456"));
             carlos.setRole(Role.PROFESSIONAL);
+            carlos.setVerified(true);
             carlos.setTipoRegistro(TipoRegistro.CRM);
             carlos.setRegistroConselho("CRM-SP 654321");
             carlos.setSpecialty("Psiquiatria");
             professionalRepository.save(carlos);
+
+            // ─── DISPONIBILIDADE DOS PROFISSIONAIS ──────────────────────────
+
+            // Dra. Ana: Segunda a Sexta, 08:00–12:00 e 14:00–18:00
+            for (DayOfWeek day : new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY}) {
+                // Manhã
+                ProfessionalAvailability manha = new ProfessionalAvailability();
+                manha.setProfessional(ana);
+                manha.setDayOfWeek(day);
+                manha.setStartTime(LocalTime.of(8, 0));
+                manha.setEndTime(LocalTime.of(12, 0));
+                availabilityRepository.save(manha);
+            }
+
+            // Dr. Carlos: Segunda, Quarta e Sexta, 09:00–17:00
+            for (DayOfWeek day : new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY}) {
+                ProfessionalAvailability disp = new ProfessionalAvailability();
+                disp.setProfessional(carlos);
+                disp.setDayOfWeek(day);
+                disp.setStartTime(LocalTime.of(9, 0));
+                disp.setEndTime(LocalTime.of(17, 0));
+                availabilityRepository.save(disp);
+            }
 
             // ─── PACIENTES ───────────────────────────────────────────────────
 
@@ -75,6 +104,7 @@ public class DataInitializer implements CommandLineRunner {
             lucas.setEmail("lucas@email.com");
             lucas.setPassword(passwordEncoder.encode("123456"));
             lucas.setRole(Role.PATIENT);
+            lucas.setVerified(true);
             lucas.setCpf("111.222.333-44");
             lucas.setPhone("11888889999");
             patientRepository.save(lucas);
@@ -84,6 +114,7 @@ public class DataInitializer implements CommandLineRunner {
             maria.setEmail("maria@email.com");
             maria.setPassword(passwordEncoder.encode("123456"));
             maria.setRole(Role.PATIENT);
+            maria.setVerified(true);
             maria.setCpf("222.333.444-55");
             maria.setPhone("11999998888");
             patientRepository.save(maria);
@@ -93,6 +124,7 @@ public class DataInitializer implements CommandLineRunner {
             joao.setEmail("joao@email.com");
             joao.setPassword(passwordEncoder.encode("123456"));
             joao.setRole(Role.PATIENT);
+            joao.setVerified(true);
             joao.setCpf("333.444.555-66");
             joao.setPhone("11999990003");
             patientRepository.save(joao);
@@ -110,13 +142,13 @@ public class DataInitializer implements CommandLineRunner {
 
             // Hoje — para testar a agenda do profissional
             Appointment c6 = new Appointment(ana, lucas, agora.withHour(9).withMinute(0).withSecond(0), "Sessão semanal", StatusConsulta.CONFIRMADA);
-            Appointment c7 = new Appointment(ana, maria, agora.withHour(11).withMinute(0).withSecond(0), "Retorno", StatusConsulta.CONFIRMADA_PACIENTE);
-            Appointment c8 = new Appointment(carlos, joao, agora.withHour(14).withMinute(30).withSecond(0), "Consulta de rotina", StatusConsulta.AGENDADA);
+            Appointment c7 = new Appointment(ana, maria, agora.withHour(11).withMinute(0).withSecond(0), "Retorno", StatusConsulta.CONFIRMADA_PROFISSIONAL);
+            Appointment c8 = new Appointment(carlos, joao, agora.withHour(14).withMinute(0).withSecond(0), "Consulta de rotina", StatusConsulta.AGENDADA);
 
             // Futuras — para testar confirmação e lembrete
             Appointment c9  = new Appointment(ana, lucas, agora.plusDays(7).withHour(10).withMinute(0).withSecond(0), "Sessão de acompanhamento", StatusConsulta.AGENDADA);
             Appointment c10 = new Appointment(ana, maria, agora.plusDays(3).withHour(15).withMinute(0).withSecond(0), "Retorno quinzenal", StatusConsulta.AGENDADA);
-            Appointment c11 = new Appointment(carlos, lucas, agora.plusDays(14).withHour(9).withMinute(0).withSecond(0), "Revisão de medicação", StatusConsulta.CONFIRMADA_PACIENTE);
+            Appointment c11 = new Appointment(carlos, lucas, agora.plusDays(14).withHour(9).withMinute(0).withSecond(0), "Revisão de medicação", StatusConsulta.CONFIRMADA_PROFISSIONAL);
 
             // Cancelada — para testar status CANCELADA
             Appointment c12 = new Appointment(ana, joao, agora.plusDays(2).withHour(16).withMinute(0).withSecond(0), "Consulta inicial", StatusConsulta.CANCELADA);

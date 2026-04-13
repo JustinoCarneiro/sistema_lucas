@@ -1,0 +1,112 @@
+<!-- frontend/src/app/pages/my-availability/my-availability.html -->
+<div class="p-4 sm:p-6 max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Minha Disponibilidade</h1>
+    <p class="text-gray-500 mt-1">Configure os dias e horários em que você atende. Cada consulta ocupa 1 hora.</p>
+  </div>
+
+  <!-- Feedback -->
+  <div *ngIf="successMessage()"
+    class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 animate-fade-in">
+    <span>✅</span> {{ successMessage() }}
+  </div>
+  <div *ngIf="errorMessage()"
+    class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 animate-fade-in">
+    <span>❌</span> {{ errorMessage() }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="text-center text-gray-400 py-20 animate-pulse">
+    Carregando disponibilidade...
+  </div>
+
+  <!-- Resumo -->
+  <div *ngIf="!isLoading()" class="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+    <div class="bg-blue-900 text-white w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0">
+      {{ enabledDaysCount }}
+    </div>
+    <div>
+      <p class="text-sm font-semibold text-blue-900">
+        {{ enabledDaysCount === 0 ? 'Nenhum dia configurado' : enabledDaysCount === 1 ? '1 dia configurado' : enabledDaysCount + ' dias configurados' }}
+      </p>
+      <p class="text-xs text-blue-600">Seus pacientes verão apenas os dias e horários marcados abaixo.</p>
+    </div>
+  </div>
+
+  <!-- Grid de dias -->
+  <div *ngIf="!isLoading()" class="space-y-4">
+
+    <div *ngFor="let day of days"
+      class="bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-300"
+      [ngClass]="day.enabled ? 'border-blue-200' : 'border-gray-200 opacity-70'">
+
+      <!-- Cabeçalho do dia -->
+      <div class="flex items-center justify-between px-5 py-4 cursor-pointer"
+        (click)="toggleDay(day)">
+        <div class="flex items-center gap-3">
+          <!-- Toggle -->
+          <div class="w-11 h-6 rounded-full transition-colors duration-300 relative"
+            [ngClass]="day.enabled ? 'bg-blue-900' : 'bg-gray-300'">
+            <div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300"
+              [ngClass]="day.enabled ? 'translate-x-5' : 'translate-x-0.5'"></div>
+          </div>
+          <span class="font-semibold text-gray-800">{{ day.label }}</span>
+          <span *ngIf="day.saved" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+            Salvo
+          </span>
+        </div>
+        <span *ngIf="day.enabled && day.slots.length > 0" class="text-xs text-gray-400">
+          {{ day.slots.length }} {{ day.slots.length === 1 ? 'slot' : 'slots' }}
+        </span>
+      </div>
+
+      <!-- Configuração (expandido quando habilitado) -->
+      <div *ngIf="day.enabled" class="px-5 pb-5 border-t border-gray-100 pt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Início</label>
+            <input type="time" [(ngModel)]="day.startTime" (ngModelChange)="onTimeChange(day)"
+              class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Fim</label>
+            <input type="time" [(ngModel)]="day.endTime" (ngModelChange)="onTimeChange(day)"
+              class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+        </div>
+
+        <!-- Preview de slots -->
+        <div *ngIf="day.slots.length > 0" class="mb-4">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Horários gerados (1h cada)</p>
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let slot of day.slots"
+              class="bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200">
+              {{ slot }}
+            </span>
+          </div>
+        </div>
+
+        <div *ngIf="day.slots.length === 0" class="mb-4">
+          <p class="text-xs text-orange-500 font-medium">
+            ⚠️ A janela precisa ter pelo menos 1 hora para gerar slots.
+          </p>
+        </div>
+
+        <!-- Ações -->
+        <div class="flex gap-2 flex-wrap">
+          <button (click)="salvarDia(day)" [disabled]="isSaving() || day.slots.length === 0"
+            class="bg-blue-900 hover:bg-blue-800 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50">
+            {{ day.saved ? 'Atualizar' : 'Salvar' }}
+          </button>
+          <button *ngIf="day.saved" (click)="removerDia(day)"
+            class="bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 border border-gray-200 text-sm font-medium px-5 py-2.5 rounded-xl transition">
+            Remover dia
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

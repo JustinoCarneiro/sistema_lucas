@@ -50,7 +50,7 @@
         class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition">
 
         <div class="flex items-center gap-4 flex-1">
-          <div class="bg-blue-900 text-white px-4 py-3 rounded-xl font-bold text-lg flex-shrink-0">
+          <div class="bg-blue-900 text-white px-4 py-3 rounded-xl font-bold text-lg shrink-0">
             {{ app.startTime | date:'HH:mm' }}
           </div>
           <div>
@@ -63,20 +63,21 @@
           </div>
         </div>
 
-        <div class="flex gap-2 flex-shrink-0 flex-wrap">
-          <button *ngIf="app.status === 'CONFIRMADA_PACIENTE'"
+        <div class="flex gap-2 shrink-0 flex-wrap">
+          <!-- Confirmar — profissional confirma quando status é AGENDADA -->
+          <button *ngIf="app.status === 'AGENDADA'"
             (click)="confirmarConsulta(app)"
             class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-2 rounded-lg font-medium text-sm transition">
             Confirmar
           </button>
           <button
-            *ngIf="app.status === 'AGENDADA' || app.status === 'CONFIRMADA_PACIENTE' || app.status === 'CONFIRMADA'"
+            *ngIf="app.status === 'AGENDADA' || app.status === 'CONFIRMADA_PROFISSIONAL' || app.status === 'CONFIRMADA'"
             (click)="iniciarAtendimento(app)"
             class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium text-sm transition">
             Iniciar atendimento
           </button>
           <button
-            *ngIf="app.status === 'AGENDADA' || app.status === 'CONFIRMADA_PACIENTE' || app.status === 'CONFIRMADA'"
+            *ngIf="app.status === 'AGENDADA' || app.status === 'CONFIRMADA_PROFISSIONAL' || app.status === 'CONFIRMADA'"
             (click)="marcarFalta(app)"
             class="bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 border border-gray-200 px-4 py-2 rounded-lg font-medium text-sm transition">
             Paciente faltou
@@ -96,7 +97,7 @@
     <div *ngIf="!isLoadingProximas() && proximasConsultas().length === 0"
       class="bg-gray-50 border-2 border-dashed border-gray-200 p-16 rounded-2xl text-center">
       <div class="text-5xl mb-4">✅</div>
-      <p class="text-gray-500 text-lg font-medium">Nenhuma consulta futura pendente de confirmação.</p>
+      <p class="text-gray-500 text-lg font-medium">Nenhuma consulta futura pendente.</p>
     </div>
 
     <div *ngIf="!isLoadingProximas() && proximasConsultas().length > 0" class="space-y-4">
@@ -104,7 +105,7 @@
         class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition">
 
         <div class="flex items-center gap-4 flex-1">
-          <div class="bg-gray-100 text-gray-700 px-4 py-3 rounded-xl font-bold text-sm flex-shrink-0 text-center">
+          <div class="bg-gray-100 text-gray-700 px-4 py-3 rounded-xl font-bold text-sm shrink-0 text-center">
             <div>{{ app.startTime | date:'dd/MM' }}</div>
             <div class="text-xs font-normal">{{ app.startTime | date:'HH:mm' }}</div>
           </div>
@@ -118,19 +119,13 @@
           </div>
         </div>
 
-        <div class="flex gap-2 flex-shrink-0">
-          <!-- Confirmar — só quando paciente já confirmou -->
-          <button *ngIf="app.status === 'CONFIRMADA_PACIENTE'"
+        <div class="flex gap-2 shrink-0">
+          <!-- Confirmar — profissional confirma quando status é AGENDADA -->
+          <button *ngIf="app.status === 'AGENDADA'"
             (click)="confirmarConsulta(app)"
             class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-2 rounded-lg font-medium text-sm transition">
             Confirmar
           </button>
-
-          <!-- Aguardando paciente -->
-          <span *ngIf="app.status === 'AGENDADA'"
-            class="text-sm text-gray-500 font-medium px-4 py-2 rounded-lg bg-gray-50 border border-gray-200">
-            Aguardando paciente
-          </span>
         </div>
       </div>
     </div>

@@ -6,12 +6,12 @@
 
   <!-- Sidebar -->
   <aside
-    class="w-64 flex-shrink-0 bg-blue-950 text-white flex flex-col shadow-2xl fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:relative lg:translate-x-0"
+    class="w-64 shrink-0 bg-blue-950 text-white flex flex-col shadow-2xl fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:relative lg:translate-x-0"
     [class.-translate-x-full]="!isSidebarOpen">
 
     <!-- Logo -->
     <div class="p-6 border-b border-blue-900 flex items-center gap-3 whitespace-nowrap">
-      <div class="w-10 h-10 overflow-hidden rounded-lg shadow-lg flex-shrink-0">
+      <div class="w-10 h-10 overflow-hidden rounded-lg shadow-lg shrink-0">
         <img src="logo.jpeg" alt="Logo" class="w-full h-full object-cover">
       </div>
       <div class="overflow-hidden">
@@ -81,6 +81,17 @@
               d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
           Início
+        </a>
+
+        <a routerLink="/panel/my-availability" routerLinkActive="bg-blue-800 text-white shadow-md"
+          (click)="closeSidebar()"
+          class="flex items-center gap-3 py-3 px-3 rounded-xl text-blue-100 hover:bg-blue-900 hover:text-white transition-all duration-200 font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-75" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Minha Disponibilidade
         </a>
 
         <a routerLink="/panel/professional-appointments" routerLinkActive="bg-blue-800 text-white shadow-md"
@@ -188,21 +199,20 @@
 
   <!-- Conteúdo principal -->
   <main class="flex-1 h-screen overflow-y-auto bg-gray-50/50 relative w-full">
-    <header
-      class="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-8 sticky top-0 z-10 w-full relative">
-      <button (click)="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-700 mr-4">
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-8 sticky top-0 z-10 w-full">
+      <button (click)="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-700 mr-4 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
       <!-- User / Branding on mobile to fill space -->
-      <span class="lg:hidden text-lg font-bold text-blue-900 absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+      <span class="lg:hidden text-lg font-bold text-blue-900 absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
         <img src="logo.jpeg" alt="Logo" class="w-6 h-6 rounded">
         Projeto Lucas
       </span>
 
-      <!-- Date string wrapped securely -->
+      <!-- Date string -->
       <span class="text-sm font-medium text-gray-500 ml-auto hidden sm:block">
         {{ today | date:'mediumDate' }}
       </span>

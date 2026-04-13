@@ -58,9 +58,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Long countByStatus(StatusConsulta status);
 
     // ✅ Consultas para lembrete — agendadas/confirmadas no intervalo informado
-    @Query("SELECT a FROM Appointment a WHERE a.dateTime >= :inicio AND a.dateTime < :fim AND a.status IN ('AGENDADA', 'CONFIRMADA_PACIENTE', 'CONFIRMADA')")
+    @Query("SELECT a FROM Appointment a WHERE a.dateTime >= :inicio AND a.dateTime < :fim AND a.status IN ('AGENDADA', 'CONFIRMADA_PROFISSIONAL', 'CONFIRMADA')")
     List<Appointment> findConsultasParaLembrete(
         @Param("inicio") LocalDateTime inicio,
         @Param("fim") LocalDateTime fim
+    );
+
+    // ✅ Buscar consultas de um profissional em um intervalo, excluindo canceladas (para validar conflitos)
+    @Query("SELECT a FROM Appointment a WHERE a.professional.id = :profId AND a.dateTime >= :inicio AND a.dateTime < :fim AND a.status <> :statusExcluido")
+    List<Appointment> findByProfessionalIdAndDateTimeBetweenAndStatusNot(
+        @Param("profId") Long professionalId,
+        @Param("inicio") LocalDateTime inicio,
+        @Param("fim") LocalDateTime fim,
+        @Param("statusExcluido") StatusConsulta status
     );
 }

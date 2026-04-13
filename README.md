@@ -50,6 +50,12 @@ A segurança é o pilar central do Sistema Lucas, implementada em múltiplas cam
 ---
 
 ## 🆕 4. Novas Funcionalidades
+*   **Gestão de Disponibilidade Profissional**: Interface intuitiva para profissionais configurarem seus dias e horários de trabalho semanais, com geração automática de slots de 1h.
+*   **Fluxo de Agendamento Guiado**: Pacientes visualizam apenas profissionais com disponibilidade configurada, escolhendo data e hora em tempo real.
+*   **Ciclo de Confirmação Invertido**: Segurança reforçada onde o agendamento passa pelos estados:
+    1.  `AGENDADA` (Aguardando profissional)
+    2.  `CONFIRMADA_PROFISSIONAL` (Aguardando paciente)
+    3.  `CONFIRMADA` (Presença confirmada por ambas as partes)
 *   **Registro de Pacientes**: Formulário completo com máscaras (CPF, WhatsApp) e validação em tempo real.
 *   **Verificação de E-mail**: Integração com Mailtrap/SMTP para validação segura de novas contas.
 *   **Notificações In-page**: Feedback de sucesso e erro via Signals, eliminando alertas pop-up intrusivos.
@@ -64,20 +70,26 @@ O projeto está pronto para produção com suporte a builds internos seguros.
 *   **`deploy.sh`**: Realiza o build **dentro do Docker** (multi-stage). Compila o Java e o Angular em ambientes isolados e atualiza os containers.
 *   **`push-and-deploy.sh`**: Script para desenvolvedores. Envia as alterações via `rsync` para o servidor e dispara o `deploy.sh` via SSH.
 
-### Como rodar localmente:
-1.  Configure o arquivo `.env` com suas credenciais.
-2.  Execute `docker compose up -d --build`.
+### Como rodar localmente (Desenvolvimento):
+1.  Configure o arquivo `.env.dev` com as credenciais locais.
+2.  Execute `docker compose --env-file .env.dev up -d --build`.
+3.  O frontend estará disponível em `http://localhost:8082` e o backend em `http://localhost:8081`.
 
 ---
 
 ## ✅ 6. Qualidade e Testes
-O sistema conta com uma suite de testes automatizados de ponta a ponta:
+O sistema conta com uma suíte robusta de testes automatizados:
 *   **Cypress (E2E)**: Localizado em `frontend/cypress/e2e/`. 
-    *   Cobre registro de sucesso, validações de erro, exibição de banner e fluxo de callback de verificação.
+    *   **11-disponibilidade**: Valida toda a configuração de grade horária do profissional.
+    *   **12-agendamento-confirmacao**: Testa o ciclo completo de reserva e o fluxo de confirmações mútua.
+    *   **Autenticação**: Cobre registro, login e proteção de rotas.
 *   **JUnit (Integração)**: Localizado em `backend/src/test/`.
-    *   Cobre endpoints de autenticação e lógica de tokens.
+    *   Cobre endpoints de autenticação, lógica de disponibilidade e criptografia AES.
 
 ---
 
 > [!TIP]
+> Para rodar os testes E2E localmente, certifique-se de que o container está rodando e execute `npm run cypress:open` ou `npm run cypress:run` na pasta `frontend`.
+
+> [!IMPORTANT]
 > Em produção, certifique-se de configurar o **Nginx** como proxy reverso para lidar com SSL (HTTPS) e redirecionamento de portas.

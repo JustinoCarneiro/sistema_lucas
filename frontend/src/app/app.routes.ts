@@ -17,6 +17,7 @@ import { DashboardComponent } from './pages/dashboard/dashboard';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password';
 import { VerifyEmail } from './pages/verify-email/verify-email';
+import { MyAvailabilityComponent } from './pages/my-availability/my-availability';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: 'document-management', component: DocumentManagementComponent },
       { path: 'my-profile', component: MyProfileComponent },
       { path: 'professional-appointments', component: ProfessionalAppointmentsComponent },
+      { path: 'my-availability', component: MyAvailabilityComponent },
       { path: 'medical-record/:id', component: MedicalRecordComponent },
       { path: 'dashboard', component: DashboardComponent }
     ]

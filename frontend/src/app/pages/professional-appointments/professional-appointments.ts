@@ -23,21 +23,21 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   today = new Date();
 
   statusLabel: Record<string, string> = {
-    AGENDADA:            'Agendada',
-    CONFIRMADA_PACIENTE: 'Confirmada pelo paciente',
-    CONFIRMADA:          'Confirmada',
-    CONCLUIDA:           'Concluída',
-    CANCELADA:           'Cancelada',
-    FALTA:               'Faltou'
+    AGENDADA:                'Agendada',
+    CONFIRMADA_PROFISSIONAL: 'Aguardando paciente',
+    CONFIRMADA:              'Confirmada',
+    CONCLUIDA:               'Concluída',
+    CANCELADA:               'Cancelada',
+    FALTA:                   'Faltou'
   };
 
   statusClass: Record<string, string> = {
-    AGENDADA:            'bg-blue-100 text-blue-700',
-    CONFIRMADA_PACIENTE: 'bg-yellow-100 text-yellow-700',
-    CONFIRMADA:          'bg-green-100 text-green-700',
-    CONCLUIDA:           'bg-gray-100 text-gray-600',
-    CANCELADA:           'bg-red-100 text-red-700',
-    FALTA:               'bg-orange-100 text-orange-700'
+    AGENDADA:                'bg-blue-100 text-blue-700',
+    CONFIRMADA_PROFISSIONAL: 'bg-yellow-100 text-yellow-700',
+    CONFIRMADA:              'bg-green-100 text-green-700',
+    CONCLUIDA:               'bg-gray-100 text-gray-600',
+    CANCELADA:               'bg-red-100 text-red-700',
+    FALTA:                   'bg-orange-100 text-orange-700'
   };
 
   ngOnInit() {
@@ -60,7 +60,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
         // Filtra apenas futuras com status que permitem ação
         const futuras = data.filter((c: any) =>
           new Date(c.startTime) > new Date() &&
-          (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PACIENTE')
+          (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL')
         );
         this.proximasConsultas.set(futuras);
         this.isLoadingProximas.set(false);
