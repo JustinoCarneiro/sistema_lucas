@@ -1,0 +1,51 @@
+# Version Control
+.git/
+.gitignore
+.gitattributes
+
+# IDEs and Editors
+.vscode/
+.idea/
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+
+# Frontend (Angular/Node)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/package-lock.json
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+frontend/coverage/
+
+# Backend (Maven/Java)
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/*.jar
+
+# Documentation & Help (Optional, usually large/static)
+backend/HELP.md
+frontend/README.md
+
+# Logs and Temporary Files
+*.log
+*.tmp
+backups/
+tmp/
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/

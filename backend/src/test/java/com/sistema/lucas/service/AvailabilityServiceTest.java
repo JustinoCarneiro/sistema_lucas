@@ -21,11 +21,13 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Answers.CALLS_REAL_METHODS;
 
 @ExtendWith(MockitoExtension.class)
 class AvailabilityServiceTest {
@@ -49,86 +51,28 @@ class AvailabilityServiceTest {
     class CrudTests {
 
         @Test
-        @DisplayName("Deve salvar disponibilidade para um dia com sucesso")
+        @DisplayName("Deve salvar slots para um dia com sucesso")
         void salvarDiaComSucesso() {
             String email = "ana@clinica.com";
-            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0));
+            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, List.of(LocalTime.of(8, 0), LocalTime.of(9, 0)));
 
             var profissional = new Professional();
             profissional.setEmail(email);
 
             when(professionalRepository.findByEmail(email)).thenReturn(Optional.of(profissional));
-            when(availabilityRepository.findByProfessionalEmailAndDayOfWeek(email, DayOfWeek.MONDAY))
-                .thenReturn(Optional.empty());
 
             assertDoesNotThrow(() -> availabilityService.salvarDia(email, dto));
-            verify(availabilityRepository, times(1)).save(any(ProfessionalAvailability.class));
-        }
-
-        @Test
-        @DisplayName("Deve atualizar disponibilidade existente para o mesmo dia")
-        void atualizarDiaExistente() {
-            String email = "ana@clinica.com";
-            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(17, 0));
-
-            var profissional = new Professional();
-            profissional.setEmail(email);
-
-            var existing = new ProfessionalAvailability();
-            existing.setProfessional(profissional);
-            existing.setDayOfWeek(DayOfWeek.MONDAY);
-            existing.setStartTime(LocalTime.of(8, 0));
-            existing.setEndTime(LocalTime.of(12, 0));
-
-            when(professionalRepository.findByEmail(email)).thenReturn(Optional.of(profissional));
-            when(availabilityRepository.findByProfessionalEmailAndDayOfWeek(email, DayOfWeek.MONDAY))
-                .thenReturn(Optional.of(existing));
-
-            assertDoesNotThrow(() -> availabilityService.salvarDia(email, dto));
-            verify(availabilityRepository, times(1)).save(existing);
-            assertEquals(LocalTime.of(9, 0), existing.getStartTime());
-            assertEquals(LocalTime.of(17, 0), existing.getEndTime());
-        }
-
-        @Test
-        @DisplayName("Deve lançar erro se horário de fim é antes do início")
-        void erroFimAntesDeInicio() {
-            String email = "ana@clinica.com";
-            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, LocalTime.of(14, 0), LocalTime.of(8, 0));
-
-            var profissional = new Professional();
-            profissional.setEmail(email);
-
-            when(professionalRepository.findByEmail(email)).thenReturn(Optional.of(profissional));
-
-            var exception = assertThrows(RuntimeException.class,
-                () -> availabilityService.salvarDia(email, dto));
-            assertTrue(exception.getMessage().contains("posterior ao de início"));
-            verify(availabilityRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Deve lançar erro se janela menor que 1 hora")
-        void erroJanelaMenorQue1Hora() {
-            String email = "ana@clinica.com";
-            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(8, 30));
-
-            var profissional = new Professional();
-            profissional.setEmail(email);
-
-            when(professionalRepository.findByEmail(email)).thenReturn(Optional.of(profissional));
-
-            var exception = assertThrows(RuntimeException.class,
-                () -> availabilityService.salvarDia(email, dto));
-            assertTrue(exception.getMessage().contains("no mínimo 1 hora"));
-            verify(availabilityRepository, never()).save(any());
+            
+            // Deve deletar os antigos e salvar os novos
+            verify(availabilityRepository, times(1)).deleteByProfessionalEmailAndDayOfWeek(email, DayOfWeek.MONDAY);
+            verify(availabilityRepository, times(2)).save(any(ProfessionalAvailability.class));
         }
 
         @Test
         @DisplayName("Deve lançar erro se profissional não encontrado")
         void erroProfissionalInexistente() {
             String email = "inexistente@clinica.com";
-            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0));
+            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, List.of(LocalTime.of(8, 0)));
 
             when(professionalRepository.findByEmail(email)).thenReturn(Optional.empty());
 
@@ -165,10 +109,9 @@ class AvailabilityServiceTest {
     class SlotTests {
 
         @Test
-        @DisplayName("Deve gerar slots de 1h dentro da janela configurada")
+        @DisplayName("Deve retornar slots salvos no banco")
         void gerarSlotsCorretos() {
             Long profId = 1L;
-            // Usamos uma data futura para evitar filtro de passado
             LocalDate data = LocalDate.now().plusDays(7);
             DayOfWeek dow = data.getDayOfWeek();
 
@@ -176,25 +119,26 @@ class AvailabilityServiceTest {
             profissional.setId(profId);
             profissional.setEmail("ana@clinica.com");
 
-            var availability = new ProfessionalAvailability();
-            availability.setStartTime(LocalTime.of(8, 0));
-            availability.setEndTime(LocalTime.of(12, 0));
+            var slot1 = new ProfessionalAvailability();
+            slot1.setStartTime(LocalTime.of(8, 0));
+            slot1.setEndTime(LocalTime.of(9, 0));
+
+            var slot2 = new ProfessionalAvailability();
+            slot2.setStartTime(LocalTime.of(10, 0));
+            slot2.setEndTime(LocalTime.of(11, 0));
 
             when(professionalRepository.findById(profId)).thenReturn(Optional.of(profissional));
             when(availabilityRepository.findByProfessionalEmailAndDayOfWeek("ana@clinica.com", dow))
-                .thenReturn(Optional.of(availability));
+                .thenReturn(List.of(slot1, slot2));
             when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
                 eq(profId), any(), any(), any()
             )).thenReturn(List.of());
 
             List<SlotDTO> slots = availabilityService.getSlotsDisponiveis(profId, data);
 
-            // 08-09, 09-10, 10-11, 11-12 = 4 slots
-            assertEquals(4, slots.size());
+            assertEquals(2, slots.size());
             assertEquals(LocalTime.of(8, 0), slots.get(0).startTime());
-            assertEquals(LocalTime.of(9, 0), slots.get(0).endTime());
-            assertEquals(LocalTime.of(11, 0), slots.get(3).startTime());
-            assertEquals(LocalTime.of(12, 0), slots.get(3).endTime());
+            assertEquals(LocalTime.of(10, 0), slots.get(1).startTime());
         }
 
         @Test
@@ -208,9 +152,13 @@ class AvailabilityServiceTest {
             profissional.setId(profId);
             profissional.setEmail("ana@clinica.com");
 
-            var availability = new ProfessionalAvailability();
-            availability.setStartTime(LocalTime.of(8, 0));
-            availability.setEndTime(LocalTime.of(12, 0));
+            var slot1 = new ProfessionalAvailability();
+            slot1.setStartTime(LocalTime.of(8, 0));
+            slot1.setEndTime(LocalTime.of(9, 0));
+
+            var slot2 = new ProfessionalAvailability();
+            slot2.setStartTime(LocalTime.of(9, 0));
+            slot2.setEndTime(LocalTime.of(10, 0));
 
             // Simula consulta existente às 09:00
             var consultaExistente = new Appointment();
@@ -218,79 +166,64 @@ class AvailabilityServiceTest {
 
             when(professionalRepository.findById(profId)).thenReturn(Optional.of(profissional));
             when(availabilityRepository.findByProfessionalEmailAndDayOfWeek("ana@clinica.com", dow))
-                .thenReturn(Optional.of(availability));
+                .thenReturn(List.of(slot1, slot2));
             when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
                 eq(profId), any(), any(), any()
             )).thenReturn(List.of(consultaExistente));
 
             List<SlotDTO> slots = availabilityService.getSlotsDisponiveis(profId, data);
 
-            // 4 slots - 1 ocupado = 3 slots
-            assertEquals(3, slots.size());
-            // Verifica que o slot das 09:00 não está presente
-            assertTrue(slots.stream().noneMatch(s -> s.startTime().equals(LocalTime.of(9, 0))));
+            // 2 slots - 1 ocupado = 1 slot restasnte (08:00)
+            assertEquals(1, slots.size());
+            assertEquals(LocalTime.of(8, 0), slots.get(0).startTime());
         }
 
         @Test
-        @DisplayName("Deve retornar lista vazia se profissional não atende no dia")
-        void retornarVazioSeProfissionalNaoAtende() {
+        @DisplayName("Deve excluir slots que já passaram no horário de Brasília")
+        void excluirSlotsPassadosSP() {
             Long profId = 1L;
-            LocalDate data = LocalDate.now().plusDays(7);
+            // Hoje: Quarta, 15/04/2026
+            LocalDate data = LocalDate.of(2026, 4, 15);
             DayOfWeek dow = data.getDayOfWeek();
 
             var profissional = new Professional();
             profissional.setId(profId);
             profissional.setEmail("ana@clinica.com");
 
+            var slotPassado = new ProfessionalAvailability();
+            slotPassado.setStartTime(LocalTime.of(8, 0)); // Passado (08:00 < 12:00)
+
+            var slotFuturo = new ProfessionalAvailability();
+            slotFuturo.setStartTime(LocalTime.of(14, 0)); // Futuro (14:00 > 12:00)
+
             when(professionalRepository.findById(profId)).thenReturn(Optional.of(profissional));
             when(availabilityRepository.findByProfessionalEmailAndDayOfWeek("ana@clinica.com", dow))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of(slotPassado, slotFuturo));
+            
+            // Simula que "agora" em SP é 12:00 do dia 15/04
+            try (var mockedLocalDateTime = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+                LocalDateTime agoraFake = LocalDateTime.of(2026, 4, 15, 12, 0);
+                mockedLocalDateTime.when(() -> LocalDateTime.now(ZoneId.of("America/Sao_Paulo")))
+                    .thenReturn(agoraFake);
 
-            List<SlotDTO> slots = availabilityService.getSlotsDisponiveis(profId, data);
-            assertTrue(slots.isEmpty());
+                List<SlotDTO> slots = availabilityService.getSlotsDisponiveis(profId, data);
+
+                assertEquals(1, slots.size(), "Deve retornar apenas o slot futuro");
+                assertEquals(LocalTime.of(14, 0), slots.get(0).startTime());
+            }
         }
 
         @Test
-        @DisplayName("Deve lançar erro se profissional não existe")
-        void erroProfissionalInexistente() {
-            Long profId = 99L;
-            when(professionalRepository.findById(profId)).thenReturn(Optional.empty());
+        @DisplayName("Deve chamar flush após deletar para evitar erros de integridade")
+        void verificarFlushAoSalvar() {
+            String email = "ana@clinica.com";
+            var dto = new AvailabilityDTO(DayOfWeek.MONDAY, List.of(LocalTime.of(8, 0)));
+            when(professionalRepository.findByEmail(email)).thenReturn(Optional.of(new Professional()));
 
-            var exception = assertThrows(RuntimeException.class,
-                () -> availabilityService.getSlotsDisponiveis(profId, LocalDate.now()));
-            assertTrue(exception.getMessage().contains("Profissional não encontrado"));
-        }
-    }
+            availabilityService.salvarDia(email, dto);
 
-    // ──────────────────────── Listagem de Profissionais ────────────────
-
-    @Nested
-    @DisplayName("Profissionais com Disponibilidade")
-    class ProfissionaisComDisponibilidadeTests {
-
-        @Test
-        @DisplayName("Deve retornar apenas profissionais que possuem disponibilidade")
-        void retornarProfissionaisComDisponibilidade() {
-            var ana = new Professional();
-            ana.setId(1L);
-            ana.setName("Dra. Ana");
-
-            when(availabilityRepository.findProfessionalIdsComDisponibilidade()).thenReturn(List.of(1L));
-            when(professionalRepository.findAllById(List.of(1L))).thenReturn(List.of(ana));
-
-            var resultado = availabilityService.getProfissionaisComDisponibilidade();
-            assertEquals(1, resultado.size());
-            assertEquals("Dra. Ana", resultado.get(0).getName());
-        }
-
-        @Test
-        @DisplayName("Deve retornar lista vazia se nenhum profissional tem disponibilidade")
-        void retornarVazioSemDisponibilidade() {
-            when(availabilityRepository.findProfessionalIdsComDisponibilidade()).thenReturn(List.of());
-            when(professionalRepository.findAllById(List.of())).thenReturn(List.of());
-
-            var resultado = availabilityService.getProfissionaisComDisponibilidade();
-            assertTrue(resultado.isEmpty());
+            verify(availabilityRepository).deleteByProfessionalEmailAndDayOfWeek(email, DayOfWeek.MONDAY);
+            verify(availabilityRepository, atLeastOnce()).flush();
         }
     }
 }

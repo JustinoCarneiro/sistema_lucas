@@ -13,7 +13,7 @@ export class AvailabilityService {
     return this.http.get<any[]>(`${environment.apiUrl}/disponibilidade/minha`);
   }
 
-  salvarDia(data: { dayOfWeek: string; startTime: string; endTime: string }) {
+  salvarDia(data: { dayOfWeek: string; startTimes: string[] }) {
     return this.http.post(`${environment.apiUrl}/disponibilidade`, data, {
       responseType: 'text'
     }).pipe(

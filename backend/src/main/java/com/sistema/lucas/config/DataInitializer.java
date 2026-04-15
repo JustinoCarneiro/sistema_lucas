@@ -15,8 +15,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("dev")
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired private UserRepository userRepository;
@@ -30,23 +32,14 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.count() > 0) {
-            System.out.println("ℹ️ Banco já populado. Pulando carga de demonstração.");
+        if (professionalRepository.count() > 0) {
+            System.out.println("ℹ️ Banco já populado (profissionais encontrados). Pulando carga de demonstração extra.");
             return;
         }
 
         try {
-            System.out.println("🌱 Carregando dados de demonstração...");
+            System.out.println("🌱 Carregando dados de demonstração (Secundários)...");
             LocalDateTime agora = LocalDateTime.now();
-
-            // ─── ADMIN ───────────────────────────────────────────────────────
-            User admin = new User();
-            admin.setName("Administrador");
-            admin.setEmail("admin@clinica.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setRole(Role.ADMIN);
-            admin.setVerified(true);
-            userRepository.save(admin);
 
             // ─── PROFISSIONAIS ───────────────────────────────────────────────
 
@@ -76,25 +69,28 @@ public class DataInitializer implements CommandLineRunner {
 
             // ─── DISPONIBILIDADE DOS PROFISSIONAIS ──────────────────────────
 
-            // Dra. Ana: Segunda a Sexta, 08:00–12:00 e 14:00–18:00
+            // Dra. Ana: Segunda a Sexta, 08:00–11:00 e 14:00–17:00
             for (DayOfWeek day : new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY}) {
-                // Manhã
-                ProfessionalAvailability manha = new ProfessionalAvailability();
-                manha.setProfessional(ana);
-                manha.setDayOfWeek(day);
-                manha.setStartTime(LocalTime.of(8, 0));
-                manha.setEndTime(LocalTime.of(12, 0));
-                availabilityRepository.save(manha);
+                for (int h : new int[]{8, 9, 10, 11, 14, 15, 16, 17}) {
+                    ProfessionalAvailability slot = new ProfessionalAvailability();
+                    slot.setProfessional(ana);
+                    slot.setDayOfWeek(day);
+                    slot.setStartTime(LocalTime.of(h, 0));
+                    slot.setEndTime(LocalTime.of(h + 1, 0));
+                    availabilityRepository.save(slot);
+                }
             }
 
-            // Dr. Carlos: Segunda, Quarta e Sexta, 09:00–17:00
+            // Dr. Carlos: Segunda, Quarta e Sexta, 09:00–11:00 e 13:00–16:00 (almoço às 12h)
             for (DayOfWeek day : new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY}) {
-                ProfessionalAvailability disp = new ProfessionalAvailability();
-                disp.setProfessional(carlos);
-                disp.setDayOfWeek(day);
-                disp.setStartTime(LocalTime.of(9, 0));
-                disp.setEndTime(LocalTime.of(17, 0));
-                availabilityRepository.save(disp);
+                for (int h : new int[]{9, 10, 11, 13, 14, 15, 16}) {
+                    ProfessionalAvailability slot = new ProfessionalAvailability();
+                    slot.setProfessional(carlos);
+                    slot.setDayOfWeek(day);
+                    slot.setStartTime(LocalTime.of(h, 0));
+                    slot.setEndTime(LocalTime.of(h + 1, 0));
+                    availabilityRepository.save(slot);
+                }
             }
 
             // ─── PACIENTES ───────────────────────────────────────────────────
@@ -165,6 +161,22 @@ public class DataInitializer implements CommandLineRunner {
             appointmentRepository.save(c10);
             appointmentRepository.save(c11);
             appointmentRepository.save(c12);
+
+            // ─── AGENDAMENTOS ALEATÓRIOS PARA REALISMO ──────────────────────
+            // Semeia algumas consultas nos próximos 15 dias para "sujar" a agenda
+            for (int i = 1; i <= 15; i++) {
+                LocalDateTime dia = agora.plusDays(i);
+                if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) continue;
+
+                // Tenta ocupar 2 horários aleatórios para a Dra. Ana e 1 para o Dr. Carlos
+                int horaAna1 = 8 + (int)(Math.random() * 4); // Manhã
+                int horaAna2 = 14 + (int)(Math.random() * 4); // Tarde
+                int horaCarlos = 9 + (int)(Math.random() * 8); // Dia todo
+
+                appointmentRepository.save(new Appointment(ana, maria, dia.withHour(horaAna1).withMinute(0).withSecond(0), "Acompanhamento", StatusConsulta.CONFIRMADA));
+                appointmentRepository.save(new Appointment(ana, joao, dia.withHour(horaAna2).withMinute(0).withSecond(0), "Sessão", StatusConsulta.AGENDADA));
+                appointmentRepository.save(new Appointment(carlos, lucas, dia.withHour(horaCarlos).withMinute(0).withSecond(0), "Retorno", StatusConsulta.CONFIRMADA));
+            }
 
             // ─── PRONTUÁRIOS ─────────────────────────────────────────────────
 

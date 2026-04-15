@@ -3,6 +3,7 @@ package com.sistema.lucas.repository;
 
 import com.sistema.lucas.model.ProfessionalAvailability;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -17,8 +18,10 @@ public interface ProfessionalAvailabilityRepository extends JpaRepository<Profes
 
     List<ProfessionalAvailability> findByProfessionalEmail(String email);
 
-    Optional<ProfessionalAvailability> findByProfessionalEmailAndDayOfWeek(String email, DayOfWeek dayOfWeek);
+    List<ProfessionalAvailability> findByProfessionalEmailAndDayOfWeek(String email, DayOfWeek dayOfWeek);
 
+    @Modifying
+    @Query("DELETE FROM ProfessionalAvailability a WHERE a.professional.email = :email AND a.dayOfWeek = :dayOfWeek")
     void deleteByProfessionalEmailAndDayOfWeek(String email, DayOfWeek dayOfWeek);
 
     // Profissionais que possuem pelo menos uma entrada de disponibilidade

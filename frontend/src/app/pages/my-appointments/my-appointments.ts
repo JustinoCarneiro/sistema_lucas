@@ -109,25 +109,37 @@ export class MyAppointmentsComponent implements OnInit {
   }
 
   generateAvailableDates(days: string[]) {
+    console.log('Gerando datas únicas por dia da semana...', days);
     const dates: {value: string, label: string}[] = [];
     const today = new Date();
     
-    // Gerar para os próximos 30 dias
-    for (let i = 1; i <= 30; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
-      const dayOfWeekEnum = this.jsToEnum[d.getDay()];
+    // Gerar apenas o próximo dia disponível para cada dia da semana configurado
+    // (ou o dia atual, ou o da próxima semana se já passou)
+    days.forEach(dayName => {
+      const today = new Date();
+      // Encontrar o enum index correspondente (0-6)
+      const targetJsDay = Object.keys(this.jsToEnum).find(k => this.jsToEnum[Number(k)] === dayName);
+      if (targetJsDay === undefined) return;
       
-      if (days.includes(dayOfWeekEnum)) {
-        const value = d.toISOString().split('T')[0];
-        // Formata: "segunda-feira 12/04"
-        const label = d.toLocaleDateString('pt-BR', { 
-          weekday: 'long', 
-          day: '2-digit', 
-          month: '2-digit' 
-        });
-        dates.push({ value, label });
-      }
-    }
+      const targetDay = Number(targetJsDay);
+      const currentDay = today.getDay();
+      
+      // Calcula quantos dias faltam para o próximo 'targetDay'
+      let daysDiff = (targetDay - currentDay + 7) % 7;
+      
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysDiff);
+      
+      const value = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('pt-BR', { 
+        weekday: 'long', 
+        day: '2-digit', 
+        month: '2-digit' 
+      });
+      dates.push({ value, label });
+    });
+
+    // Ordenar as datas cronologicamente
+    dates.sort((a, b) => a.value.localeCompare(b.value));
     this.availableDates.set(dates);
   }
 

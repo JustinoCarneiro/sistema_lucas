@@ -69,32 +69,14 @@ public class AppointmentService {
         var availability = availabilityRepository
             .findByProfessionalEmailAndDayOfWeek(profissional.getEmail(), dayOfWeek);
         
-        if (availability.isEmpty()) {
-            throw new RuntimeException("O profissional não atende neste dia da semana.");
-        }
-
-        // ✅ Validar que o horário está dentro da janela de atendimento
-        LocalTime horario = dto.dateTime().toLocalTime();
-        var avail = availability.get();
-        if (horario.isBefore(avail.getStartTime()) || horario.plusHours(1).isAfter(avail.getEndTime())) {
-            throw new RuntimeException("Horário fora da janela de atendimento do profissional.");
-        }
-
-        // ✅ Validar que o slot está alinhado com a grade de 1h
-        if (horario.getMinute() != 0 && horario.getMinute() != avail.getStartTime().getMinute()) {
-            // Permite apenas horários que iniciam em hora cheia relativa ao startTime
-            LocalTime cursor = avail.getStartTime();
-            boolean slotValido = false;
-            while (cursor.plusHours(1).compareTo(avail.getEndTime()) <= 0) {
-                if (cursor.equals(horario)) {
-                    slotValido = true;
-                    break;
-                }
-                cursor = cursor.plusHours(1);
-            }
-            if (!slotValido) {
-                throw new RuntimeException("Horário inválido. Escolha um dos horários disponíveis.");
-            }
+        // ✅ Validar que o slot existe na disponibilidade do profissional
+        LocalTime horario = dto.dateTime().toLocalTime().withMinute(0).withSecond(0).withNano(0);
+        
+        boolean slotDisponivel = availability.stream()
+            .anyMatch(a -> a.getStartTime().equals(horario));
+        
+        if (!slotDisponivel) {
+            throw new RuntimeException("O profissional não atende neste horário ou dia da semana.");
         }
 
         // ✅ Validar conflito de horário (já existe consulta nesse horário?)

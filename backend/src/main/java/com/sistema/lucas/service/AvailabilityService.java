@@ -52,34 +52,27 @@ public class AvailabilityService {
         var profissional = professionalRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado."));
 
-        if (dto.endTime().isBefore(dto.startTime()) || dto.endTime().equals(dto.startTime())) {
-            throw new RuntimeException("Horário de término deve ser posterior ao de início.");
+        // Remove a disponibilidade antiga do dia para esse profissional
+        availabilityRepository.deleteByProfessionalEmailAndDayOfWeek(email, dto.dayOfWeek());
+        availabilityRepository.flush();
+
+        // Cria os novos slots
+        if (dto.startTimes() != null) {
+            for (LocalTime startTime : dto.startTimes()) {
+                ProfessionalAvailability availability = new ProfessionalAvailability();
+                availability.setProfessional(profissional);
+                availability.setDayOfWeek(dto.dayOfWeek());
+                availability.setStartTime(startTime);
+                availability.setEndTime(startTime.plusHours(1)); // Always 1 hour
+                availabilityRepository.save(availability);
+            }
         }
-
-        // Mínimo de 1h de janela
-        if (Duration.between(dto.startTime(), dto.endTime()).toMinutes() < 60) {
-            throw new RuntimeException("A janela de atendimento deve ter no mínimo 1 hora.");
-        }
-
-        var existing = availabilityRepository.findByProfessionalEmailAndDayOfWeek(email, dto.dayOfWeek());
-
-        ProfessionalAvailability availability;
-        if (existing.isPresent()) {
-            availability = existing.get();
-        } else {
-            availability = new ProfessionalAvailability();
-            availability.setProfessional(profissional);
-            availability.setDayOfWeek(dto.dayOfWeek());
-        }
-
-        availability.setStartTime(dto.startTime());
-        availability.setEndTime(dto.endTime());
-        availabilityRepository.save(availability);
     }
 
     @Transactional
     public void removerDia(String email, DayOfWeek dayOfWeek) {
         availabilityRepository.deleteByProfessionalEmailAndDayOfWeek(email, dayOfWeek);
+        availabilityRepository.flush();
     }
 
     // ─── Cálculo de Slots ────────────────────────────────────────────────────
@@ -90,25 +83,19 @@ public class AvailabilityService {
 
         DayOfWeek dayOfWeek = date.getDayOfWeek();
 
-        // Busca a disponibilidade do profissional para esse dia da semana
-        var availability = availabilityRepository
+        // Busca todos os slots salvos para esse dia da semana
+        var availabilities = availabilityRepository
             .findByProfessionalEmailAndDayOfWeek(profissional.getEmail(), dayOfWeek);
 
-        if (availability.isEmpty()) {
-            return List.of(); // Profissional não atende nesse dia
+        if (availabilities.isEmpty()) {
+            return List.of(); 
         }
 
-        var avail = availability.get();
-        LocalTime start = avail.getStartTime();
-        LocalTime end = avail.getEndTime();
-
-        // Gera todos os slots de 1h dentro da janela
-        List<SlotDTO> todosSlots = new ArrayList<>();
-        LocalTime cursor = start;
-        while (cursor.plusHours(1).compareTo(end) <= 0) {
-            todosSlots.add(new SlotDTO(cursor, cursor.plusHours(1)));
-            cursor = cursor.plusHours(1);
-        }
+        // Gera a lista de DTOs a partir da disponibilidade salva
+        List<SlotDTO> todosSlots = availabilities.stream()
+            .map(a -> new SlotDTO(a.getStartTime(), a.getEndTime()))
+            .sorted((a, b) -> a.startTime().compareTo(b.startTime()))
+            .collect(Collectors.toList());
 
         // Busca consultas já agendadas nesse dia (status != CANCELADA)
         LocalDateTime inicioDia = date.atStartOfDay();
@@ -125,7 +112,8 @@ public class AvailabilityService {
             .collect(Collectors.toSet());
 
         // Filtra slots livres + não permite agendar no passado
-        LocalDateTime agora = LocalDateTime.now();
+        // Usamos ZoneId de SP para alinhar com o horário do servidor/usuário
+        LocalDateTime agora = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
         return todosSlots.stream()
             .filter(slot -> !horariosOcupados.contains(slot.startTime()))
             .filter(slot -> date.atTime(slot.startTime()).isAfter(agora))

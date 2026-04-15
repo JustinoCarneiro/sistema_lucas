@@ -8,10 +8,8 @@ interface DayConfig {
   key: string;
   label: string;
   enabled: boolean;
-  startTime: string;
-  endTime: string;
+  selectedSlots: string[]; // Agora rastreamos os horários de início selecionados
   saved: boolean;
-  slots: string[];
 }
 
 @Component({
@@ -29,14 +27,20 @@ export class MyAvailabilityComponent implements OnInit {
   successMessage = signal('');
   errorMessage = signal('');
 
+  // Faixa definida pelo usuário: 08:00 às 19:00 (último slot começa às 18:00)
+  possibleSlots = [
+    '08:00', '09:00', '10:00', '11:00', '12:00', 
+    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
+  ];
+
   days: DayConfig[] = [
-    { key: 'MONDAY',    label: 'Segunda-feira', enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
-    { key: 'TUESDAY',   label: 'Terça-feira',   enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
-    { key: 'WEDNESDAY', label: 'Quarta-feira',   enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
-    { key: 'THURSDAY',  label: 'Quinta-feira',   enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
-    { key: 'FRIDAY',    label: 'Sexta-feira',    enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
-    { key: 'SATURDAY',  label: 'Sábado',         enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
-    { key: 'SUNDAY',    label: 'Domingo',        enabled: false, startTime: '08:00', endTime: '12:00', saved: false, slots: [] },
+    { key: 'MONDAY',    label: 'Segunda-feira', enabled: false, selectedSlots: [], saved: false },
+    { key: 'TUESDAY',   label: 'Terça-feira',   enabled: false, selectedSlots: [], saved: false },
+    { key: 'WEDNESDAY', label: 'Quarta-feira',  enabled: false, selectedSlots: [], saved: false },
+    { key: 'THURSDAY',  label: 'Quinta-feira',  enabled: false, selectedSlots: [], saved: false },
+    { key: 'FRIDAY',    label: 'Sexta-feira',   enabled: false, selectedSlots: [], saved: false },
+    { key: 'SATURDAY',  label: 'Sábado',        enabled: false, selectedSlots: [], saved: false },
+    { key: 'SUNDAY',    label: 'Domingo',       enabled: false, selectedSlots: [], saved: false },
   ];
 
   ngOnInit() {
@@ -47,57 +51,61 @@ export class MyAvailabilityComponent implements OnInit {
     this.isLoading.set(true);
     this.service.getMinhaDisponibilidade().subscribe({
       next: (data) => {
-        // Marcar os dias que já estão salvos
+        // Limpar estados
+        this.days.forEach(d => { d.enabled = false; d.selectedSlots = []; d.saved = false; });
+
+        // Mapear dados do backend
         data.forEach((item: any) => {
           const day = this.days.find(d => d.key === item.dayOfWeek);
           if (day) {
             day.enabled = true;
-            day.startTime = item.startTime?.substring(0, 5) || '08:00';
-            day.endTime = item.endTime?.substring(0, 5) || '12:00';
             day.saved = true;
-            day.slots = this.calculateSlots(day.startTime, day.endTime);
+            const time = item.startTime?.substring(0, 5);
+            if (time && !day.selectedSlots.includes(time)) {
+              day.selectedSlots.push(time);
+            }
           }
         });
+        
+        // Ordenar slots para consistência visual
+        this.days.forEach(d => d.selectedSlots.sort());
+        
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
     });
   }
 
-  calculateSlots(start: string, end: string): string[] {
-    const slots: string[] = [];
-    const [sh, sm] = start.split(':').map(Number);
-    const [eh, em] = end.split(':').map(Number);
-    let cursor = sh * 60 + sm;
-    const endMin = eh * 60 + em;
-
-    while (cursor + 60 <= endMin) {
-      const h = Math.floor(cursor / 60);
-      const m = cursor % 60;
-      const hEnd = Math.floor((cursor + 60) / 60);
-      const mEnd = (cursor + 60) % 60;
-      slots.push(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} – ${String(hEnd).padStart(2, '0')}:${String(mEnd).padStart(2, '0')}`
-      );
-      cursor += 60;
+  toggleSlot(day: DayConfig, time: string) {
+    const index = day.selectedSlots.indexOf(time);
+    if (index > -1) {
+      day.selectedSlots.splice(index, 1);
+    } else {
+      day.selectedSlots.push(time);
+      day.selectedSlots.sort();
     }
-    return slots;
   }
 
-  onTimeChange(day: DayConfig) {
-    day.slots = this.calculateSlots(day.startTime, day.endTime);
+  isSlotSelected(day: DayConfig, time: string): boolean {
+    return day.selectedSlots.includes(time);
   }
 
   salvarDia(day: DayConfig) {
+    if (day.selectedSlots.length === 0) {
+        this.removerDia(day);
+        return;
+    }
+
     this.isSaving.set(true);
     this.successMessage.set('');
     this.errorMessage.set('');
 
-    this.service.salvarDia({
+    const payload = {
       dayOfWeek: day.key,
-      startTime: day.startTime + ':00',
-      endTime: day.endTime + ':00'
-    }).subscribe({
+      startTimes: day.selectedSlots.map(t => t + ':00')
+    };
+
+    this.service.salvarDia(payload).subscribe({
       next: () => {
         day.saved = true;
         this.isSaving.set(false);
@@ -113,15 +121,13 @@ export class MyAvailabilityComponent implements OnInit {
   }
 
   removerDia(day: DayConfig) {
-    if (!confirm(`Remover disponibilidade de ${day.label}?`)) return;
+    if (!confirm(`Remover toda a disponibilidade de ${day.label}?`)) return;
 
     this.service.removerDia(day.key).subscribe({
       next: () => {
         day.enabled = false;
         day.saved = false;
-        day.startTime = '08:00';
-        day.endTime = '12:00';
-        day.slots = [];
+        day.selectedSlots = [];
         this.successMessage.set(`${day.label} removido.`);
         setTimeout(() => this.successMessage.set(''), 3000);
       },
@@ -134,15 +140,14 @@ export class MyAvailabilityComponent implements OnInit {
 
   toggleDay(day: DayConfig) {
     if (day.enabled) {
-      // Desabilitando → remove do backend se salvo
       if (day.saved) {
         this.removerDia(day);
       } else {
         day.enabled = false;
+        day.selectedSlots = [];
       }
     } else {
       day.enabled = true;
-      day.slots = this.calculateSlots(day.startTime, day.endTime);
     }
   }
 

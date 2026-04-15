@@ -4,7 +4,7 @@
   <!-- Header -->
   <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Minha Disponibilidade</h1>
-    <p class="text-gray-500 mt-1">Configure os dias e horários em que você atende. Cada consulta ocupa 1 hora.</p>
+    <p class="text-gray-500 mt-1">Selecione os horários em que você atende em cada dia. Cada item representa 1 hora.</p>
   </div>
 
   <!-- Feedback -->
@@ -31,7 +31,7 @@
       <p class="text-sm font-semibold text-blue-900">
         {{ enabledDaysCount === 0 ? 'Nenhum dia configurado' : enabledDaysCount === 1 ? '1 dia configurado' : enabledDaysCount + ' dias configurados' }}
       </p>
-      <p class="text-xs text-blue-600">Seus pacientes verão apenas os dias e horários marcados abaixo.</p>
+      <p class="text-xs text-blue-600">Seus pacientes verão apenas os horários marcados abaixo.</p>
     </div>
   </div>
 
@@ -57,55 +57,56 @@
             Salvo
           </span>
         </div>
-        <span *ngIf="day.enabled && day.slots.length > 0" class="text-xs text-gray-400">
-          {{ day.slots.length }} {{ day.slots.length === 1 ? 'slot' : 'slots' }}
+        <span *ngIf="day.enabled && day.selectedSlots.length > 0" class="text-xs text-gray-400">
+          {{ day.selectedSlots.length }} {{ day.selectedSlots.length === 1 ? 'horário' : 'horários' }}
         </span>
       </div>
 
       <!-- Configuração (expandido quando habilitado) -->
-      <div *ngIf="day.enabled" class="px-5 pb-5 border-t border-gray-100 pt-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Início</label>
-            <input type="time" [(ngModel)]="day.startTime" (ngModelChange)="onTimeChange(day)"
-              class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Fim</label>
-            <input type="time" [(ngModel)]="day.endTime" (ngModelChange)="onTimeChange(day)"
-              class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
+      <div *ngIf="day.enabled" class="px-5 pb-5 border-t border-gray-100 pt-5">
+        
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecione seus horários de atendimento:</p>
+        
+        <!-- Grid de Slots -->
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-6">
+          <button *ngFor="let slot of possibleSlots"
+            (click)="toggleSlot(day, slot)"
+            class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border"
+            [ngClass]="isSlotSelected(day, slot) 
+              ? 'bg-blue-900 text-white border-blue-900 shadow-sm' 
+              : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'">
+            {{ slot }}
+          </button>
         </div>
 
-        <!-- Preview de slots -->
-        <div *ngIf="day.slots.length > 0" class="mb-4">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Horários gerados (1h cada)</p>
-          <div class="flex flex-wrap gap-2">
-            <span *ngFor="let slot of day.slots"
-              class="bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200">
-              {{ slot }}
-            </span>
-          </div>
-        </div>
-
-        <div *ngIf="day.slots.length === 0" class="mb-4">
-          <p class="text-xs text-orange-500 font-medium">
-            ⚠️ A janela precisa ter pelo menos 1 hora para gerar slots.
+        <div *ngIf="day.selectedSlots.length === 0" class="mb-5 p-3 bg-orange-50 border border-orange-100 rounded-lg">
+          <p class="text-xs text-orange-700 font-medium">
+            ⚠️ Selecione pelo menos um horário para este dia ou desabilite-o.
           </p>
         </div>
 
         <!-- Ações -->
-        <div class="flex gap-2 flex-wrap">
-          <button (click)="salvarDia(day)" [disabled]="isSaving() || day.slots.length === 0"
-            class="bg-blue-900 hover:bg-blue-800 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50">
-            {{ day.saved ? 'Atualizar' : 'Salvar' }}
+        <div class="flex gap-2 flex-wrap items-center">
+          <button (click)="salvarDia(day)" [disabled]="isSaving() || day.selectedSlots.length === 0"
+            class="bg-blue-900 hover:bg-blue-800 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition shadow-md disabled:opacity-50 flex items-center gap-2">
+            <span *ngIf="isSaving()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ day.saved ? 'Atualizar' : 'Salvar dia' }}
           </button>
+          
           <button *ngIf="day.saved" (click)="removerDia(day)"
             class="bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 border border-gray-200 text-sm font-medium px-5 py-2.5 rounded-xl transition">
-            Remover dia
+            Remover do dia
           </button>
+
+          <p *ngIf="day.selectedSlots.length > 0 && !day.saved" class="text-xs text-blue-600 italic ml-auto sm:ml-0">
+            Alterações não salvas
+          </p>
         </div>
       </div>
+    </div>
+
+    <div *ngIf="days.length === 0" class="text-center py-10 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+      <p class="text-gray-400">Nenhuma configuração encontrada.</p>
     </div>
 
   </div>

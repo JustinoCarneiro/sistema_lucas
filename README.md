@@ -60,20 +60,25 @@ A segurança é o pilar central do Sistema Lucas, implementada em múltiplas cam
 *   **Verificação de E-mail**: Integração com Mailtrap/SMTP para validação segura de novas contas.
 *   **Notificações In-page**: Feedback de sucesso e erro via Signals, eliminando alertas pop-up intrusivos.
 *   **Roteamento SPA Seguro**: Configuração Nginx customizada com `try_files` para garantir funcionamento perfeito das rotas Angular em ambiente Docker.
+*   **Blindagem de Concorrência**: `UNIQUE CONSTRAINT` no banco de dados para a dupla `(professional_id, date_time)`, garantindo imunidade técnica total contra duplicação de horários (*race conditions*).
 
 ---
 
 ## 🐳 5. Infraestrutura e Deploy
-O projeto está pronto para produção com suporte a builds internos seguros.
+O projeto utiliza Docker Compose e perfis automáticos Spring (`dev` e `prod`) para separar completamente os dados e comportamentos de infraestrutura.
 
 ### Scripts de Deploy:
-*   **`deploy.sh`**: Realiza o build **dentro do Docker** (multi-stage). Compila o Java e o Angular em ambientes isolados e atualiza os containers.
-*   **`push-and-deploy.sh`**: Script para desenvolvedores. Envia as alterações via `rsync` para o servidor e dispara o `deploy.sh` via SSH.
+*   **`deploy-dev.sh`**: Sobe o ambiente local carregando o perfil de desenvolvimento e populando o banco (`DataInitializer`) com dados falsos. Lê do `.env.dev`.
+*   **`deploy-prod.sh`**: Sobe o ambiente de produção isolado e com credenciais de produção lidas do `.env` principal. Banco de dados sobe limpo.
+*   **`push-and-deploy.sh`**: Script para desenvolvedores. Envia as alterações via `rsync` ignorando arquivos indesejados (`.geminiignore`, etc.) e dispara o deploy remoto.
+
+### Inicialização Segura (O "Primeiro Admin")
+Na produção, a base nasce vazia. Para evitar credenciais no código-fonte, o sistema possui um `AdminInitializer` que checa se o sistema é novo e **cria automaticamente a primeira conta de Administrador** usando o e-mail e senha definidos nas suas variáveis do `.env` (`INITIAL_ADMIN_EMAIL` e `INITIAL_ADMIN_PASSWORD`).
 
 ### Como rodar localmente (Desenvolvimento):
-1.  Configure o arquivo `.env.dev` com as credenciais locais.
-2.  Execute `docker compose --env-file .env.dev up -d --build`.
-3.  O frontend estará disponível em `http://localhost:8082` e o backend em `http://localhost:8081`.
+1.  Verifique se o arquivo `.env.dev` está configurado.
+2.  Execute `./deploy-dev.sh`.
+3.  O frontend estará disponível em `http://localhost:8082` e o backend em `http://localhost:8081`. O sistema já nascerá com usuários falsos para testes (Dr. Carlos, Dra. Ana, etc.).
 
 ---
 

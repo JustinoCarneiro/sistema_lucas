@@ -46,14 +46,13 @@
           </span>
         </div>
 
-        <select formControlName="date" (change)="onDateChange()"
-          class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-          [ngClass]="{'border-red-500 bg-red-50': dateErrorMessage()}">
-          <option value="" disabled selected>Selecione uma data disponível</option>
-          <option *ngFor="let d of availableDates()" [value]="d.value">
-            {{ d.label | titlecase }}
-          </option>
-        </select>
+            <select id="date" formControlName="date" (change)="onDateChange()"
+              class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition appearance-none text-sm cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed">
+              <option value="">Selecione uma data (Próximos 7 dias)</option>
+              <option *ngFor="let date of availableDates()" [value]="date.value">
+                {{ date.label }}
+              </option>
+            </select>
 
         @if (selectedProfessional() && availableDates().length === 0) {
           <p class="text-amber-600 text-xs mt-1">
@@ -79,6 +78,7 @@
         <div *ngIf="!isLoadingSlots() && availableSlots().length > 0" class="flex flex-wrap gap-2">
           <button *ngFor="let slot of availableSlots()" type="button"
             (click)="selectSlot(slot)"
+            data-testid="slot-button"
             class="px-4 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200"
             [ngClass]="selectedSlot()?.startTime === slot.startTime
               ? 'bg-blue-900 text-white border-blue-900 shadow-md'
@@ -91,7 +91,9 @@
       <!-- Motivo (opcional) -->
       <div *ngIf="selectedSlot()" class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-1">Motivo (opcional)</label>
-        <input type="text" formControlName="reason" placeholder="Ex: Consulta inicial"
+        <input type="text" formControlName="reason" 
+          data-testid="reason-input"
+          placeholder="Ex: Consulta inicial"
           class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
       </div>
 
