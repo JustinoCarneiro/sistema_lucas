@@ -152,8 +152,8 @@ public class AppointmentService {
         if (!consulta.getProfessional().getEmail().equals(emailProfissional))
             throw new RuntimeException("Sem permissão para confirmar esta consulta.");
 
-        validarJanela(consulta);
-
+        // Removida a trava de 24h para confirmação, pois o profissional deve poder confirmar a qualquer momento.
+        
         if (consulta.getStatus() == StatusConsulta.AGENDADA) {
             consulta.setStatus(StatusConsulta.CONFIRMADA_PROFISSIONAL);
             appointmentRepository.save(consulta);
@@ -172,7 +172,7 @@ public class AppointmentService {
         if (!consulta.getPatient().getEmail().equals(emailPaciente))
             throw new RuntimeException("Sem permissão para confirmar esta consulta.");
 
-        validarJanela(consulta);
+        // Removida a trava de 24h para confirmação, pois o paciente deve poder confirmar a qualquer momento após o profissional.
 
         if (consulta.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL) {
             consulta.setStatus(StatusConsulta.CONFIRMADA);

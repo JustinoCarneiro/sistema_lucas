@@ -76,7 +76,7 @@ export class ProfessionalsComponent implements OnInit {
   }
 
   deleteProfessional(id: number) {
-    if (confirm('Tem certeza que deseja remover este profissional?')) {
+    if (confirm('ATENÇÃO: Exclusão Forçada!\n\nTem certeza que deseja remover este profissional?\n\nIsso apagará DE FORMA PERMANENTE todas as consultas, prontuários, horários e documentos vinculados a ele. Essa ação não pode ser desfeita.')) {
       this.professionalService.deleteProfessional(id).subscribe({
         next: () => { alert('Profissional removido com sucesso!'); this.loadProfessionals(); },
         error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service

@@ -47,7 +47,12 @@ public class PatientService {
 
     @Transactional
     public void delete(Long id) {
-        repository.deleteById(id);
+        try {
+            repository.deleteById(id);
+            repository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("Não é possível excluir o paciente pois existem registros (como consultas ou prontuários) vinculados a ele.");
+        }
     }
 
     public Patient getMyProfile(String email) {
@@ -55,12 +60,16 @@ public class PatientService {
                 .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
     }
 
-    // Adicionar ao PatientService.java
     @Transactional
     public void deleteByEmail(String email) {
         Patient patient = repository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
-        repository.delete(patient);
+        try {
+            repository.delete(patient);
+            repository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("Não é possível excluir o paciente pois existem registros (como consultas ou prontuários) vinculados a ele.");
+        }
     }
 
     // Adicionar ao PatientService.java

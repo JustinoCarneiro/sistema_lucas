@@ -177,7 +177,7 @@ export class MyAppointmentsComponent implements OnInit {
   confirmar(id: number) {
     this.appointmentService.confirmarPaciente(id).subscribe({
       next: () => { alert('Presença confirmada!'); this.loadAppointments(); },
-      error: (err: any) => alert('Erro: ' + (err.error?.message || 'Não foi possível confirmar.'))
+      error: (msg: string) => alert('Erro: ' + msg)
     });
   }
 
@@ -185,7 +185,7 @@ export class MyAppointmentsComponent implements OnInit {
     if (confirm('Confirmar cancelamento desta consulta?')) {
       this.appointmentService.cancelarMinhaConsulta(id).subscribe({
         next: () => this.loadAppointments(),
-        error: (err: any) => alert('Erro: ' + (err.error?.message || 'Não foi possível cancelar.'))
+        error: (msg: string) => alert('Erro: ' + msg)
       });
     }
   }

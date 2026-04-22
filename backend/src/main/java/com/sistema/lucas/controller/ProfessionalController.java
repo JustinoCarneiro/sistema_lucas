@@ -57,4 +57,10 @@ public class ProfessionalController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/force/{id}")
+    public ResponseEntity<Void> forceDelete(@PathVariable Long id) {
+        service.forceDelete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

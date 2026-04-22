@@ -13,7 +13,7 @@ public record AppointmentResponseDTO(
     LocalDateTime startTime,
     String reason,
     StatusConsulta status,
-    boolean podeConfirmarOuCancelar
+    boolean podeCancelar
 ) {
     public AppointmentResponseDTO(Appointment app) {
         this(
@@ -24,10 +24,11 @@ public record AppointmentResponseDTO(
             app.getDateTime(),
             app.getReason(),
             app.getStatus(),
-            // ✅ pode agir se faltam mais de 24h E o status permite
+            // ✅ pode cancelar se faltam mais de 24h E o status permite
             LocalDateTime.now().isBefore(app.getDateTime().minusHours(24))
                 && (app.getStatus() == StatusConsulta.AGENDADA
-                    || app.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL)
+                    || app.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL
+                    || app.getStatus() == StatusConsulta.CONFIRMADA)
         );
     }
 }

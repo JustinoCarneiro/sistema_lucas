@@ -149,14 +149,14 @@
           <span class="font-medium">{{ c.professionalName }}</span>
           <span *ngIf="c.reason"> · {{ c.reason }}</span>
         </p>
-        <p *ngIf="!c.podeConfirmarOuCancelar && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL')"
+        <p *ngIf="!c.podeCancelar && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL')"
           class="text-xs text-orange-500 mt-1">
-          ⚠️ Prazo de confirmação/cancelamento encerrado (menos de 24h)
+          ⚠️ Prazo de cancelamento encerrado (menos de 24h)
         </p>
       </div>
       <div class="flex gap-2 shrink-0 flex-wrap">
         <!-- Paciente confirma — só quando profissional já confirmou -->
-        <button *ngIf="c.status === 'CONFIRMADA_PROFISSIONAL' && c.podeConfirmarOuCancelar"
+        <button *ngIf="c.status === 'CONFIRMADA_PROFISSIONAL'"
           (click)="confirmar(c.id)"
           class="text-sm font-medium px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition">
           Confirmar presença
@@ -176,7 +176,7 @@
 
         <!-- Cancelar -->
         <button
-          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL') && c.podeConfirmarOuCancelar"
+          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL') && c.podeCancelar"
           (click)="cancelar(c.id)"
           class="text-sm font-medium px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition">
           Cancelar

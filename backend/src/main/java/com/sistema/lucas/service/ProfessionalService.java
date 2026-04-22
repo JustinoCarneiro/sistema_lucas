@@ -17,6 +17,10 @@ public class ProfessionalService {
 
     @Autowired private ProfessionalRepository repository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private com.sistema.lucas.repository.AppointmentRepository appointmentRepository;
+    @Autowired private com.sistema.lucas.repository.ProfessionalAvailabilityRepository availabilityRepository;
+    @Autowired private com.sistema.lucas.repository.ProntuarioRepository prontuarioRepository;
+    @Autowired private com.sistema.lucas.repository.DocumentoRepository documentoRepository;
 
     public List<Professional> findAll() {
         return repository.findAll();
@@ -102,7 +106,33 @@ public class ProfessionalService {
 
     @Transactional
     public void delete(Long id) {
-        repository.deleteById(id);
+        try {
+            repository.deleteById(id);
+            repository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("Não é possível excluir o profissional pois existem registros (como consultas ou prontuários) vinculados a ele.");
+        }
+    }
+
+    @Transactional
+    public void forceDelete(Long id) {
+        Professional prof = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
+
+        // Apagar Documentos
+        documentoRepository.deleteAll(documentoRepository.findByProfissionalEmailOrderByCriadoEmDesc(prof.getEmail()));
+        
+        // Apagar Prontuários
+        prontuarioRepository.deleteAll(prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc(prof.getEmail()));
+
+        // Apagar Disponibilidades
+        availabilityRepository.deleteAll(availabilityRepository.findByProfessionalId(id));
+
+        // Apagar Consultas
+        appointmentRepository.deleteAll(appointmentRepository.findByProfessionalId(id));
+
+        // Finalmente, apagar o Profissional
+        repository.delete(prof);
     }
 
     public Professional getMyProfile(String email) {

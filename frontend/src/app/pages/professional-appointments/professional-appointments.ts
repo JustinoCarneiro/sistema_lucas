@@ -57,10 +57,10 @@ export class ProfessionalAppointmentsComponent implements OnInit {
     this.isLoadingProximas.set(true);
     this.http.get<any[]>(`${environment.apiUrl}/consultas/profissional/todas`).subscribe({
       next: (data) => {
-        // Filtra apenas futuras com status que permitem ação
+        // Filtra apenas futuras ativas (incluindo as confirmadas)
         const futuras = data.filter((c: any) =>
           new Date(c.startTime) > new Date() &&
-          (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL')
+          (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL' || c.status === 'CONFIRMADA')
         );
         this.proximasConsultas.set(futuras);
         this.isLoadingProximas.set(false);
@@ -84,7 +84,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
           this.carregarHoje();
           this.carregarProximas();
         },
-        error: (err: any) => alert('Erro: ' + (err.error?.message || 'Não foi possível confirmar.'))
+        error: (msg: string) => alert('Erro: ' + msg)
       });
     }
   }

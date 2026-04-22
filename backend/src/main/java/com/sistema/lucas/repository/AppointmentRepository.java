@@ -26,8 +26,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("SELECT a FROM Appointment a WHERE a.professional.email = :email AND CAST(a.dateTime AS date) = CURRENT_DATE")
     List<Appointment> findTodayAppointmentsByProfessionalEmail(@Param("email") String email);
 
-    // Próximas consultas do profissional (status AGENDADA, a partir de agora)
-    @Query("SELECT a FROM Appointment a WHERE a.professional.email = :email AND a.dateTime > :agora AND a.status = 'AGENDADA' ORDER BY a.dateTime ASC")
+    // Próximas consultas do profissional (status AGENDADA, CONFIRMADA_PROFISSIONAL, CONFIRMADA, a partir de agora)
+    @Query("SELECT a FROM Appointment a WHERE a.professional.email = :email AND a.dateTime > :agora AND a.status IN ('AGENDADA', 'CONFIRMADA_PROFISSIONAL', 'CONFIRMADA') ORDER BY a.dateTime ASC")
     List<Appointment> findProximasByProfissionalEmail(
         @Param("email") String email,
         @Param("agora") LocalDateTime agora
@@ -38,7 +38,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Long countPacientesUnicosByProfissional(@Param("email") String email);
 
     // Próxima consulta agendada do paciente
-    @Query("SELECT a FROM Appointment a WHERE a.patient.email = :email AND a.dateTime > :agora AND a.status = 'AGENDADA' ORDER BY a.dateTime ASC")
+    @Query("SELECT a FROM Appointment a WHERE a.patient.email = :email AND a.dateTime > :agora AND a.status IN ('AGENDADA', 'CONFIRMADA_PROFISSIONAL', 'CONFIRMADA') ORDER BY a.dateTime ASC")
     List<Appointment> findProximaByPacienteEmail(
         @Param("email") String email,
         @Param("agora") LocalDateTime agora

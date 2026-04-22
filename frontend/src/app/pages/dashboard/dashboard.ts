@@ -105,7 +105,7 @@ export class DashboardComponent implements OnInit {
   confirmarNoDashboard(id: number) {
     this.appointmentService.confirmarPaciente(id).subscribe({
       next: () => { alert('Presença confirmada!'); this.carregarDados(); },
-      error: (err: any) => alert('Erro: ' + (err.error?.message || 'Não foi possível confirmar.'))
+      error: (msg: string) => alert('Erro: ' + msg)
     });
   }
 }

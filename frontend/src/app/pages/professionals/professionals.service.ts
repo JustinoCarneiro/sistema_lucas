@@ -36,7 +36,7 @@ export class ProfessionalService {
   }
 
   deleteProfessional(id: number) {
-    return this.http.delete(`${environment.apiUrl}/professionals/${id}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/professionals/force/${id}`).pipe(
       catchError((err: HttpErrorResponse) => {
         const body = this.parseError(err);
         return throwError(() => body);
