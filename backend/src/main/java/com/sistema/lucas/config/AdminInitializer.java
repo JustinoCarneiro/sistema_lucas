@@ -19,13 +19,13 @@ public class AdminInitializer implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Value("${app.admin.email:admin@clinica.com}")
+    @Value("${app.admin.email}")
     private String adminEmail;
 
-    @Value("${app.admin.password:admin123}")
+    @Value("${app.admin.password}")
     private String adminPassword;
 
-    @Value("${app.admin.name:Administrador Principal}")
+    @Value("${app.admin.name}")
     private String adminName;
 
     @Override

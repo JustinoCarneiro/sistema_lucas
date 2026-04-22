@@ -16,7 +16,7 @@ public class EncryptionConverter implements AttributeConverter<String, String> {
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
     private final SecretKeySpec key;
 
-    public EncryptionConverter(@Value("${api.security.encryption.key:my-secret-key-123}") String encryptionKey) {
+    public EncryptionConverter(@Value("${api.security.encryption.key}") String encryptionKey) {
         // Garantir que a chave tenha 16 bytes para AES-128 (simples para demo)
         byte[] keyBytes = new byte[16];
         byte[] providedBytes = encryptionKey.getBytes();

@@ -2,8 +2,19 @@
 
 # --- script para enviar e rodar o deploy no servidor ---
 
-SERVER_IP="157.173.212.76"
-SERVER_USER="root"
+# Carrega variáveis do .env (se existir)
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+SERVER_IP="${DEPLOY_SERVER_IP}"
+SERVER_USER="${DEPLOY_SERVER_USER}"
+
+if [ -z "$SERVER_IP" ] || [ -z "$SERVER_USER" ]; then
+    echo "❌ Erro: DEPLOY_SERVER_IP ou DEPLOY_SERVER_USER não definidos no .env!"
+    exit 1
+fi
+
 SERVER_PATH="~/sistema/sistema_lucas/"
 
 echo "📡 Transferindo arquivos para o servidor ($SERVER_IP)..."
