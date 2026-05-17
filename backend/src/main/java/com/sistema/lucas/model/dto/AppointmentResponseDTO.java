@@ -3,17 +3,20 @@ package com.sistema.lucas.model.dto;
 
 import com.sistema.lucas.model.Appointment;
 import com.sistema.lucas.model.enums.StatusConsulta;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 public record AppointmentResponseDTO(
-    Long id,
-    Long patientId,
-    String professionalName,
-    String patientName,
-    LocalDateTime startTime,
-    String reason,
-    StatusConsulta status,
-    boolean podeCancelar
+    @JsonProperty("id") Long id,
+    @JsonProperty("patientId") Long patientId,
+    @JsonProperty("professionalName") String professionalName,
+    @JsonProperty("patientName") String patientName,
+    @JsonProperty("startTime") LocalDateTime startTime,
+    @JsonProperty("reason") String reason,
+    @JsonProperty("cancelReason") String cancelReason,
+    @JsonProperty("status") StatusConsulta status,
+    @JsonProperty("podeCancelar") boolean podeCancelar,
+    @JsonProperty("atrasada") boolean atrasada
 ) {
     public AppointmentResponseDTO(Appointment app) {
         this(
@@ -23,12 +26,14 @@ public record AppointmentResponseDTO(
             app.getPatient().getName(),
             app.getDateTime(),
             app.getReason(),
+            app.getCancelReason(),
             app.getStatus(),
-            // ✅ pode cancelar se faltam mais de 24h E o status permite
-            LocalDateTime.now().isBefore(app.getDateTime().minusHours(24))
-                && (app.getStatus() == StatusConsulta.AGENDADA
+            // ✅ Pode cancelar se o status permitir (mesmo se < 24h)
+            (app.getStatus() == StatusConsulta.AGENDADA
                     || app.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL
-                    || app.getStatus() == StatusConsulta.CONFIRMADA)
+                    || app.getStatus() == StatusConsulta.CONFIRMADA),
+            // ✅ Indica se é uma ação tardia (penalidade será aplicada)
+            java.time.LocalDateTime.now().isAfter(app.getDateTime().minusHours(24))
         );
     }
 }

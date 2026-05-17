@@ -31,7 +31,14 @@ export class MyAppointmentsComponent implements OnInit {
   availableDates = signal<{value: string, label: string}[]>([]);
   dateErrorMessage = signal('');
 
+  // 🔄 Modais e Signals de Controle
+  isCancelling = signal(false);
+  isRescheduling = signal(false);
+  selectedAppointment = signal<any>(null);
+
   scheduleForm: FormGroup;
+  cancelForm: FormGroup;
+  rescheduleForm: FormGroup;
 
   dayNames: Record<string, string> = {
     'MONDAY': 'Segunda-feira',
@@ -67,6 +74,17 @@ export class MyAppointmentsComponent implements OnInit {
       date: ['', Validators.required],
       slot: ['', Validators.required],
       reason: ['']
+    });
+
+    this.cancelForm = this.fb.group({
+      justification: ['', [Validators.required, Validators.minLength(10)]]
+    });
+
+    this.rescheduleForm = this.fb.group({
+      professionalId: ['', Validators.required],
+      date: ['', Validators.required],
+      slot: ['', Validators.required],
+      justification: ['', [Validators.required, Validators.minLength(10)]]
     });
   }
 
@@ -182,10 +200,91 @@ export class MyAppointmentsComponent implements OnInit {
   }
 
   cancelar(id: number) {
-    if (confirm('Confirmar cancelamento desta consulta?')) {
-      this.appointmentService.cancelarMinhaConsulta(id).subscribe({
-        next: () => this.loadAppointments(),
-        error: (msg: string) => alert('Erro: ' + msg)
+    const appointment = this.myAppointments().find(a => a.id === id);
+    if (!appointment) return;
+    
+    this.selectedAppointment.set(appointment);
+    this.cancelForm.reset();
+    this.isCancelling.set(true);
+  }
+
+  openRescheduleModal(appointment: any) {
+    this.selectedAppointment.set(appointment);
+    this.rescheduleForm.reset({
+      professionalId: appointment.professionalId, // Assuming we have this or need to load it
+      justification: ''
+    });
+    
+    // Configura o formulário com o profissional da consulta original
+    // Precisamos achar o profissional no signal de professionals
+    const prof = this.professionals().find(p => p.name === appointment.professionalName);
+    if (prof) {
+      this.rescheduleForm.patchValue({ professionalId: prof.id });
+      this.onRescheduleProfessionalChange();
+    }
+    
+    this.isRescheduling.set(true);
+  }
+
+  onRescheduleProfessionalChange() {
+    const profId = this.rescheduleForm.value.professionalId;
+    if (profId) {
+      this.availabilityService.getWorkingDays(Number(profId)).subscribe({
+        next: (days) => {
+          this.generateAvailableDates(days);
+        }
+      });
+    }
+  }
+
+  onRescheduleDateChange() {
+    const dateStr = this.rescheduleForm.value.date;
+    const profId = this.rescheduleForm.value.professionalId;
+    if (!dateStr || !profId) return;
+
+    this.isLoadingSlots.set(true);
+    this.availabilityService.getSlots(Number(profId), dateStr).subscribe({
+      next: (slots: any[]) => {
+        this.availableSlots.set(slots);
+        this.isLoadingSlots.set(false);
+      },
+      error: () => {
+        this.availableSlots.set([]);
+        this.isLoadingSlots.set(false);
+      }
+    });
+  }
+
+  onCancelSubmit() {
+    if (this.cancelForm.valid && this.selectedAppointment()) {
+      const id = this.selectedAppointment().id;
+      const justification = this.cancelForm.value.justification;
+
+      this.appointmentService.cancelarMinhaConsulta(id, justification).subscribe({
+        next: () => {
+          this.isCancelling.set(false);
+          this.loadAppointments();
+        },
+        error: (msg: string) => alert('Erro ao cancelar: ' + msg)
+      });
+    }
+  }
+
+  onRescheduleSubmit() {
+    if (this.rescheduleForm.valid && this.selectedAppointment()) {
+      const id = this.selectedAppointment().id;
+      const date = this.rescheduleForm.value.date;
+      const slot = this.rescheduleForm.value.slot;
+      const justification = this.rescheduleForm.value.justification;
+
+      const newDateTime = `${date}T${slot}`;
+
+      this.appointmentService.reagendarConsulta(id, newDateTime, justification).subscribe({
+        next: () => {
+          this.isRescheduling.set(false);
+          this.loadAppointments();
+        },
+        error: (msg: string) => alert('Erro ao reagendar: ' + msg)
       });
     }
   }

@@ -13,6 +13,9 @@ public class LembreteScheduler {
 
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private EmailTemplateService emailTemplateService;
+    @Autowired private com.sistema.lucas.repository.ProfessionalRepository professionalRepository;
+    @Autowired private com.sistema.lucas.repository.ProfessionalAvailabilityRepository availabilityRepository;
+    @Autowired private EmailService emailService;
 
     // Executa todo dia às 10h da manhã
     // Busca consultas do dia seguinte e envia lembrete
@@ -33,5 +36,33 @@ public class LembreteScheduler {
         });
 
         System.out.println("✅ Job de lembretes concluído. " + consultas.size() + " e-mail(s) enviado(s).");
+    }
+
+    // Executa todo dia às 8h da manhã
+    @Scheduled(cron = "0 0 8 * * *", zone = "America/Sao_Paulo")
+    public void notificarPrazoAgenda() {
+        java.time.LocalDate hoje = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"));
+        java.time.YearMonth mesAtual = java.time.YearMonth.from(hoje);
+        java.time.LocalDate fimDoMes = mesAtual.atEndOfMonth();
+        long diasParaFim = java.time.temporal.ChronoUnit.DAYS.between(hoje, fimDoMes);
+
+        // Se bloqueia quando < 5 dias pro fim (ex: dia 27 em um mês de 31 dias).
+        // 5 dias antes desse limite significa faltar 10 dias pro fim (ex: dia 21).
+        if (diasParaFim == 10) {
+            java.time.YearMonth proximoMes = mesAtual.plusMonths(1);
+            var todos = professionalRepository.findAll();
+            for (var p : todos) {
+                boolean enviou = availabilityRepository.existsByProfessionalIdAndDateBetween(
+                    p.getId(), proximoMes.atDay(1), proximoMes.atEndOfMonth()
+                );
+                if (!enviou) {
+                    emailService.enviar(
+                        p.getEmail(),
+                        "Lembrete: Prazo da Agenda do Próximo Mês",
+                        "<p>Olá, " + p.getName() + ",</p><p>Faltam exatos 5 dias para o limite de submissão da sua agenda de " + proximoMes + ".</p><p>Por favor, acesse o sistema e envie seus horários.</p>"
+                    );
+                }
+            }
+        }
     }
 }

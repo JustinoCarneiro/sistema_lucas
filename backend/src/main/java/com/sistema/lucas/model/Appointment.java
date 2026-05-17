@@ -1,6 +1,7 @@
 // backend/src/main/java/com/sistema/lucas/model/Appointment.java
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import com.sistema.lucas.model.dto.AppointmentCreateDTO;
 import com.sistema.lucas.model.enums.StatusConsulta;
 import jakarta.persistence.*;
@@ -27,7 +28,11 @@ public class Appointment {
     private Patient patient;
 
     private LocalDateTime dateTime;
+    @Convert(converter = EncryptionConverter.class)
     private String reason;
+
+    @Convert(converter = EncryptionConverter.class)
+    private String cancelReason;
 
     @Enumerated(EnumType.STRING)
     private StatusConsulta status;

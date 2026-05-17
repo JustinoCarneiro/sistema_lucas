@@ -22,6 +22,6 @@ public class AuditLogService {
                 .entidadeId(entidadeId)
                 .detalhes(detalhes)
                 .build();
-        auditLogRepository.save(log);
+        auditLogRepository.save(java.util.Objects.requireNonNull(log));
     }
 }

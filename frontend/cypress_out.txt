@@ -1,0 +1,82 @@
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.12.0                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v24.13.1 (/home/marcos/.nvm/versions/node/v24.13.1/bin/node)                   │
+  │ Specs:          1 found (11-disponibilidade.cy.ts)                                             │
+  │ Searched:       cypress/e2e/11-disponibilidade.cy.ts                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  11-disponibilidade.cy.ts                                                        (1 of 1)
+
+
+  11 — Disponibilidade de Horários (Profissional)
+    ✓ Página de disponibilidade carrega corretamente (2613ms)
+    1) Pode selecionar um dia no calendário e um horário
+    ✓ Botão "Enviar Agenda do Mês" persiste as mudanças (2597ms)
+    ✓ Exibe alerta de prazo ou não, dependendo da data atual (2065ms)
+
+
+  3 passing (14s)
+  1 failing
+
+  1) 11 — Disponibilidade de Horários (Profissional)
+       Pode selecionar um dia no calendário e um horário:
+     AssertionError: Timed out retrying after 4000ms: expected '<button.px-2.py-2.rounded-lg.text-sm.font-medium.transition-all.duration-200.border.disabled:cursor-not-allowed.bg-white.text-gray-600.border-gray-200.hover:border-blue-300.hover:bg-blue-50>' to have class 'bg-blue-900'
+      at Context.eval (webpack://sistema-lucas-ui/./cypress/e2e/11-disponibilidade.cy.ts:19:35)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        4                                                                                │
+  │ Passing:      3                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        true                                                                             │
+  │ Duration:     13 seconds                                                                       │
+  │ Spec Ran:     11-disponibilidade.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/marcos/Applications/sistema_lucas/frontend/cypress/screenshots/11-disponib     (1280x720)
+     ilidade.cy.ts/11 — Disponibilidade de Horários (Profissional) -- Pode selecionar               
+      um dia no calendário e um horário (failed).png                                                
+
+
+  (Video)
+
+  -  Video output: /home/marcos/Applications/sistema_lucas/frontend/cypress/videos/11-disponibilidade.cy.ts.mp4
+
+
+================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  11-disponibilidade.cy.ts                 00:13        4        3        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:13        4        3        1        -        -  
+

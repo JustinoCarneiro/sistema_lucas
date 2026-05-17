@@ -43,7 +43,7 @@ class ProfessionalServiceTest {
         var exception = assertThrows(RuntimeException.class, () -> professionalService.create(dto));
         assertTrue(exception.getMessage().contains("registro já está cadastrado"));
 
-        verify(professionalRepository, never()).save(any());
+        verify(professionalRepository, never()).save(java.util.Objects.requireNonNull(any()));
     }
 
     @Test
@@ -61,6 +61,6 @@ class ProfessionalServiceTest {
 
         assertDoesNotThrow(() -> professionalService.create(dto));
 
-        verify(professionalRepository, times(1)).save(any(Professional.class));
+        verify(professionalRepository, times(1)).save(java.util.Objects.requireNonNull(any(Professional.class)));
     }
 }

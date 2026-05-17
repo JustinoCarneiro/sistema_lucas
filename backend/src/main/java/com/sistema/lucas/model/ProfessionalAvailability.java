@@ -3,12 +3,12 @@ package com.sistema.lucas.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
 @Table(name = "professional_availability",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"professional_id", "day_of_week", "startTime"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"professional_id", "available_date", "startTime"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class ProfessionalAvailability {
 
@@ -20,9 +20,8 @@ public class ProfessionalAvailability {
     @JoinColumn(name = "professional_id", nullable = false)
     private Professional professional;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week", nullable = false)
-    private DayOfWeek dayOfWeek;
+    @Column(name = "available_date", nullable = false)
+    private LocalDate date;
 
     @Column(nullable = false)
     private LocalTime startTime;

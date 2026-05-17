@@ -50,7 +50,7 @@ describe('01 — Autenticação', () => {
   });
 
   it('Deve logar como ADMIN', () => {
-    cy.login('admin@clinica.com', 'admin123');
+    cy.login('admin@clinica.com', 'admin');
     cy.url().should('include', '/panel/dashboard');
   });
 

@@ -40,6 +40,7 @@ class AppointmentServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private EmailTemplateService emailTemplateService;
     @Mock private ProfessionalAvailabilityRepository availabilityRepository;
+    @Mock private AuditLogService auditLogService;
 
     // ──────────────────────── Agendamento ────────────────────────
 
@@ -67,14 +68,14 @@ class AppointmentServiceTest {
 
             when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
             when(patientRepository.findByEmail(patientEmail)).thenReturn(Optional.of(patient));
-            when(availabilityRepository.findByProfessionalEmailAndDayOfWeek("ana@clinica.com", DayOfWeek.MONDAY))
+            when(availabilityRepository.findByProfessionalEmailAndDate("ana@clinica.com", futureMonday.toLocalDate()))
                 .thenReturn(List.of(availability));
             when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
                 eq(professionalId), any(), any(), any()
             )).thenReturn(List.of());
 
             assertDoesNotThrow(() -> appointmentService.agendar(dto, patientEmail));
-            verify(appointmentRepository, times(1)).save(any(Appointment.class));
+            verify(appointmentRepository, times(1)).save(java.util.Objects.requireNonNull(any(Appointment.class)));
         }
 
         @Test
@@ -94,7 +95,7 @@ class AppointmentServiceTest {
 
             when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
             when(patientRepository.findByEmail(patientEmail)).thenReturn(Optional.of(new Patient()));
-            when(availabilityRepository.findByProfessionalEmailAndDayOfWeek("ana@clinica.com", DayOfWeek.MONDAY))
+            when(availabilityRepository.findByProfessionalEmailAndDate("ana@clinica.com", futureMonday.toLocalDate()))
                 .thenReturn(List.of(slot)); // Só tem 08:00, pedimos 15:00
 
             var exception = assertThrows(RuntimeException.class, () -> appointmentService.agendar(dto, patientEmail));
@@ -122,7 +123,7 @@ class AppointmentServiceTest {
 
             when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
             when(patientRepository.findByEmail(patientEmail)).thenReturn(Optional.of(new Patient()));
-            when(availabilityRepository.findByProfessionalEmailAndDayOfWeek("ana@clinica.com", DayOfWeek.MONDAY))
+            when(availabilityRepository.findByProfessionalEmailAndDate("ana@clinica.com", futureMonday.toLocalDate()))
                 .thenReturn(List.of(availability));
             when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
                 eq(professionalId), any(), any(), any()
@@ -159,6 +160,78 @@ class AppointmentServiceTest {
             assertDoesNotThrow(() -> appointmentService.confirmarProfissional(id, emailProf));
             assertEquals(StatusConsulta.CONFIRMADA_PROFISSIONAL, consulta.getStatus());
             verify(appointmentRepository, times(1)).save(consulta);
+        }
+    }
+
+    // ──────────────────────── Cancelamento e Reagendamento ────────────────────────
+
+    @Nested
+    @DisplayName("Cancelamento e Reagendamento (Regra 24h e Justificativa)")
+    class CancelamentoReagendamentoTests {
+
+        @Test
+        @DisplayName("Deve cancelar com sucesso se faltar mais de 24h e houver justificativa")
+        void cancelarComSucesso() {
+            Long id = 1L;
+            String email = "paciente@email.com";
+            String justificativa = "Imprevisto pessoal importante";
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setDateTime(LocalDateTime.now().plusHours(25)); // OK: 25h > 24h
+            consulta.setStatus(StatusConsulta.AGENDADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.cancelar(id, email, justificativa));
+            assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
+            assertEquals(justificativa, consulta.getCancelReason());
+            verify(auditLogService).log(anyString(), anyString(), anyString(), anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("Deve falhar ao cancelar se faltar menos de 24h")
+        void erroCancelarMenos24h() {
+            Long id = 1L;
+            String email = "paciente@email.com";
+            
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setDateTime(LocalDateTime.now().plusHours(23)); // ERRO: 23h < 24h
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class, () -> appointmentService.cancelar(id, email, "Justificativa"));
+            assertTrue(ex.getMessage().contains("24h de antecedência"));
+        }
+
+        @Test
+        @DisplayName("Deve falhar ao reagendar sem justificativa")
+        void erroReagendarSemJustificativa() {
+            Long id = 1L;
+            String email = "paciente@email.com";
+            LocalDateTime novaData = LocalDateTime.now().plusDays(2);
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setDateTime(LocalDateTime.now().plusDays(1));
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class, () -> appointmentService.reagendar(id, email, novaData, ""));
+            assertEquals("A justificativa é obrigatória para o reagendamento.", ex.getMessage());
         }
     }
 

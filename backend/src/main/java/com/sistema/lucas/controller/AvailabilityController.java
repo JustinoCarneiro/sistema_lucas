@@ -10,11 +10,15 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -24,28 +28,38 @@ public class AvailabilityController {
 
     @Autowired private AvailabilityService service;
 
-    // Profissional — ver minha grade semanal
+    // Profissional — ver minha grade do mês
     @GetMapping("/minha")
-    public ResponseEntity<List<ProfessionalAvailability>> minhaDisponibilidade(Principal principal) {
-        return ResponseEntity.ok(service.getMinhaDisponibilidade(principal.getName()));
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<List<ProfessionalAvailability>> minhaDisponibilidade(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes,
+            Principal principal) {
+        return ResponseEntity.ok(service.getMinhaDisponibilidade(principal.getName(), mes));
     }
 
-    // Profissional — salvar/atualizar um dia
-    @PostMapping
-    public ResponseEntity<String> salvarDia(
-            @RequestBody @Valid AvailabilityDTO dto,
+    // Profissional — salvar/atualizar o mês
+    @PostMapping("/mensal")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<String> salvarMes(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes,
+            @RequestBody @Valid List<AvailabilityDTO> dtos,
             Principal principal) {
-        service.salvarDia(principal.getName(), dto);
-        return ResponseEntity.ok("Disponibilidade salva com sucesso!");
+        service.salvarMes(principal.getName(), dtos, mes);
+        return ResponseEntity.ok("Disponibilidade do mês salva com sucesso!");
     }
 
-    // Profissional — remover um dia
-    @DeleteMapping("/{dayOfWeek}")
-    public ResponseEntity<Void> removerDia(
-            @PathVariable DayOfWeek dayOfWeek,
-            Principal principal) {
-        service.removerDia(principal.getName(), dayOfWeek);
-        return ResponseEntity.noContent().build();
+    // Status do mês para o Frontend
+    @GetMapping("/status-mes")
+    public ResponseEntity<Map<String, Object>> getStatusMes() {
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        YearMonth mesAtual = YearMonth.from(hoje);
+        LocalDate fimDoMes = mesAtual.atEndOfMonth();
+        long diasParaFim = ChronoUnit.DAYS.between(hoje, fimDoMes);
+        
+        return ResponseEntity.ok(Map.of(
+            "diasRestantes", diasParaFim,
+            "bloqueado", false // Não há mais bloqueio, apenas avisos.
+        ));
     }
 
     // Paciente — listar profissionais que possuem disponibilidade configurada
@@ -71,6 +85,6 @@ public class AvailabilityController {
     public ResponseEntity<List<SlotDTO>> slotsDisponiveis(
             @PathVariable Long professionalId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
-        return ResponseEntity.ok(service.getSlotsDisponiveis(professionalId, data));
+        return ResponseEntity.ok(service.getSlotsDisponiveis(java.util.Objects.requireNonNull(professionalId), data));
     }
 }

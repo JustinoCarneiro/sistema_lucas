@@ -37,7 +37,7 @@ class PatientServiceTest {
         var exception = assertThrows(RuntimeException.class, () -> patientService.create(dto));
         assertTrue(exception.getMessage().contains("CPF já cadastrado"));
         
-        verify(patientRepository, never()).save(any());
+        verify(patientRepository, never()).save(java.util.Objects.requireNonNull(any()));
     }
 
     @Test
@@ -56,6 +56,6 @@ class PatientServiceTest {
         assertDoesNotThrow(() -> patientService.create(dto));
 
         // Assert
-        verify(patientRepository, times(1)).save(any(Patient.class));
+        verify(patientRepository, times(1)).save(java.util.Objects.requireNonNull(any(Patient.class)));
     }
 }

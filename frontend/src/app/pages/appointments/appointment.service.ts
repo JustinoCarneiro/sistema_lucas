@@ -32,8 +32,14 @@ export class AppointmentService {
     return this.http.get(`${environment.apiUrl}/consultas/minhas`);
   }
 
-  cancelarMinhaConsulta(id: number) {
-    return this.http.delete(`${environment.apiUrl}/consultas/${id}`).pipe(
+  cancelarMinhaConsulta(id: number, justification: string) {
+    return this.http.post(`${environment.apiUrl}/consultas/${id}/cancelar`, { justification }).pipe(
+      catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
+    );
+  }
+
+  reagendarConsulta(id: number, newDateTime: string, justification: string) {
+    return this.http.post(`${environment.apiUrl}/consultas/${id}/reagendar`, { newDateTime, justification }).pipe(
       catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
     );
   }

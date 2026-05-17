@@ -2,8 +2,7 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.*;
-import com.sistema.lucas.model.dto.AppointmentCreateDTO;
-import com.sistema.lucas.model.dto.AppointmentResponseDTO;
+import com.sistema.lucas.model.dto.*;
 import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +22,7 @@ public class AppointmentService {
     @Autowired private UserRepository userRepository;
     @Autowired private EmailTemplateService emailTemplateService;
     @Autowired private ProfessionalAvailabilityRepository availabilityRepository;
+    @Autowired private AuditLogService auditLogService;
 
     // ─── Leitura ─────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ public class AppointmentService {
             .stream().map(AppointmentResponseDTO::new).toList();
     }
 
-    public AppointmentResponseDTO buscarPorId(Long id, String email) {
+    public AppointmentResponseDTO buscarPorId(@org.springframework.lang.NonNull Long id, String email) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
             
@@ -59,15 +59,20 @@ public class AppointmentService {
     // Apenas pacientes agendam — via token JWT
     @Transactional
     public void agendar(AppointmentCreateDTO dto, String emailPaciente) {
-        var profissional = professionalRepository.findById(dto.professionalId())
+        var profissional = professionalRepository.findById(java.util.Objects.requireNonNull(dto.professionalId()))
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
         var paciente = patientRepository.findByEmail(emailPaciente)
             .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
 
-        // ✅ Validar que o profissional atende nesse dia da semana
-        var dayOfWeek = dto.dateTime().getDayOfWeek();
+        if (paciente.getBlockedUntil() != null && paciente.getBlockedUntil().isAfter(java.time.LocalDateTime.now())) {
+            String data = paciente.getBlockedUntil().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            throw new RuntimeException("Você está temporariamente bloqueado para novos agendamentos até " + data + " devido a um cancelamento/reagendamento tardio.");
+        }
+
+        // ✅ Validar que o profissional atende nesse dia
+        var dataConsulta = dto.dateTime().toLocalDate();
         var availability = availabilityRepository
-            .findByProfessionalEmailAndDayOfWeek(profissional.getEmail(), dayOfWeek);
+            .findByProfessionalEmailAndDate(profissional.getEmail(), dataConsulta);
         
         // ✅ Validar que o slot existe na disponibilidade do profissional
         LocalTime horario = dto.dateTime().toLocalTime().withMinute(0).withSecond(0).withNano(0);
@@ -102,7 +107,7 @@ public class AppointmentService {
     // ─── Cancelamento ────────────────────────────────────────────────────────
 
     @Transactional
-    public void cancelar(Long id, String email) {
+    public void cancelar(@org.springframework.lang.NonNull Long id, String email, String justificativa) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
             
@@ -114,16 +119,83 @@ public class AppointmentService {
         if (!isOwner && !isAdmin) {
             throw new RuntimeException("Operação de Segurança: Tentativa de cancelamento malicioso bloqueada.");
         }
+
+        // ✅ Regra de 24h: Aplica penalidade mas permite a ação
+        aplicarPenalidadeSeNecessario(consulta);
+
+        // ✅ Justificativa Obrigatória
+        if (justificativa == null || justificativa.isBlank()) {
+            throw new RuntimeException("A justificativa é obrigatória para o cancelamento.");
+        }
         
         consulta.setStatus(StatusConsulta.CANCELADA);
+        consulta.setCancelReason(justificativa);
         appointmentRepository.save(consulta);
+        
+        auditLogService.log(email, "CANCELAMENTO_CONSULTA", "Appointment", id, "Justificativa: " + justificativa);
         emailTemplateService.notificarConsultaCancelada(consulta); // ✅ e-mail
+    }
+
+    @Transactional
+    public void reagendar(@org.springframework.lang.NonNull Long id, String email, LocalDateTime novaData, String justificativa) {
+        var consulta = appointmentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+
+        // 🛡️ Segurança (IDOR)
+        if (!consulta.getPatient().getEmail().equals(email)) {
+            throw new RuntimeException("Apenas o paciente pode reagendar sua própria consulta.");
+        }
+
+        // ✅ Regra de 24h (validar a consulta original): Aplica penalidade mas permite
+        aplicarPenalidadeSeNecessario(consulta);
+
+        // ✅ Justificativa Obrigatória
+        if (justificativa == null || justificativa.isBlank()) {
+            throw new RuntimeException("A justificativa é obrigatória para o reagendamento.");
+        }
+
+        // ✅ Validar disponibilidade na nova data
+        var profissional = consulta.getProfessional();
+        var dataConsulta = novaData.toLocalDate();
+        var availability = availabilityRepository
+            .findByProfessionalEmailAndDate(profissional.getEmail(), dataConsulta);
+        
+        LocalTime horario = novaData.toLocalTime().withMinute(0).withSecond(0).withNano(0);
+        boolean slotDisponivel = availability.stream()
+            .anyMatch(a -> a.getStartTime().equals(horario));
+        
+        if (!slotDisponivel) {
+            throw new RuntimeException("O profissional não atende neste novo horário ou dia da semana.");
+        }
+
+        // ✅ Validar conflito de horário
+        LocalDateTime inicioDia = novaData.toLocalDate().atStartOfDay();
+        LocalDateTime fimDia = novaData.toLocalDate().plusDays(1).atStartOfDay();
+        var consultasExistentes = appointmentRepository
+            .findByProfessionalIdAndDateTimeBetweenAndStatusNot(
+                profissional.getId(), inicioDia, fimDia, StatusConsulta.CANCELADA
+            );
+
+        boolean conflito = consultasExistentes.stream()
+            .anyMatch(c -> c.getDateTime().toLocalTime().equals(horario));
+
+        if (conflito) {
+            throw new RuntimeException("Este novo horário já está ocupado.");
+        }
+
+        consulta.setDateTime(novaData);
+        consulta.setCancelReason(justificativa); // Reutilizando campo para justificativa de mudança
+        consulta.setStatus(StatusConsulta.AGENDADA); // Volta para agendada (precisa reconfirmar?)
+        appointmentRepository.save(consulta);
+
+        auditLogService.log(email, "REAGENDAMENTO_CONSULTA", "Appointment", id, "Nova Data: " + novaData + " | Justificativa: " + justificativa);
+        emailTemplateService.notificarConsultaAgendada(consulta);
     }
 
     // ─── Falta ───────────────────────────────────────────────────────────────
 
     @Transactional
-    public void marcarFalta(Long id, String emailProfissional) {
+    public void marcarFalta(@org.springframework.lang.NonNull Long id, String emailProfissional) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
             
@@ -137,15 +209,17 @@ public class AppointmentService {
 
     // ─── Confirmação (Profissional primeiro, Paciente depois) ────────────────
 
-    // Regra: só permite ação se faltam mais de 24h para a consulta
-    private void validarJanela(Appointment consulta) {
-        if (LocalDateTime.now().isAfter(consulta.getDateTime().minusHours(24))) {
-            throw new RuntimeException("Não é possível alterar a consulta com menos de 24h de antecedência.");
+    // Regra: se faltam menos de 24h para a consulta, bloqueia o paciente por 2 semanas para novos agendamentos
+    private void aplicarPenalidadeSeNecessario(Appointment consulta) {
+        if (java.time.LocalDateTime.now().isAfter(consulta.getDateTime().minusHours(24))) {
+            var paciente = consulta.getPatient();
+            paciente.setBlockedUntil(java.time.LocalDateTime.now().plusWeeks(2));
+            patientRepository.save(paciente);
         }
     }
 
     @Transactional
-    public void confirmarProfissional(Long id, String emailProfissional) {
+    public void confirmarProfissional(@org.springframework.lang.NonNull Long id, String emailProfissional) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
 
@@ -165,7 +239,7 @@ public class AppointmentService {
     }
 
     @Transactional
-    public void confirmarPaciente(Long id, String emailPaciente) {
+    public void confirmarPaciente(@org.springframework.lang.NonNull Long id, String emailPaciente) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
 

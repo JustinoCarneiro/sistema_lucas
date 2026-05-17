@@ -3,8 +3,10 @@ package com.sistema.lucas.controller;
 
 import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.*;
+import com.sistema.lucas.service.AuditLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.sistema.lucas.model.Appointment;
 
@@ -24,9 +26,12 @@ public class DashboardController {
     @Autowired private PatientRepository patientRepository;
     @Autowired private ProntuarioRepository prontuarioRepository;
     @Autowired private DocumentoRepository documentoRepository;
+    @Autowired private AuditLogService auditLogService;
 
     @GetMapping("/admin")
-    public ResponseEntity<Map<String, Object>> dashboardAdmin() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> dashboardAdmin(Principal principal) {
+        auditLogService.log(principal.getName(), "VISUALIZACAO", "Dashboard", null, "Acessou dashboard administrativo");
         Map<String, Object> dados = new LinkedHashMap<>();
 
         dados.put("totalProfissionais", professionalRepository.count());
@@ -50,8 +55,10 @@ public class DashboardController {
     }
 
     @GetMapping("/profissional")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
     public ResponseEntity<Map<String, Object>> dashboardProfissional(Principal principal) {
         String email = principal.getName();
+        auditLogService.log(email, "VISUALIZACAO", "Dashboard", null, "Acessou dashboard profissional");
         Map<String, Object> dados = new LinkedHashMap<>();
 
         // Consultas de hoje
@@ -80,8 +87,10 @@ public class DashboardController {
     }
 
     @GetMapping("/paciente")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<Map<String, Object>> dashboardPaciente(Principal principal) {
         String email = principal.getName();
+        auditLogService.log(email, "VISUALIZACAO", "Dashboard", null, "Acessou dashboard paciente");
         Map<String, Object> dados = new LinkedHashMap<>();
 
         // Próxima consulta agendada

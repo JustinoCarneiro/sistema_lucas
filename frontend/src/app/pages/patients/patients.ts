@@ -41,4 +41,17 @@ export class Patients implements OnInit {
       });
     }
   }
+
+  desbloquearPaciente(id: number) {
+    if (confirm('Deseja liberar este paciente para novos agendamentos agora?')) {
+      this.patientService.desbloquear(id).subscribe({
+        next: () => { 
+          alert('Paciente desbloqueado com sucesso!'); 
+          this.loadPatients(); 
+          if (this.selectedItem) this.selectedItem = null;
+        },
+        error: (msg: string) => alert('Erro: ' + msg)
+      });
+    }
+  }
 }

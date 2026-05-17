@@ -183,6 +183,34 @@ public class EmailTemplateService {
             )
         );
     }
+    
+    // ─── Lembrete de Prazo de Agenda ──────────────────────────────────────────
+    
+    public void enviarLembreteSubmissaoAgenda(com.sistema.lucas.model.Professional prof, java.time.YearMonth mesAlvo, boolean urgente) {
+        String nomeMes = mesAlvo.getMonth().getDisplayName(java.time.format.TextStyle.FULL, new java.util.Locale("pt", "BR"));
+        nomeMes = nomeMes.substring(0, 1).toUpperCase() + nomeMes.substring(1);
+        
+        String urlSistema = "http://localhost:8082"; // Idealmente viria de um config
+        
+        String prefixo = urgente ? "🚨 URGENTE: " : "⚠️ Lembrete: ";
+        String mensagem = urgente 
+            ? "O mês está acabando! Notamos que sua disponibilidade para <b>" + nomeMes + "</b> ainda não foi preenchida."
+            : "Gostaríamos de lembrar que o prazo para submissão da sua disponibilidade para o próximo mês (<b>" + nomeMes + "</b>) encerra em breve.";
+        
+        emailService.enviar(
+            prof.getEmail(),
+            prefixo + "Prazo final para agenda de " + nomeMes,
+            buildPremiumTemplate(
+                urgente ? "Ação Necessária: Agenda" : "Lembrete de Agenda",
+                "Olá, Dr(a). " + prof.getName() + "!",
+                mensagem,
+                urgente ? "⏳ Prazo Crítico" : "Prazo Final: Dia 25 às 23:59",
+                urgente ? "Sua agenda precisa ser preenchida hoje para evitar transtornos no agendamento de pacientes." 
+                        : "Após este período, iniciaremos os avisos diários de pendência.",
+                urlSistema + "/panel/availability"
+            )
+        );
+    }
 
     // ─── Template HTML base ──────────────────────────────────────────────────
 
@@ -256,5 +284,57 @@ public class EmailTemplateService {
             </body>
             </html>
             """.formatted(corDestaque, titulo, saudacao, mensagem, linhas, rodapeHtml);
+    }
+
+    private String buildPremiumTemplate(
+            String titulo,
+            String saudacao,
+            String mensagem,
+            String destaqueTitulo,
+            String destaqueTexto,
+            String urlCta) {
+        
+        return """
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head><meta charset="UTF-8"></head>
+            <body style="margin:0;padding:0;background-color:#f8fafc;font-family:Arial,sans-serif;">
+                <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:40px 0;">
+                    <tr><td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.05);border:1px solid #e2e8f0;">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1e3a8a 0%%, #3b82f6 100%%); padding:40px;">
+                                    <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">%s</h1>
+                                    <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Projeto Lucas — Gestão Clínica</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:40px;">
+                                    <p style="margin:0 0 20px;font-size:18px;color:#1e293b;font-weight:600;">%s</p>
+                                    <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#475569;">%s</p>
+                                    <div style="background-color:#fff7ed;border-left:4px solid #f97316;padding:20px;border-radius:8px;margin-bottom:30px;">
+                                        <p style="margin:0;font-size:15px;color:#9a3412;font-weight:600;">%s</p>
+                                        <p style="margin:5px 0 0;font-size:14px;color:#c2410c;">%s</p>
+                                    </div>
+                                    <table width="100%%" cellpadding="0" cellspacing="0">
+                                        <tr><td align="center">
+                                            <a href="%s" style="background-color:#2563eb;color:#ffffff;padding:16px 32px;text-decoration:none;font-weight:700;border-radius:10px;font-size:16px;display:inline-block;">
+                                                Atualizar Minha Agenda Agora
+                                            </a>
+                                        </td></tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:30px;background-color:#f1f5f9;text-align:center;">
+                                    <p style="margin:0;font-size:12px;color:#94a3b8;">Projeto Lucas — Gestão Clínica Humanizada</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td></tr>
+                </table>
+            </body>
+            </html>
+            """.formatted(titulo, saudacao, mensagem, destaqueTitulo, destaqueTexto, urlCta);
     }
 }

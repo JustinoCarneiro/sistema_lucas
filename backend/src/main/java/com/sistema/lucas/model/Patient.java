@@ -2,6 +2,9 @@ package com.sistema.lucas.model;
 
 import java.time.LocalDate;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -12,15 +15,25 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Patient extends User { // Herança estabelecida aqui
+    @Convert(converter = EncryptionConverter.class)
     private String cpf;
+    @Convert(converter = EncryptionConverter.class)
     private String phone;
 
     private LocalDate birthDate;
+    @Convert(converter = EncryptionConverter.class)
     private String emergencyContactName;
+    @Convert(converter = EncryptionConverter.class)
     private String emergencyContactPhone;
     private String gender;
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String allergies;
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String address;
+
+    private java.time.LocalDateTime blockedUntil;
 
     @PrePersist
     @PreUpdate

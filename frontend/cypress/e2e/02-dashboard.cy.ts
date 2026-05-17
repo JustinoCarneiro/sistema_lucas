@@ -3,7 +3,7 @@
 describe('02 — Dashboards por Role', () => {
 
   it('Dashboard do Admin — cards visíveis', () => {
-    cy.login('admin@clinica.com', 'admin123');
+    cy.login('admin@clinica.com', 'admin');
     cy.url().should('include', '/panel/dashboard');
     cy.contains('Visão Geral', { timeout: 10000 }).should('be.visible');
     cy.contains('Profissionais cadastrados').should('be.visible');
@@ -12,7 +12,7 @@ describe('02 — Dashboards por Role', () => {
   });
 
   it('Dashboard do Admin — gráfico por status', () => {
-    cy.login('admin@clinica.com', 'admin123');
+    cy.login('admin@clinica.com', 'admin');
     cy.contains('Consultas por status', { timeout: 10000 }).should('be.visible');
   });
 

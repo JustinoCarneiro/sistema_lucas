@@ -8,23 +8,21 @@ import { environment } from '../../../environments/environment';
 export class AvailabilityService {
   private http = inject(HttpClient);
 
-  // Profissional — minha grade semanal
-  getMinhaDisponibilidade() {
-    return this.http.get<any[]>(`${environment.apiUrl}/disponibilidade/minha`);
+  // Profissional — minha grade do mês
+  getMinhaDisponibilidade(mes: string) {
+    return this.http.get<any[]>(`${environment.apiUrl}/disponibilidade/minha?mes=${mes}`);
   }
 
-  salvarDia(data: { dayOfWeek: string; startTimes: string[] }) {
-    return this.http.post(`${environment.apiUrl}/disponibilidade`, data, {
+  salvarMes(mes: string, dtos: { date: string; startTimes: string[] }[]) {
+    return this.http.post(`${environment.apiUrl}/disponibilidade/mensal?mes=${mes}`, dtos, {
       responseType: 'text'
     }).pipe(
       catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
     );
   }
 
-  removerDia(dayOfWeek: string) {
-    return this.http.delete(`${environment.apiUrl}/disponibilidade/${dayOfWeek}`).pipe(
-      catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
-    );
+  getStatusMes() {
+    return this.http.get<{ diasRestantes: number; bloqueado: boolean }>(`${environment.apiUrl}/disponibilidade/status-mes`);
   }
 
   // Paciente — profissionais com disponibilidade
@@ -47,11 +45,15 @@ export class AvailabilityService {
   }
 
   private parseError(err: HttpErrorResponse): string {
+    console.error('AvailabilityService parseError input:', err);
     try {
-      const body = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;
-      return body?.message || 'Erro desconhecido.';
+      if (err.error) {
+        const body = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;
+        return body?.message || err.message || 'Erro desconhecido.';
+      }
+      return err.message || 'Erro desconhecido.';
     } catch {
-      return err.error || 'Erro desconhecido.';
+      return err.error || err.message || 'Erro desconhecido.';
     }
   }
 }

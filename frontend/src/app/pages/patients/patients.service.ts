@@ -55,6 +55,14 @@ export class PatientService {
     );
   }
 
+  desbloquear(id: number) {
+    return this.http.patch(`${environment.apiUrl}/patients/${id}/desbloquear`, {}, {
+      responseType: 'text'
+    }).pipe(
+      catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
+    );
+  }
+
   private parseError(err: HttpErrorResponse): string {
     try {
       const body = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;

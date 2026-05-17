@@ -45,10 +45,59 @@ describe('04 — Consultas (Agendamento, Confirmação, Cancelamento)', () => {
   });
 
   it('Admin — agenda geral carrega', () => {
-    cy.login('admin@clinica.com', 'admin123');
+    cy.login('admin@clinica.com', 'admin');
     cy.visit('/panel/appointments');
     // Admin vê consultas de todos
     cy.get('table, [class*="border"]', { timeout: 10000 }).should('exist');
   });
 
+  it('Paciente — deve abrir modal de cancelamento e exigir justificativa', () => {
+    cy.login('lucas@email.com', '123456');
+    cy.intercept('GET', '**/consultas/minhas').as('getMinhas');
+    cy.visit('/panel/my-appointments');
+    cy.wait('@getMinhas');
+    
+    // Procura por uma consulta que pode ser cancelada usando testid
+    cy.get('[data-testid="cancelar-button"]').first().click();
+    
+    cy.contains('Cancelar Consulta').should('be.visible');
+    cy.contains('Confirmar Cancelamento').should('be.disabled');
+    
+    // Preencher justificativa curta (inválido)
+    cy.get('textarea').type('Curta');
+    cy.contains('Confirmar Cancelamento').should('be.disabled');
+    
+    // Justificativa válida
+    cy.get('textarea').clear().type('Justificativa com mais de 10 caracteres');
+    cy.contains('Confirmar Cancelamento').should('not.be.disabled');
+    
+    cy.contains('Voltar').click();
+    cy.contains('Cancelar Consulta').should('not.exist');
+  });
+
+  it('Paciente — deve abrir modal de reagendamento', () => {
+    cy.login('lucas@email.com', '123456');
+    cy.intercept('GET', '**/consultas/minhas').as('getMinhasReagendar');
+    cy.visit('/panel/my-appointments');
+    cy.wait('@getMinhasReagendar');
+    
+    cy.get('[data-testid="reagendar-button"]').first().click();
+    cy.contains('Reagendar Consulta').should('be.visible');
+    cy.get('select').should('exist'); // Select de datas
+    
+    cy.contains('Voltar').click();
+    cy.contains('Reagendar Consulta').should('not.exist');
+  });
+
+  it('Paciente — deve exibir aviso se consulta estiver a menos de 24h', () => {
+    cy.login('lucas@email.com', '123456');
+    cy.intercept('GET', '**/consultas/minhas').as('getMinhasAviso');
+    cy.visit('/panel/my-appointments');
+    cy.wait('@getMinhasAviso');
+    
+    // No DataInitializer, algumas consultas são de hoje (menos de 24h)
+    // Elas não devem ter os botões "Cancelar" ou "Reagendar"
+    // E devem exibir o aviso
+    cy.contains('⚠️ Ação tardia:').should('exist');
+  });
 });

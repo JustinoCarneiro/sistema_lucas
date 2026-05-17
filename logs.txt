@@ -1,0 +1,91 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.3)
+
+2026-05-16T14:54:14.659Z  INFO 1 --- [sistema-lucas] [           main] com.sistema.lucas.LucasApplication       : Starting LucasApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 1 (/app/app.jar started by root in /app)
+2026-05-16T14:54:14.664Z  INFO 1 --- [sistema-lucas] [           main] com.sistema.lucas.LucasApplication       : The following 1 profile is active: "prod"
+2026-05-16T14:54:16.784Z  INFO 1 --- [sistema-lucas] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-16T14:54:16.921Z  INFO 1 --- [sistema-lucas] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 117 ms. Found 10 JPA repository interfaces.
+2026-05-16T14:54:18.854Z  INFO 1 --- [sistema-lucas] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-05-16T14:54:18.887Z  INFO 1 --- [sistema-lucas] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-16T14:54:18.887Z  INFO 1 --- [sistema-lucas] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.36]
+2026-05-16T14:54:18.959Z  INFO 1 --- [sistema-lucas] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-16T14:54:18.962Z  INFO 1 --- [sistema-lucas] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 4217 ms
+2026-05-16T14:54:19.955Z  INFO 1 --- [sistema-lucas] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-16T14:54:20.399Z  INFO 1 --- [sistema-lucas] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4a336377
+2026-05-16T14:54:20.406Z  INFO 1 --- [sistema-lucas] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-16T14:54:20.495Z  INFO 1 --- [sistema-lucas] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://db:5432/sistema_lucas (PostgreSQL 15.17)
+2026-05-16T14:54:20.594Z  INFO 1 --- [sistema-lucas] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-05-16T14:54:20.772Z  INFO 1 --- [sistema-lucas] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-05-16T14:54:20.803Z  INFO 1 --- [sistema-lucas] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - baseline"
+2026-05-16T14:54:20.996Z  INFO 1 --- [sistema-lucas] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - add email verification"
+2026-05-16T14:54:21.042Z  INFO 1 --- [sistema-lucas] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - add unique constraint appointments"
+2026-05-16T14:54:21.093Z  INFO 1 --- [sistema-lucas] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 3 migrations to schema "public", now at version v3 (execution time 00:00.181s)
+2026-05-16T14:54:21.458Z  INFO 1 --- [sistema-lucas] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-16T14:54:21.633Z  INFO 1 --- [sistema-lucas] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.8.Final
+2026-05-16T14:54:21.747Z  INFO 1 --- [sistema-lucas] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-16T14:54:22.394Z  INFO 1 --- [sistema-lucas] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-16T14:54:22.567Z  INFO 1 --- [sistema-lucas] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 15.17
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-16T14:54:24.713Z  INFO 1 --- [sistema-lucas] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: alter table if exists appointments alter column id set data type bigint
+Hibernate: alter table if exists appointments alter column reason set data type varchar(255)
+Hibernate: alter table if exists appointments alter column status set data type varchar(255)
+Hibernate: create table audit_logs (id bigint generated by default as identity, acao varchar(255), data_hora timestamp(6), detalhes TEXT, entidade_id bigint, tipo_entidade varchar(255), usuario_email varchar(255), primary key (id))
+Hibernate: alter table if exists documentos alter column id set data type bigint
+Hibernate: alter table if exists documentos alter column tipo set data type varchar(255)
+Hibernate: create table password_reset_tokens (id bigint generated by default as identity, expiracao timestamp(6) not null, token varchar(255) not null, usado boolean not null, user_id bigint not null, primary key (id))
+Hibernate: alter table if exists patient alter column allergies set data type varchar(255)
+Hibernate: alter table if exists patient alter column cpf set data type varchar(255)
+Hibernate: alter table if exists patient alter column emergency_contact_phone set data type varchar(255)
+Hibernate: alter table if exists patient alter column gender set data type varchar(255)
+Hibernate: alter table if exists patient alter column phone set data type varchar(255)
+Hibernate: alter table if exists professional alter column cpf set data type varchar(255)
+Hibernate: alter table if exists professional alter column gender set data type varchar(255)
+Hibernate: alter table if exists professional alter column phone set data type varchar(255)
+Hibernate: alter table if exists professional alter column registro_conselho set data type varchar(255)
+Hibernate: alter table if exists professional alter column tipo_registro set data type varchar(255)
+Hibernate: create table professional_availability (id bigint generated by default as identity, available_date date not null, end_time time(6) not null, start_time time(6) not null, professional_id bigint not null, primary key (id))
+Hibernate: alter table if exists prontuarios alter column id set data type bigint
+Hibernate: alter table if exists users alter column id set data type bigint
+Hibernate: alter table if exists users alter column role set data type varchar(255)
+Hibernate: alter table if exists verification_tokens alter column id set data type bigint
+Hibernate: alter table if exists password_reset_tokens drop constraint if exists UK71lqwbwtklmljk3qlsugr1mig
+2026-05-16T14:54:25.186Z  WARN 1 --- [sistema-lucas] [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-05-16T14:54:25.188Z  WARN 1 --- [sistema-lucas] [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "uk71lqwbwtklmljk3qlsugr1mig" of relation "password_reset_tokens" does not exist, skipping
+Hibernate: alter table if exists password_reset_tokens add constraint UK71lqwbwtklmljk3qlsugr1mig unique (token)
+Hibernate: alter table if exists professional_availability drop constraint if exists UKkjeemnk43p9tq8elh74f80nd0
+2026-05-16T14:54:25.215Z  WARN 1 --- [sistema-lucas] [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-05-16T14:54:25.216Z  WARN 1 --- [sistema-lucas] [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "ukkjeemnk43p9tq8elh74f80nd0" of relation "professional_availability" does not exist, skipping
+Hibernate: alter table if exists professional_availability add constraint UKkjeemnk43p9tq8elh74f80nd0 unique (professional_id, available_date, start_time)
+Hibernate: alter table if exists password_reset_tokens add constraint FKk3ndxg5xp6v7wd4gjyusp15gq foreign key (user_id) references users
+Hibernate: alter table if exists professional_availability add constraint FKnkbjv8l4kay4i8jk2ghw4o4km foreign key (professional_id) references professional
+2026-05-16T14:54:26.095Z  INFO 1 --- [sistema-lucas] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-16T14:54:27.176Z  INFO 1 --- [sistema-lucas] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-16T14:54:29.122Z  INFO 1 --- [sistema-lucas] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name authService
+2026-05-16T14:54:29.285Z  WARN 1 --- [sistema-lucas] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-16T14:54:30.282Z  INFO 1 --- [sistema-lucas] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+CORS Configurado: Permitindo acessos de: [https://lucas.institutomelvin.org]
+2026-05-16T14:54:31.729Z  INFO 1 --- [sistema-lucas] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path '/'
+2026-05-16T14:54:31.763Z  INFO 1 --- [sistema-lucas] [           main] com.sistema.lucas.LucasApplication       : Started LucasApplication in 17.844 seconds (process running for 19.815)
+Hibernate: select u1_0.id,case when u1_1.id is not null then 1 when u1_2.id is not null then 2 when u1_0.id is not null then 0 end,u1_0.email,u1_0.name,u1_0.password,u1_0.role,u1_0.verified,u1_1.address,u1_1.allergies,u1_1.birth_date,u1_1.cpf,u1_1.emergency_contact_name,u1_1.emergency_contact_phone,u1_1.gender,u1_1.phone,u1_2.address,u1_2.birth_date,u1_2.cpf,u1_2.gender,u1_2.phone,u1_2.registro_conselho,u1_2.specialty,u1_2.tipo_registro from users u1_0 left join patient u1_1 on u1_0.id=u1_1.id left join professional u1_2 on u1_0.id=u1_2.id
+🛡️ Nenhum administrador encontrado. Criando Administrador Fundador...
+Hibernate: insert into users (email,name,password,role,verified) values (?,?,?,?,?)
+✅ Administrador Fundador criado com sucesso! Email: admin@clinica.com
+2026-05-16T14:55:25.200Z  INFO 1 --- [sistema-lucas] [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-16T14:55:25.201Z  INFO 1 --- [sistema-lucas] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-16T14:55:25.203Z  INFO 1 --- [sistema-lucas] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+Hibernate: select u1_0.id,case when u1_1.id is not null then 1 when u1_2.id is not null then 2 when u1_0.id is not null then 0 end,u1_0.email,u1_0.name,u1_0.password,u1_0.role,u1_0.verified,u1_1.address,u1_1.allergies,u1_1.birth_date,u1_1.cpf,u1_1.emergency_contact_name,u1_1.emergency_contact_phone,u1_1.gender,u1_1.phone,u1_2.address,u1_2.birth_date,u1_2.cpf,u1_2.gender,u1_2.phone,u1_2.registro_conselho,u1_2.specialty,u1_2.tipo_registro from users u1_0 left join patient u1_1 on u1_0.id=u1_1.id left join professional u1_2 on u1_0.id=u1_2.id where u1_0.email=?
+2026-05-16T14:55:25.955Z  WARN 1 --- [sistema-lucas] [nio-8081-exec-1] c.s.l.s.config.GlobalExceptionHandler    : Tentativa de login com credenciais inválidas.

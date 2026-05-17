@@ -7,7 +7,7 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
   });
 
   it('Admin — Exportar Pacientes (Mascaramento CPF)', () => {
-    cy.login('admin@clinica.com', 'admin123');
+    cy.login('admin@clinica.com', 'admin');
     cy.visit('/panel/dashboard');
 
     // Intercepta a chamada de exportação
@@ -25,7 +25,7 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
   });
 
   it('Admin — Exportar Profissionais', () => {
-    cy.login('admin@clinica.com', 'admin123');
+    cy.login('admin@clinica.com', 'admin');
     cy.visit('/panel/dashboard');
 
     cy.intercept('GET', '**/export/professionals').as('exportProfs');

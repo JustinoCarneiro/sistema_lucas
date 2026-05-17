@@ -149,9 +149,9 @@
           <span class="font-medium">{{ c.professionalName }}</span>
           <span *ngIf="c.reason"> · {{ c.reason }}</span>
         </p>
-        <p *ngIf="!c.podeCancelar && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL')"
-          class="text-xs text-orange-500 mt-1">
-          ⚠️ Prazo de cancelamento encerrado (menos de 24h)
+        <p *ngIf="c.atrasada && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL' || c.status === 'CONFIRMADA')"
+          class="text-xs text-red-500 font-bold mt-1">
+          ⚠️ Ação tardia: Cancelar/Reagendar aplicará penalidade de 2 semanas.
         </p>
       </div>
       <div class="flex gap-2 shrink-0 flex-wrap">
@@ -174,13 +174,139 @@
           ✓ Confirmada
         </span>
 
+        <!-- Reagendar -->
+        <button
+          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL' || c.status === 'CONFIRMADA') && c.podeCancelar"
+          (click)="openRescheduleModal(c)"
+          data-testid="reagendar-button"
+          class="text-sm font-medium px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition">
+          Reagendar
+        </button>
+
         <!-- Cancelar -->
         <button
-          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL') && c.podeCancelar"
+          *ngIf="(c.status === 'AGENDADA' || c.status === 'CONFIRMADA_PROFISSIONAL' || c.status === 'CONFIRMADA') && c.podeCancelar"
           (click)="cancelar(c.id)"
+          data-testid="cancelar-button"
           class="text-sm font-medium px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition">
           Cancelar
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ MODAL DE CANCELAMENTO ══════════ -->
+  <div *ngIf="isCancelling()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Cancelar Consulta</h3>
+        <p class="text-sm text-gray-500 mb-4">Por favor, informe o motivo do cancelamento para o profissional.</p>
+        
+        <div *ngIf="selectedAppointment()?.atrasada" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <p class="text-xs text-red-700 font-bold flex items-center gap-2">
+            <span>⚠️ AVISO DE PENALIDADE</span>
+          </p>
+          <p class="text-[11px] text-red-600 mt-1">
+            Como faltam menos de 24h para a consulta, ao confirmar o cancelamento você ficará 
+            <span class="font-bold underline">bloqueado para novos agendamentos por 14 dias</span>.
+          </p>
+        </div>
+
+        <form [formGroup]="cancelForm" (ngSubmit)="onCancelSubmit()">
+          <div class="mb-6">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Justificativa (mín. 10 caracteres)</label>
+            <textarea formControlName="justification" rows="3"
+              class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition resize-none"
+              placeholder="Digite o motivo do cancelamento..."></textarea>
+            <p *ngIf="cancelForm.get('justification')?.touched && cancelForm.get('justification')?.invalid" class="text-xs text-red-500 mt-1">
+              Justificativa muito curta ou obrigatória.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="button" (click)="isCancelling.set(false)"
+              class="flex-1 px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition">
+              Voltar
+            </button>
+            <button type="submit" [disabled]="cancelForm.invalid"
+              class="flex-1 px-6 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition disabled:opacity-50 shadow-md">
+              Confirmar Cancelamento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ MODAL DE REAGENDAMENTO ══════════ -->
+  <div *ngIf="isRescheduling()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="p-6 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Reagendar Consulta</h3>
+        <p class="text-sm text-gray-500 mb-4">Escolha uma nova data e informe a justificativa.</p>
+
+        <div *ngIf="selectedAppointment()?.atrasada" class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <p class="text-xs text-amber-700 font-bold flex items-center gap-2">
+            <span>⚠️ AVISO DE PENALIDADE</span>
+          </p>
+          <p class="text-[11px] text-amber-600 mt-1">
+            Como faltam menos de 24h para a consulta original, ao reagendar você ficará 
+            <span class="font-bold underline">bloqueado para novos agendamentos por 14 dias</span>.
+          </p>
+        </div>
+
+        <form [formGroup]="rescheduleForm" (ngSubmit)="onRescheduleSubmit()">
+          
+          <div class="space-y-4 mb-6">
+            <!-- Data -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Escolha a nova data</label>
+              <select formControlName="date" (change)="onRescheduleDateChange()"
+                class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition">
+                <option value="">Selecione uma data...</option>
+                <option *ngFor="let date of availableDates()" [value]="date.value">{{ date.label }}</option>
+              </select>
+            </div>
+
+            <!-- Horários -->
+            <div *ngIf="rescheduleForm.get('date')?.value">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Escolha o novo horário</label>
+              
+              <div *ngIf="isLoadingSlots()" class="text-sm text-gray-400 py-2 animate-pulse">Buscando horários...</div>
+              
+              <div *ngIf="!isLoadingSlots() && availableSlots().length > 0" class="flex flex-wrap gap-2">
+                <button *ngFor="let slot of availableSlots()" type="button"
+                  (click)="rescheduleForm.patchValue({slot: slot.startTime})"
+                  class="px-3 py-2 rounded-lg text-xs font-medium border transition-all"
+                  [ngClass]="rescheduleForm.get('slot')?.value === slot.startTime
+                    ? 'bg-blue-900 text-white border-blue-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400'">
+                  {{ slot.startTime.substring(0, 5) }}
+                </button>
+              </div>
+              <p *ngIf="!isLoadingSlots() && availableSlots().length === 0" class="text-xs text-amber-600">Nenhum horário disponível para esta data.</p>
+            </div>
+
+            <!-- Justificativa -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Justificativa da mudança</label>
+              <textarea formControlName="justification" rows="2"
+                class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition resize-none"
+                placeholder="Por que você precisa reagendar?"></textarea>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="button" (click)="isRescheduling.set(false)"
+              class="flex-1 px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition">
+              Voltar
+            </button>
+            <button type="submit" [disabled]="rescheduleForm.invalid"
+              class="flex-1 px-6 py-2.5 rounded-xl bg-blue-900 text-white font-semibold hover:bg-blue-800 transition disabled:opacity-50 shadow-md">
+              Confirmar Alteração
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

@@ -46,7 +46,7 @@ public class ProfessionalService {
     }
 
     @Transactional
-    public void update(Long id, ProfessionalCreateDTO dto) {
+    public void update(@org.springframework.lang.NonNull Long id, ProfessionalCreateDTO dto) {
         Professional professional = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
@@ -101,11 +101,11 @@ public class ProfessionalService {
             professional.setPassword(passwordEncoder.encode(dto.newPassword()));
         }
 
-        repository.save(professional);
+        repository.save(java.util.Objects.requireNonNull(professional));
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(@org.springframework.lang.NonNull Long id) {
         try {
             repository.deleteById(id);
             repository.flush();
@@ -115,21 +115,21 @@ public class ProfessionalService {
     }
 
     @Transactional
-    public void forceDelete(Long id) {
+    public void forceDelete(@org.springframework.lang.NonNull Long id) {
         Professional prof = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
         // Apagar Documentos
-        documentoRepository.deleteAll(documentoRepository.findByProfissionalEmailOrderByCriadoEmDesc(prof.getEmail()));
+        documentoRepository.deleteAll(java.util.Objects.requireNonNull(documentoRepository.findByProfissionalEmailOrderByCriadoEmDesc(prof.getEmail())));
         
         // Apagar Prontuários
-        prontuarioRepository.deleteAll(prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc(prof.getEmail()));
+        prontuarioRepository.deleteAll(java.util.Objects.requireNonNull(prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc(prof.getEmail())));
 
         // Apagar Disponibilidades
-        availabilityRepository.deleteAll(availabilityRepository.findByProfessionalId(id));
+        availabilityRepository.deleteAll(java.util.Objects.requireNonNull(availabilityRepository.findByProfessionalId(id)));
 
         // Apagar Consultas
-        appointmentRepository.deleteAll(appointmentRepository.findByProfessionalId(id));
+        appointmentRepository.deleteAll(java.util.Objects.requireNonNull(appointmentRepository.findByProfessionalId(id)));
 
         // Finalmente, apagar o Profissional
         repository.delete(prof);

@@ -31,7 +31,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(java.util.Objects.requireNonNull(context)).build();
     }
 
     @Test
@@ -41,8 +41,8 @@ class AuthControllerTest {
         org.mockito.Mockito.when(userRepository.findByEmail(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/register")
-                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("Paciente registrado com sucesso! Verifique seu e-mail para confirmar a conta."));
         
@@ -76,8 +76,8 @@ class AuthControllerTest {
         org.mockito.Mockito.when(userRepository.findByEmail("jaexiste@email.com")).thenReturn(new com.sistema.lucas.model.User());
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/register")
-                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("Email já cadastrado"));
     }

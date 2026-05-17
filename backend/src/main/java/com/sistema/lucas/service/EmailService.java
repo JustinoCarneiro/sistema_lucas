@@ -25,10 +25,10 @@ public class EmailService {
             MimeMessage mensagem = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mensagem, true, "UTF-8");
 
-            helper.setFrom(remetente);
-            helper.setTo(destinatario);
-            helper.setSubject(assunto);
-            helper.setText(corpoHtml, true); // true = HTML
+            helper.setFrom(java.util.Objects.requireNonNull(remetente));
+            helper.setTo(java.util.Objects.requireNonNull(destinatario));
+            helper.setSubject(java.util.Objects.requireNonNull(assunto));
+            helper.setText(java.util.Objects.requireNonNull(corpoHtml), true); // true = HTML
 
             mailSender.send(mensagem);
         } catch (MessagingException e) {

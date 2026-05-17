@@ -21,7 +21,6 @@ import org.springframework.context.annotation.Profile;
 @Profile("dev")
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired private UserRepository userRepository;
     @Autowired private ProfessionalRepository professionalRepository;
     @Autowired private PatientRepository patientRepository;
     @Autowired private AppointmentRepository appointmentRepository;
@@ -29,6 +28,12 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private DocumentoRepository documentoRepository;
     @Autowired private ProfessionalAvailabilityRepository availabilityRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+
+    @org.springframework.beans.factory.annotation.Value("${app.admin.email}")
+    private String adminEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${app.admin.password}")
+    private String adminPassword;
 
     @Override
     public void run(String... args) throws Exception {
@@ -69,12 +74,14 @@ public class DataInitializer implements CommandLineRunner {
 
             // ─── DISPONIBILIDADE DOS PROFISSIONAIS ──────────────────────────
 
-            // Dra. Ana: Segunda a Sexta, 08:00–11:00 e 14:00–17:00
-            for (DayOfWeek day : new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY}) {
+            // Dra. Ana: Segunda a Sexta, 08:00–11:00 e 14:00–17:00 (para os próximos 60 dias)
+            for (int i = 0; i < 60; i++) {
+                var d = agora.toLocalDate().plusDays(i);
+
                 for (int h : new int[]{8, 9, 10, 11, 14, 15, 16, 17}) {
                     ProfessionalAvailability slot = new ProfessionalAvailability();
                     slot.setProfessional(ana);
-                    slot.setDayOfWeek(day);
+                    slot.setDate(d);
                     slot.setStartTime(LocalTime.of(h, 0));
                     slot.setEndTime(LocalTime.of(h + 1, 0));
                     availabilityRepository.save(slot);
@@ -82,14 +89,18 @@ public class DataInitializer implements CommandLineRunner {
             }
 
             // Dr. Carlos: Segunda, Quarta e Sexta, 09:00–11:00 e 13:00–16:00 (almoço às 12h)
-            for (DayOfWeek day : new DayOfWeek[]{DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY}) {
-                for (int h : new int[]{9, 10, 11, 13, 14, 15, 16}) {
-                    ProfessionalAvailability slot = new ProfessionalAvailability();
-                    slot.setProfessional(carlos);
-                    slot.setDayOfWeek(day);
-                    slot.setStartTime(LocalTime.of(h, 0));
-                    slot.setEndTime(LocalTime.of(h + 1, 0));
-                    availabilityRepository.save(slot);
+            for (int i = 0; i < 60; i++) {
+                var d = agora.toLocalDate().plusDays(i);
+                var day = d.getDayOfWeek();
+                if (day == DayOfWeek.MONDAY || day == DayOfWeek.WEDNESDAY || day == DayOfWeek.FRIDAY) {
+                    for (int h : new int[]{9, 10, 11, 13, 14, 15, 16}) {
+                        ProfessionalAvailability slot = new ProfessionalAvailability();
+                        slot.setProfessional(carlos);
+                        slot.setDate(d);
+                        slot.setStartTime(LocalTime.of(h, 0));
+                        slot.setEndTime(LocalTime.of(h + 1, 0));
+                        availabilityRepository.save(slot);
+                    }
                 }
             }
 
@@ -138,6 +149,7 @@ public class DataInitializer implements CommandLineRunner {
 
             // Hoje — para testar a agenda do profissional
             Appointment c6 = new Appointment(ana, lucas, agora.withHour(9).withMinute(0).withSecond(0), "Sessão semanal", StatusConsulta.CONFIRMADA);
+            Appointment c6_2 = new Appointment(ana, lucas, agora.plusDays(1).withHour(15).withMinute(0).withSecond(0), "Acompanhamento extra", StatusConsulta.AGENDADA);
             Appointment c7 = new Appointment(ana, maria, agora.withHour(11).withMinute(0).withSecond(0), "Retorno", StatusConsulta.CONFIRMADA_PROFISSIONAL);
             Appointment c8 = new Appointment(carlos, joao, agora.withHour(14).withMinute(0).withSecond(0), "Consulta de rotina", StatusConsulta.AGENDADA);
 
@@ -155,6 +167,7 @@ public class DataInitializer implements CommandLineRunner {
             appointmentRepository.save(c4);
             appointmentRepository.save(c5);
             appointmentRepository.save(c6);
+            appointmentRepository.save(c6_2);
             appointmentRepository.save(c7);
             appointmentRepository.save(c8);
             appointmentRepository.save(c9);
@@ -162,20 +175,17 @@ public class DataInitializer implements CommandLineRunner {
             appointmentRepository.save(c11);
             appointmentRepository.save(c12);
 
-            // ─── AGENDAMENTOS ALEATÓRIOS PARA REALISMO ──────────────────────
-            // Semeia algumas consultas nos próximos 15 dias para "sujar" a agenda
+            // ─── AGENDAMENTOS EXTRAS PARA REALISMO ──────────────────────────
+            // Semeia consultas nos próximos 15 dias (exceto dias com consultas fixas)
             for (int i = 1; i <= 15; i++) {
+                // Pula dias que já têm consultas fixas (0=hoje, 2=c12, 3=c10, 7=c9, 14=c11)
+                if (i == 2 || i == 3 || i == 7 || i == 14) continue;
                 LocalDateTime dia = agora.plusDays(i);
                 if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) continue;
 
-                // Tenta ocupar 2 horários aleatórios para a Dra. Ana e 1 para o Dr. Carlos
-                int horaAna1 = 8 + (int)(Math.random() * 4); // Manhã
-                int horaAna2 = 14 + (int)(Math.random() * 4); // Tarde
-                int horaCarlos = 9 + (int)(Math.random() * 8); // Dia todo
-
-                appointmentRepository.save(new Appointment(ana, maria, dia.withHour(horaAna1).withMinute(0).withSecond(0), "Acompanhamento", StatusConsulta.CONFIRMADA));
-                appointmentRepository.save(new Appointment(ana, joao, dia.withHour(horaAna2).withMinute(0).withSecond(0), "Sessão", StatusConsulta.AGENDADA));
-                appointmentRepository.save(new Appointment(carlos, lucas, dia.withHour(horaCarlos).withMinute(0).withSecond(0), "Retorno", StatusConsulta.CONFIRMADA));
+                appointmentRepository.save(new Appointment(ana, maria, dia.withHour(8).withMinute(0).withSecond(0), "Acompanhamento", StatusConsulta.CONFIRMADA));
+                appointmentRepository.save(new Appointment(ana, joao, dia.withHour(16).withMinute(0).withSecond(0), "Sessão", StatusConsulta.AGENDADA));
+                appointmentRepository.save(new Appointment(carlos, lucas, dia.withHour(13).withMinute(0).withSecond(0), "Retorno", StatusConsulta.CONFIRMADA));
             }
 
             // ─── PRONTUÁRIOS ─────────────────────────────────────────────────
@@ -265,7 +275,7 @@ public class DataInitializer implements CommandLineRunner {
 
             System.out.println("✅ Dados de demonstração carregados com sucesso!");
             System.out.println("─────────────────────────────────────────────");
-            System.out.println("👤 ADMIN       → admin@clinica.com     / admin123");
+            System.out.println("👤 ADMIN       → " + adminEmail + "     / " + adminPassword);
             System.out.println("🩺 PROFISSIONAL → ana@clinica.com       / 123456");
             System.out.println("🩺 PROFISSIONAL → carlos@clinica.com    / 123456");
             System.out.println("🙋 PACIENTE    → lucas@email.com       / 123456");

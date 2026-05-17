@@ -25,7 +25,7 @@ public class ProntuarioService {
     }
 
     @Transactional
-    public Prontuario create(Long appointmentId, String notas, String professionalEmail) {
+    public Prontuario create(@org.springframework.lang.NonNull Long appointmentId, String notas, String professionalEmail) {
         var appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
 

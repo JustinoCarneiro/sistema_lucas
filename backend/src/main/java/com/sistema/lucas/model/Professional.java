@@ -1,6 +1,7 @@
 // backend/src/main/java/com/sistema/lucas/model/Professional.java
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import com.sistema.lucas.model.enums.TipoRegistro;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -18,10 +19,14 @@ public class Professional extends User {
 
     private String specialty;
 
+    @Convert(converter = EncryptionConverter.class)
     private String cpf;
+    @Convert(converter = EncryptionConverter.class)
     private String phone;
     private java.time.LocalDate birthDate;
     private String gender;
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String address;
 
     @PrePersist

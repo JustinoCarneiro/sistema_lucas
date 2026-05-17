@@ -47,7 +47,7 @@ public class DocumentoService {
     // Criar documento (texto ou PDF)
     @Transactional
     public DocumentoResponseDTO criar(
-            Long pacienteId,
+            @org.springframework.lang.NonNull Long pacienteId,
             TipoDocumento tipo,
             String titulo,
             String conteudoTexto,
@@ -91,7 +91,7 @@ public class DocumentoService {
 
     // Disponibilizar ou retirar acesso do paciente
     @Transactional
-    public void alterarDisponibilidade(Long id, boolean disponivel, String emailProfissional) {
+    public void alterarDisponibilidade(@org.springframework.lang.NonNull Long id, boolean disponivel, String emailProfissional) {
         var doc = documentoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Documento não encontrado"));
 
@@ -106,7 +106,7 @@ public class DocumentoService {
 
     // Excluir
     @Transactional
-    public void excluir(Long id, String emailProfissional) {
+    public void excluir(@org.springframework.lang.NonNull Long id, String emailProfissional) {
         var doc = documentoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Documento não encontrado"));
 
