@@ -1,2 +1,25 @@
+# Variáveis de ambiente (segurança)
 .env
 .env.*
+
+# Logs de aplicação
+logs.txt
+*.log
+
+# Pasta scratch (scripts descartáveis e node_modules locais)
+scratch/
+
+# Artefatos de testes Cypress
+frontend/cypress/downloads/
+frontend/cypress/videos/
+frontend/cypress_out*.txt
+frontend/test_results.txt
+
+# Artefatos temporários do TestSprite
+testsprite_tests/tmp/
+
+# Apresentações e documentos comerciais
+APRESENTACAO_CLIENTE.*
+
+# Scripts de debug
+debug_*.js

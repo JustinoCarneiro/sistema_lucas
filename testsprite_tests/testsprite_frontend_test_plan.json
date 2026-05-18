@@ -1,0 +1,1667 @@
+[
+  {
+    "id": "TC001",
+    "title": "Log in and land in the correct area",
+    "description": "Verifies that a valid user can log in successfully and is routed to the correct role-specific area after authentication.",
+    "category": "Authentication and Access Control",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the required role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands in the correct role area"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Sign in and reach the correct workspace",
+    "description": "This verifies that a user can sign in with valid credentials and land in the appropriate authenticated area.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the correct dashboard area"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Register a new patient account",
+    "description": "This verifies that a new patient can complete registration and is taken to email verification afterward.",
+    "category": "Patient Registration and Email Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the personal details form with valid patient information"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the contact details form with valid patient information"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a registration success message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the email verification page is shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Verify a newly registered patient account",
+    "description": "Verifies that a newly registered patient can complete email verification with the provided token and see a successful verification outcome.",
+    "category": "Patient Self-Registration and Email Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /verify-email"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the verification token provided for the new account"
+      },
+      {
+        "type": "action",
+        "description": "Submit the verification form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful verification confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Reject invalid login credentials",
+    "description": "This verifies that signing in with invalid credentials shows an error and does not enter the app.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with invalid@example.com"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with wrong-password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a login error message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the authenticated area is not shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Set a new password with a reset token",
+    "description": "Verifies that a user can complete the password reset flow with a valid token and see a successful password update confirmation.",
+    "category": "Password Recovery",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the reset token provided for the account"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the new password fields with a valid new password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the password reset form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful password update confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Verify a patient account with a valid token",
+    "description": "This verifies that a patient can complete email verification with a valid token and see a successful result.",
+    "category": "Patient Registration and Email Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /verify-email"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid verification token"
+      },
+      {
+        "type": "action",
+        "description": "Submit the verification form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a verification success message is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Request a password reset link",
+    "description": "This verifies that a user can request a password reset and receive a confirmation state.",
+    "category": "Password Recovery",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /forgot-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset request form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password reset confirmation message is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Create an appointment as an administrator",
+    "description": "Verifies that an administrator can create a new appointment by selecting a professional, a patient, and a date and time, and that the new appointment appears in the list.",
+    "category": "Appointments Management for Admin",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an administrator"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the appointments management area"
+      },
+      {
+        "type": "action",
+        "description": "Create a new appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a professional for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a patient for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date and time for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Save the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new appointment appears in the appointment list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Admin views dashboard statistics",
+    "description": "Verifies that an administrator can open the dashboard and see the system statistics needed to monitor appointments and patients.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appointment statistics are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify patient statistics are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Delete an appointment as an administrator",
+    "description": "Verifies that an administrator can remove an appointment from the system and that it no longer appears in the list.",
+    "category": "Appointments Management for Admin",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an administrator"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the appointments management area"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing appointment"
+      },
+      {
+        "type": "action",
+        "description": "Delete the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is no longer shown in the list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Update professional profile details",
+    "description": "A professional can edit their profile information and save the changes successfully.",
+    "category": "My Profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a professional user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the profile page"
+      },
+      {
+        "type": "action",
+        "description": "Edit the name, specialty, and CRM details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Save the profile changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated profile information is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Reschedule an appointment with justification",
+    "description": "Verifies that a patient can reschedule one of their appointments by selecting a new date and time and providing a justification, and that the updated appointment appears.",
+    "category": "My Appointments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a patient"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the my appointments area"
+      },
+      {
+        "type": "action",
+        "description": "Select an upcoming appointment"
+      },
+      {
+        "type": "action",
+        "description": "Choose the reschedule appointment action"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid new date and time"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a rescheduling justification"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the reschedule"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment shows the updated schedule"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Administrator creates a professional account",
+    "description": "Verifies that an administrator can add a new professional and see it appear in the professionals list.",
+    "category": "Professionals Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open professional management"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new professional"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the professional name with a unique value"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the professional email with a unique value"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the remaining required professional details"
+      },
+      {
+        "type": "action",
+        "description": "Submit the professional form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new professional appears in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the professionals list remains available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Cancel an appointment with justification",
+    "description": "Verifies that a patient can cancel one of their appointments by providing a justification and that the appointment is updated accordingly.",
+    "category": "My Appointments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a patient"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the my appointments area"
+      },
+      {
+        "type": "action",
+        "description": "Select an upcoming appointment"
+      },
+      {
+        "type": "action",
+        "description": "Choose the cancel appointment action"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a cancellation justification"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the cancellation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is shown as cancelled"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Save a clinical note for an appointment",
+    "description": "A professional can open an appointment record, enter clinical notes, and save the medical record successfully.",
+    "category": "Medical Record Entry",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a professional user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open a medical record for an appointment from the professional appointments page"
+      },
+      {
+        "type": "action",
+        "description": "Enter clinical notes in the record form"
+      },
+      {
+        "type": "action",
+        "description": "Save the medical record"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved medical record content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Save monthly availability changes",
+    "description": "A professional can save edited availability and see a success confirmation after the changes are applied.",
+    "category": "My Availability",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to monthly availability"
+      },
+      {
+        "type": "action",
+        "description": "Toggle at least one time slot on the calendar grid"
+      },
+      {
+        "type": "action",
+        "description": "Save the monthly availability"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated availability remains displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Administrator unblocks a patient account",
+    "description": "Verifies that an administrator can unblock a blocked patient and see the account available again in the patients list.",
+    "category": "Patients Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open patient management"
+      },
+      {
+        "type": "action",
+        "description": "Select a blocked patient account to unblock"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the unblock action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the patient is shown as unblocked"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the patient remains in the list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Confirm a scheduled appointment as a professional",
+    "description": "Verifies that a professional can confirm one of today's appointments and that the appointment status is updated in the schedule view.",
+    "category": "Professional Appointments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a professional"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the professional appointments area"
+      },
+      {
+        "type": "action",
+        "description": "View today's appointments"
+      },
+      {
+        "type": "action",
+        "description": "Select an appointment"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is marked as confirmed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC020",
+    "title": "Export the dashboard data set",
+    "description": "An administrator can export the dashboard data as a CSV file from the dashboard page.",
+    "category": "Data Export",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an administrator user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Export the dashboard data set"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CSV export is initiated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the export action completes successfully"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC021",
+    "title": "Mark availability for a time slot",
+    "description": "A professional can toggle a slot on the monthly calendar and see it marked as available.",
+    "category": "My Availability",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to monthly availability"
+      },
+      {
+        "type": "action",
+        "description": "Toggle an available time slot on the calendar grid"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chosen time slot is marked as available"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC022",
+    "title": "Administrator edits a professional account",
+    "description": "Verifies that an administrator can update an existing professional and see the saved changes reflected in the list.",
+    "category": "Professionals Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open professional management"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing professional for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the professional details with new valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the professional update form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated professional information is visible in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC023",
+    "title": "Mark a patient as absent as a professional",
+    "description": "Verifies that a professional can mark an appointment as absent from the all-appointments view and that the absence status is shown.",
+    "category": "Professional Appointments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a professional"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the professional appointments area"
+      },
+      {
+        "type": "action",
+        "description": "View all appointments"
+      },
+      {
+        "type": "action",
+        "description": "Select an appointment"
+      },
+      {
+        "type": "action",
+        "description": "Mark the patient as absent"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is marked as absent"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC024",
+    "title": "Export personal appointment data",
+    "description": "A patient can export their own appointment data as a CSV file from the appointments page.",
+    "category": "Data Export",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a patient user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/my-appointments"
+      },
+      {
+        "type": "action",
+        "description": "Export the personal appointment data set"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CSV export is initiated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the export action completes successfully"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC025",
+    "title": "Upload a patient document",
+    "description": "A professional can upload a new document and see it added to the document list.",
+    "category": "Document Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to document management"
+      },
+      {
+        "type": "action",
+        "description": "Upload a new document for a patient"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the uploaded document appears in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC026",
+    "title": "Export the professionals list",
+    "description": "An administrator can export the professionals data as a CSV file from the professionals page.",
+    "category": "Data Export",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an administrator user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/professionals"
+      },
+      {
+        "type": "action",
+        "description": "Export the professionals data set"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CSV export is initiated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the export action completes successfully"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC027",
+    "title": "Administrator removes a professional account",
+    "description": "Verifies that an administrator can delete a professional account and no longer see it in the list afterward.",
+    "category": "Professionals Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open professional management"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing professional for deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the professional is no longer visible in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC028",
+    "title": "Download an exam document",
+    "description": "A patient can download a document from the list and see the download action complete in the browser.",
+    "category": "My Documents",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to my documents"
+      },
+      {
+        "type": "action",
+        "description": "Download an exam document from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the document download action is available and completes"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC029",
+    "title": "Export the patients list",
+    "description": "An administrator can export the patients data as a CSV file from the patients page.",
+    "category": "Data Export",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an administrator user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/patients"
+      },
+      {
+        "type": "action",
+        "description": "Export the patients data set"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CSV export is initiated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the export action completes successfully"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC030",
+    "title": "Administrator removes a patient account",
+    "description": "Verifies that an administrator can delete a patient account and the patient is removed from the patients list.",
+    "category": "Patients Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open patient management"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing patient for deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the patient is no longer visible in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "Keep the document list usable after an upload",
+    "description": "A professional can upload a document and continue to see a usable updated list with the new item present.",
+    "category": "Document Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to document management"
+      },
+      {
+        "type": "action",
+        "description": "Upload a new document for a patient"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the list to refresh"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated document list is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "View the monthly availability grid",
+    "description": "A professional can open monthly availability and see the scheduling grid for the selected month.",
+    "category": "My Availability",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to monthly availability"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the monthly availability calendar is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify available time slots are shown"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Delete a patient document",
+    "description": "A professional can delete a document and confirm it is removed from the list.",
+    "category": "Document Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to document management"
+      },
+      {
+        "type": "action",
+        "description": "Delete a document from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deleted document is no longer displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Change the displayed month for availability",
+    "description": "A professional can switch the month being edited and see the availability grid update for that month.",
+    "category": "My Availability",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to monthly availability"
+      },
+      {
+        "type": "action",
+        "description": "Select a different month"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the availability grid reflects the selected month"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Show an error for an invalid verification token",
+    "description": "This verifies that email verification surfaces a clear error when the token is invalid or missing.",
+    "category": "Patient Registration and Email Verification",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /verify-email"
+      },
+      {
+        "type": "action",
+        "description": "Submit the verification form without a valid token"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a verification error message is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "Export the appointment list as CSV",
+    "description": "Verifies that a patient can export their appointment list as CSV from the appointments page and the export action completes successfully.",
+    "category": "My Appointments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a patient"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the my appointments area"
+      },
+      {
+        "type": "action",
+        "description": "Export the appointment list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the export action completes successfully"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "View uploaded exam documents",
+    "description": "A patient can open their documents page and see the list of uploaded exam documents.",
+    "category": "My Documents",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to my documents"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam document list is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "Administrator exports professionals as CSV",
+    "description": "Verifies that an administrator can export the professionals list from the management page.",
+    "category": "Professionals Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open professional management"
+      },
+      {
+        "type": "action",
+        "description": "Export the professionals list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the professionals list remains visible after export"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Preserve existing selections after revisiting availability",
+    "description": "A professional can return to monthly availability and see previously saved slot selections still applied.",
+    "category": "My Availability",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to monthly availability"
+      },
+      {
+        "type": "action",
+        "description": "Toggle an available time slot on the calendar grid"
+      },
+      {
+        "type": "action",
+        "description": "Save the monthly availability"
+      },
+      {
+        "type": "action",
+        "description": "Refresh the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved slot selection is still displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Administrator exports patients as CSV",
+    "description": "Verifies that an administrator can export the patients list from the management page.",
+    "category": "Patients Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open patient management"
+      },
+      {
+        "type": "action",
+        "description": "Export the patients list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the patients list remains visible after export"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC041",
+    "title": "Open the document management page",
+    "description": "A professional can access document management and see the current list of patient documents.",
+    "category": "Document Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to document management"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the document list is displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC042",
+    "title": "Reject invalid profile edits",
+    "description": "A professional is shown validation feedback when required profile fields are left invalid and the changes are not saved.",
+    "category": "My Profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a professional user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the profile page"
+      },
+      {
+        "type": "action",
+        "description": "Clear or enter invalid values in a required profile field"
+      },
+      {
+        "type": "action",
+        "description": "Save the profile changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the profile details remain unchanged"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC043",
+    "title": "Show validation when the reset token is missing or invalid",
+    "description": "This verifies that the reset password page shows an error state when the token is not usable.",
+    "category": "Password Recovery",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset form without a valid token"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a reset password error message is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC044",
+    "title": "Keep medical record notes required",
+    "description": "A professional cannot save a medical record until the required clinical notes are provided.",
+    "category": "Medical Record Entry",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for a professional user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open a medical record for an appointment from the professional appointments page"
+      },
+      {
+        "type": "action",
+        "description": "Leave the clinical notes field empty"
+      },
+      {
+        "type": "action",
+        "description": "Save the medical record"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the record is not saved"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC045",
+    "title": "Show an empty state when no documents exist",
+    "description": "A patient with no uploaded exam documents sees an empty state instead of a broken document list.",
+    "category": "My Documents",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to my documents"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is visible"
+      }
+    ],
+    "priority": "Low"
+  }
+]
