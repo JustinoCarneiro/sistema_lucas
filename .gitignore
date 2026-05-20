@@ -26,3 +26,13 @@ debug_*.js
 
 # Arquivos de referencia visual
 /template-ref/
+
+# Artefatos locais de Design e HTML (Mockups)
+template_*.html
+
+# Banco de dados e Backups (Crítico para LGPD / Segurança)
+backups/
+*.sql
+*.sql.gz
+*.dump
+backup_*

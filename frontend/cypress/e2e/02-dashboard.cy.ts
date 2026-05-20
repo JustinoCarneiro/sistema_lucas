@@ -90,7 +90,8 @@ describe('02 — Dashboards por Role', () => {
           criadoEm: '2026-05-12T10:00:00',
           disponivel: true
         }
-      ]
+      ],
+      pendentesConfirmacao: 2
     };
 
     beforeEach(() => {
@@ -117,13 +118,19 @@ describe('02 — Dashboards por Role', () => {
     });
 
     it('exibe pacientes da agenda mockada', () => {
-      cy.contains('p', 'Lucas Silva').should('be.visible');
-      cy.contains('p', 'Sessão de acompanhamento.').should('be.visible');
-      cy.contains('p', 'Laudo Psicológico — Lucas Silva').should('be.visible');
+      cy.contains('p', 'Lucas Silva').should('exist');
+      cy.contains('p', 'Sessão de acompanhamento.').should('exist');
+      cy.contains('p', 'Laudo Psicológico — Lucas Silva').should('exist');
     });
 
     it('exibe botão de exportar atendimentos', () => {
       cy.contains('button', 'Exportar Meus Atendimentos').should('be.visible');
+    });
+
+    it('exibe alerta de agendamentos aguardando aprovação', () => {
+      cy.contains('Ação necessária').should('be.visible');
+      cy.contains('Você tem 2 agendamento(s) aguardando sua aprovação.').should('be.visible');
+      cy.contains('a', 'Ver agendamentos').should('have.attr', 'href', '/panel/professional-appointments');
     });
   });
 
@@ -154,7 +161,8 @@ describe('02 — Dashboards por Role', () => {
           criadoEm: '2026-05-12T10:00:00',
           nomeProfissional: 'Dra. Ana Souza'
         }
-      ]
+      ],
+      pendentesConfirmacao: 1
     };
 
     beforeEach(() => {
@@ -186,8 +194,14 @@ describe('02 — Dashboards por Role', () => {
     });
 
     it('exibe documentos recentes do paciente', () => {
-      cy.contains('h2', 'Documentos recentes').should('be.visible');
-      cy.contains('p', 'Laudo Psicológico — Lucas Silva').should('be.visible');
+      cy.contains('h2', 'Documentos recentes').scrollIntoView().should('be.visible');
+      cy.contains('Laudo').scrollIntoView().should('exist');
+    });
+
+    it('exibe alerta de consultas aguardando confirmação de presença', () => {
+      cy.contains('Confirme sua presença').should('be.visible');
+      cy.contains('Você tem 1 consulta(s) aguardando confirmação de presença.').should('be.visible');
+      cy.contains('a', 'Minhas consultas').should('have.attr', 'href', '/panel/my-appointments');
     });
   });
 

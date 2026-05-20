@@ -4,7 +4,12 @@
 
 # Carrega variáveis do .env (se existir)
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    while IFS='=' read -r key value; do
+        if [[ -n "$key" && "$key" != \#* ]]; then
+            value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
+            export "$key=$value"
+        fi
+    done < .env
 fi
 
 SERVER_IP="${DEPLOY_SERVER_IP}"
@@ -17,9 +22,18 @@ fi
 
 SERVER_PATH="~/sistema/sistema_lucas/"
 
+echo "📦 Compilando o Backend localmente..."
+cd backend
+mvn clean package -DskipTests
+if [ $? -ne 0 ]; then
+    echo "❌ Erro na compilação do backend!"
+    exit 1
+fi
+cd ..
+
 echo "📡 Transferindo arquivos para o servidor ($SERVER_IP)..."
 
-rsync -avz --exclude 'node_modules' --exclude 'target' --exclude 'dist' --exclude '.git' \
+rsync -avz --exclude 'node_modules' --exclude 'dist' --exclude '.git' \
 ./ $SERVER_USER@$SERVER_IP:$SERVER_PATH
 
 if [ $? -ne 0 ]; then

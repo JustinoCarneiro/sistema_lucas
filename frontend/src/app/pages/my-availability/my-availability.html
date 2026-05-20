@@ -31,7 +31,6 @@
       <p class="text-sm text-yellow-700 mt-1">
         <span *ngIf="bloqueado()">O prazo para submissão encerrou. Alterações não são mais permitidas.</span>
         <span *ngIf="!bloqueado() && !hasSubmitted()">Você ainda não enviou sua agenda. Faltam {{ diasRestantes() }} dias para o fim do mês!</span>
-        <span *ngIf="!bloqueado() && hasSubmitted()">Faltam {{ (diasRestantes() || 0) - 4 }} dias para o bloqueio do mês. Revise sua agenda!</span>
       </p>
     </div>
   </div>

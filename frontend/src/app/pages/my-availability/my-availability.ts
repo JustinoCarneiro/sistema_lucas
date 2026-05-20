@@ -50,8 +50,10 @@ export class MyAvailabilityComponent implements OnInit {
     const dr = this.diasRestantes();
     if (dr === null) return false;
     if (this.bloqueado()) return true;
-    if (dr <= 10 && dr >= 5) return true;
-    if (!this.hasSubmitted() && dr < 15) return true;
+    // Se já enviou a agenda, não mostra alerta nenhum
+    if (this.hasSubmitted()) return false;
+    // Se não enviou, mostra o alerta se faltar menos de 15 dias para o fim do mês
+    if (dr < 15) return true;
     return false;
   });
 
