@@ -1,5 +1,5 @@
 // frontend/src/app/pages/patients/patients.ts
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientService } from './patients.service';
 
@@ -15,6 +15,20 @@ export class Patients implements OnInit {
 
   patientsList = signal<any[]>([]);
   selectedItem: any = null;
+
+  filtroStatus = signal<'TODOS' | 'BLOQUEADOS' | 'COM_INFRACOES'>('TODOS');
+
+  filteredPatients = computed(() => {
+    const list = this.patientsList();
+    const status = this.filtroStatus();
+    if (status === 'BLOQUEADOS') {
+      return list.filter(p => p.blockedUntil && new Date(p.blockedUntil) > new Date());
+    }
+    if (status === 'COM_INFRACOES') {
+      return list.filter(p => p.infractionCount > 0);
+    }
+    return list;
+  });
 
   openDetails(item: any) {
     this.selectedItem = item;

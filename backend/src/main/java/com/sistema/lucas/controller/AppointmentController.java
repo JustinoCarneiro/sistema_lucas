@@ -102,4 +102,24 @@ public class AppointmentController {
         service.confirmarProfissional(java.util.Objects.requireNonNull(id), principal.getName());
         return ResponseEntity.ok("Consulta totalmente confirmada!");
     }
+
+    // Profissional aprova solicitação pendente
+    @PatchMapping("/{id}/aprovar")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<String> aprovar(@PathVariable Long id, Principal principal) {
+        service.aprovarAgendamento(java.util.Objects.requireNonNull(id), principal.getName());
+        return ResponseEntity.ok("Agendamento aprovado e paciente notificado.");
+    }
+
+    // Profissional recusa solicitação pendente
+    @PatchMapping("/{id}/recusar")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<String> recusar(
+            @PathVariable Long id,
+            @RequestBody(required = false) AppointmentCancelDTO dto,
+            Principal principal) {
+        String justificativa = dto != null ? dto.justification() : "Indisponibilidade de agenda.";
+        service.recusarAgendamento(java.util.Objects.requireNonNull(id), principal.getName(), justificativa);
+        return ResponseEntity.ok("Agendamento recusado com sucesso.");
+    }
 }

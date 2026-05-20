@@ -50,6 +50,6 @@ public class Appointment {
         this.patient = patient;
         this.dateTime = dto.dateTime();
         this.reason = dto.reason();
-        this.status = StatusConsulta.AGENDADA;
+        this.status = StatusConsulta.AGUARDANDO_CONFIRMACAO;
     }
 }

@@ -7,8 +7,17 @@ export default defineConfig({
     video: true,
     viewportWidth: 1280,
     viewportHeight: 720,
+    env: {
+      apiUrl: 'http://localhost:8081'
+    },
     setupNodeEvents(on, config) {
-      // Configurações e Listeners de ambiente Node
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium' || browser.name === 'electron') {
+          launchOptions.args.push('--disable-gpu');
+          launchOptions.args.push('--disable-software-rasterizer');
+        }
+        return launchOptions;
+      });
     },
   },
 });

@@ -57,12 +57,14 @@ export class MyAppointmentsComponent implements OnInit {
   };
 
   statusLabel: Record<string, string> = {
+    AGUARDANDO_CONFIRMACAO: 'Aguardando Confirmação',
     AGENDADA: 'Agendada', CONFIRMADA_PROFISSIONAL: 'Aguardando paciente',
     CONFIRMADA: 'Confirmada', CONCLUIDA: 'Concluída',
     CANCELADA: 'Cancelada', FALTA: 'Faltou'
   };
 
   statusClass: Record<string, string> = {
+    AGUARDANDO_CONFIRMACAO: 'bg-purple-100 text-purple-700 border border-purple-200',
     AGENDADA: 'bg-blue-100 text-blue-700', CONFIRMADA_PROFISSIONAL: 'bg-yellow-100 text-yellow-700',
     CONFIRMADA: 'bg-green-100 text-green-700', CONCLUIDA: 'bg-gray-100 text-gray-600',
     CANCELADA: 'bg-red-100 text-red-700', FALTA: 'bg-orange-100 text-orange-700'
@@ -142,9 +144,10 @@ export class MyAppointmentsComponent implements OnInit {
       const targetDay = Number(targetJsDay);
       const currentDay = today.getDay();
       
-      // Calcula quantos dias faltam para o próximo 'targetDay'
+      // Calcula quantos dias faltam para o próximo 'targetDay' (nunca hoje)
       let daysDiff = (targetDay - currentDay + 7) % 7;
-      
+      if (daysDiff === 0) daysDiff = 7;
+
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysDiff);
       
       const value = d.toISOString().split('T')[0];

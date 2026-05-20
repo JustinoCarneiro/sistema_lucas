@@ -101,7 +101,8 @@ public class AppointmentService {
 
         var consulta = new Appointment(profissional, paciente, dto);
         appointmentRepository.save(consulta);
-        emailTemplateService.notificarConsultaAgendada(consulta); // ✅ e-mail
+        emailTemplateService.notificarPacienteAgendamentoPendente(consulta);
+        emailTemplateService.notificarSolicitacaoAgendamentoParaMedico(consulta);
     }
 
     // ─── Cancelamento ────────────────────────────────────────────────────────
@@ -198,24 +199,88 @@ public class AppointmentService {
     public void marcarFalta(@org.springframework.lang.NonNull Long id, String emailProfissional) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
-            
-        // 🛡️ Segurança (IDOR)
+
         if (!consulta.getProfessional().getEmail().equals(emailProfissional)) {
             throw new RuntimeException("Operação de Segurança: Você não é o médico dessa consulta.");
         }
+
         consulta.setStatus(StatusConsulta.FALTA);
         appointmentRepository.save(consulta);
+
+        processarInfracaoPaciente(consulta.getPatient(), consulta);
     }
 
     // ─── Confirmação (Profissional primeiro, Paciente depois) ────────────────
 
-    // Regra: se faltam menos de 24h para a consulta, bloqueia o paciente por 2 semanas para novos agendamentos
+    // Consultas pendentes de aprovação não geram penalidade (profissional ainda não aceitou).
     private void aplicarPenalidadeSeNecessario(Appointment consulta) {
-        if (java.time.LocalDateTime.now().isAfter(consulta.getDateTime().minusHours(24))) {
-            var paciente = consulta.getPatient();
-            paciente.setBlockedUntil(java.time.LocalDateTime.now().plusWeeks(2));
-            patientRepository.save(paciente);
+        if (consulta.getStatus() == StatusConsulta.AGUARDANDO_CONFIRMACAO) {
+            return;
         }
+        if (java.time.LocalDateTime.now().isAfter(consulta.getDateTime().minusHours(24))) {
+            processarInfracaoPaciente(consulta.getPatient(), consulta);
+        }
+    }
+
+    private void processarInfracaoPaciente(com.sistema.lucas.model.Patient paciente, Appointment consulta) {
+        paciente.setInfractionCount(paciente.getInfractionCount() + 1);
+
+        if (!paciente.isReceivedFirstWarning()) {
+            paciente.setReceivedFirstWarning(true);
+            patientRepository.save(paciente);
+            emailTemplateService.enviarAvisoPrimeiraFalta(paciente, consulta);
+            auditLogService.log("SYSTEM", "ADVERTENCIA_PACIENTE", "Patient", paciente.getId(), "Advertência de 1ª Falta aplicada.");
+        } else {
+            java.time.LocalDateTime dataBloqueio = java.time.LocalDateTime.now().plusDays(15);
+            paciente.setBlockedUntil(dataBloqueio);
+            patientRepository.save(paciente);
+            emailTemplateService.enviarAvisoBloqueioFalta(paciente, consulta, dataBloqueio);
+            auditLogService.log("SYSTEM", "BLOQUEIO_FALTAS", "Patient", paciente.getId(), "Bloqueio automático de 15 dias aplicado.");
+        }
+    }
+
+    @Transactional
+    public void aprovarAgendamento(@org.springframework.lang.NonNull Long id, String emailProfissional) {
+        var consulta = appointmentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+
+        if (!consulta.getProfessional().getEmail().equals(emailProfissional)) {
+            throw new RuntimeException("Operação não autorizada. Você não é o médico dessa consulta.");
+        }
+
+        if (consulta.getStatus() != StatusConsulta.AGUARDANDO_CONFIRMACAO) {
+            throw new RuntimeException("Apenas consultas aguardando confirmação podem ser aprovadas.");
+        }
+
+        consulta.setStatus(StatusConsulta.AGENDADA);
+        appointmentRepository.save(consulta);
+
+        auditLogService.log(emailProfissional, "APROVACAO_AGENDAMENTO", "Appointment", id,
+            "Aprovou consulta do paciente " + consulta.getPatient().getName());
+        emailTemplateService.notificarPacienteAgendamentoAceito(consulta);
+    }
+
+    @Transactional
+    public void recusarAgendamento(@org.springframework.lang.NonNull Long id, String emailProfissional, String justificativa) {
+        var consulta = appointmentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+
+        if (!consulta.getProfessional().getEmail().equals(emailProfissional)) {
+            throw new RuntimeException("Operação não autorizada. Você não é o médico dessa consulta.");
+        }
+
+        if (consulta.getStatus() != StatusConsulta.AGUARDANDO_CONFIRMACAO) {
+            throw new RuntimeException("Apenas consultas aguardando confirmação podem ser recusadas.");
+        }
+
+        consulta.setStatus(StatusConsulta.CANCELADA);
+        consulta.setCancelReason(justificativa != null && !justificativa.isBlank()
+            ? justificativa : "Recusada pelo profissional de saúde.");
+        appointmentRepository.save(consulta);
+
+        auditLogService.log(emailProfissional, "RECUSA_AGENDAMENTO", "Appointment", id,
+            "Justificativa: " + consulta.getCancelReason());
+        emailTemplateService.notificarPacienteAgendamentoRecusado(consulta, consulta.getCancelReason());
     }
 
     @Transactional

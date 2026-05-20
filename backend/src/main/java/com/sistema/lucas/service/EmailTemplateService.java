@@ -1,6 +1,7 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Appointment;
+import com.sistema.lucas.model.Patient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -184,6 +185,127 @@ public class EmailTemplateService {
         );
     }
     
+    // ─── Fluxo de Aprovação ──────────────────────────────────────────────────
+
+    public void notificarSolicitacaoAgendamentoParaMedico(Appointment consulta) {
+        String data = consulta.getDateTime().format(FMT);
+        emailService.enviar(
+            consulta.getProfessional().getEmail(),
+            "Nova solicitação de consulta — " + data,
+            buildTemplate(
+                "Solicitação de Agendamento Pendente",
+                "Olá, Dr(a). " + consulta.getProfessional().getName() + "!",
+                "Um paciente solicitou um horário na sua agenda e aguarda sua confirmação.",
+                new String[][]{
+                    {"Paciente", consulta.getPatient().getName()},
+                    {"Data e hora", data},
+                    {"Motivo", consulta.getReason() != null ? consulta.getReason() : "—"}
+                },
+                "Acesse seu painel profissional para Confirmar ou Recusar esta consulta.",
+                "#5a3d9e"
+            )
+        );
+    }
+
+    public void notificarPacienteAgendamentoPendente(Appointment consulta) {
+        String data = consulta.getDateTime().format(FMT);
+        emailService.enviar(
+            consulta.getPatient().getEmail(),
+            "Solicitação de consulta enviada — " + data,
+            buildTemplate(
+                "Solicitação Recebida",
+                "Olá, " + consulta.getPatient().getName() + "!",
+                "Sua solicitação de consulta foi enviada com sucesso e está aguardando a aprovação do médico.",
+                new String[][]{
+                    {"Profissional", consulta.getProfessional().getName()},
+                    {"Data e hora", data}
+                },
+                "Você receberá uma confirmação por e-mail assim que o médico validar o agendamento.",
+                "#1e3a5f"
+            )
+        );
+    }
+
+    public void notificarPacienteAgendamentoAceito(Appointment consulta) {
+        String data = consulta.getDateTime().format(FMT);
+        emailService.enviar(
+            consulta.getPatient().getEmail(),
+            "Consulta Confirmada! — " + data,
+            buildTemplate(
+                "Sua Consulta foi Aprovada",
+                "Olá, " + consulta.getPatient().getName() + "!",
+                "Excelente! O médico confirmou a sua solicitação de agendamento.",
+                new String[][]{
+                    {"Profissional", consulta.getProfessional().getName()},
+                    {"Data e hora", data}
+                },
+                "Lembre-se de comparecer ou cancelar com no mínimo 24h de antecedência se houver imprevistos.",
+                "#1a7a4a"
+            )
+        );
+    }
+
+    public void notificarPacienteAgendamentoRecusado(Appointment consulta, String motivo) {
+        String data = consulta.getDateTime().format(FMT);
+        emailService.enviar(
+            consulta.getPatient().getEmail(),
+            "Solicitação de consulta recusada — " + data,
+            buildTemplate(
+                "Solicitação Não Aprovada",
+                "Olá, " + consulta.getPatient().getName() + "!",
+                "Infelizmente o médico não pôde aceitar a sua solicitação de consulta.",
+                new String[][]{
+                    {"Profissional", consulta.getProfessional().getName()},
+                    {"Data e hora", data},
+                    {"Motivo da recusa", motivo != null ? motivo : "Indisponibilidade de agenda"}
+                },
+                "Você pode tentar agendar em outro horário disponível no sistema.",
+                "#a0320a"
+            )
+        );
+    }
+
+    // ─── Penalidades por Falta / Cancelamento Tardio ────────────────────────
+
+    public void enviarAvisoPrimeiraFalta(Patient paciente, Appointment consulta) {
+        String dataStr = consulta.getDateTime().format(FMT);
+        emailService.enviar(
+            paciente.getEmail(),
+            "Aviso importante: Política de Faltas — Projeto Lucas",
+            buildTemplate(
+                "Aviso de Ausência",
+                "Olá, " + paciente.getName() + "!",
+                "Registramos que você não pôde comparecer à consulta agendada para <b>" + dataStr + "</b> e não realizou o cancelamento com antecedência mínima de 24 horas.",
+                new String[][]{
+                    {"Profissional", consulta.getProfessional().getName()},
+                    {"Consulta em questão", dataStr}
+                },
+                "⚠️ <b>Atenção:</b> Esta é uma advertência formal. Caso ocorra uma segunda falta sem cancelamento prévio, sua conta será bloqueada temporariamente para novos agendamentos por 15 dias.",
+                "#f59e0b"
+            )
+        );
+    }
+
+    public void enviarAvisoBloqueioFalta(Patient paciente, Appointment consulta, java.time.LocalDateTime bloqueadoAte) {
+        String dataFalta = consulta.getDateTime().format(FMT);
+        String dataLiberacao = bloqueadoAte.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        emailService.enviar(
+            paciente.getEmail(),
+            "Acesso Temporariamente Suspenso — Projeto Lucas",
+            buildTemplate(
+                "Bloqueio de Agendamentos",
+                "Olá, " + paciente.getName() + "!",
+                "Identificamos uma reincidência de faltas em agendamentos (ausência em <b>" + dataFalta + "</b> sem aviso prévio de 24h).",
+                new String[][]{
+                    {"Infração ocorrida em", dataFalta},
+                    {"Agendamentos suspensos até", dataLiberacao}
+                },
+                "Conforme nossa política clínica, o agendamento de novas consultas está temporariamente suspenso para a sua conta até a data informada.",
+                "#b91c1c"
+            )
+        );
+    }
+
     // ─── Lembrete de Prazo de Agenda ──────────────────────────────────────────
     
     public void enviarLembreteSubmissaoAgenda(com.sistema.lucas.model.Professional prof, java.time.YearMonth mesAlvo, boolean urgente) {

@@ -63,6 +63,25 @@ export class AppointmentService {
     );
   }
 
+  aprovarAgendamento(id: number) {
+    return this.http.patch(
+      `${environment.apiUrl}/consultas/${id}/aprovar`, {},
+      { responseType: 'text' }
+    ).pipe(
+      catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
+    );
+  }
+
+  recusarAgendamento(id: number, justification: string) {
+    return this.http.patch(
+      `${environment.apiUrl}/consultas/${id}/recusar`,
+      { justification },
+      { responseType: 'text' }
+    ).pipe(
+      catchError((err: HttpErrorResponse) => throwError(() => this.parseError(err)))
+    );
+  }
+
   private parseError(err: HttpErrorResponse): string {
     try {
       const body = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;

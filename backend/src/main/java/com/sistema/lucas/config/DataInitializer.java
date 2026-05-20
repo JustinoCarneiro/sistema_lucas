@@ -77,6 +77,7 @@ public class DataInitializer implements CommandLineRunner {
             // Dra. Ana: Segunda a Sexta, 08:00–11:00 e 14:00–17:00 (para os próximos 60 dias)
             for (int i = 0; i < 60; i++) {
                 var d = agora.toLocalDate().plusDays(i);
+                if (d.getDayOfWeek() == DayOfWeek.SATURDAY || d.getDayOfWeek() == DayOfWeek.SUNDAY) continue;
 
                 for (int h : new int[]{8, 9, 10, 11, 14, 15, 16, 17}) {
                     ProfessionalAvailability slot = new ProfessionalAvailability();
@@ -114,6 +115,10 @@ public class DataInitializer implements CommandLineRunner {
             lucas.setVerified(true);
             lucas.setCpf("111.222.333-44");
             lucas.setPhone("11888889999");
+            // Pré-seta advertência recebida para que o teste E2E de penalidades
+            // possa provocar um bloqueio com um único cancelamento tardio
+            lucas.setReceivedFirstWarning(true);
+            lucas.setInfractionCount(1);
             patientRepository.save(lucas);
 
             Patient maria = new Patient();

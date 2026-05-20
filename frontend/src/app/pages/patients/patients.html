@@ -5,12 +5,28 @@
     <p class="text-gray-500 font-medium">Visualize os pacientes cadastrados na clínica.</p>
   </div>
 
-  <div *ngIf="patientsList().length === 0"
-    class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 rounded-2xl text-center text-gray-400">
-    Nenhum paciente cadastrado ainda.
+  <!-- Barra de Filtros -->
+  <div class="mb-6 flex flex-wrap gap-2 items-center">
+    <button (click)="filtroStatus.set('TODOS')"
+      [class]="filtroStatus() === 'TODOS' ? 'bg-blue-900 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm transition-all'">
+      Todos
+    </button>
+    <button (click)="filtroStatus.set('BLOQUEADOS')"
+      [class]="filtroStatus() === 'BLOQUEADOS' ? 'bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm transition-all'">
+      Bloqueados Temporariamente
+    </button>
+    <button (click)="filtroStatus.set('COM_INFRACOES')"
+      [class]="filtroStatus() === 'COM_INFRACOES' ? 'bg-amber-600 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm transition-all'">
+      Com Histórico de Ausências
+    </button>
   </div>
 
-  <div *ngIf="patientsList().length > 0"
+  <div *ngIf="filteredPatients().length === 0"
+    class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 rounded-2xl text-center text-gray-400">
+    Nenhum paciente encontrado para este filtro.
+  </div>
+
+  <div *ngIf="filteredPatients().length > 0"
     class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
@@ -23,7 +39,7 @@
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-100">
-        <tr *ngFor="let patient of patientsList()" class="hover:bg-blue-50/50 transition-colors">
+        <tr *ngFor="let patient of filteredPatients()" class="hover:bg-blue-50/50 transition-colors">
           <td class="px-6 py-4 whitespace-nowrap">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs">
@@ -54,8 +70,8 @@
   </div>
 
   <!-- Mobile Cards -->
-  <div *ngIf="patientsList().length > 0" class="md:hidden space-y-4">
-    <div *ngFor="let patient of patientsList()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
+  <div *ngIf="filteredPatients().length > 0" class="md:hidden space-y-4">
+    <div *ngFor="let patient of filteredPatients()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
           {{ patient.name.charAt(0) }}
@@ -113,6 +129,21 @@
           <p class="text-[10px] font-bold text-red-500 uppercase mb-1">Status de Agendamento</p>
           <p class="text-xs text-red-700">Paciente bloqueado até {{ selectedItem.blockedUntil | date:'dd/MM/yyyy HH:mm' }}</p>
           <button (click)="desbloquearPaciente(selectedItem.id)" class="mt-2 text-xs font-bold text-red-600 underline">Desbloquear agora</button>
+        </div>
+
+        <!-- Auditoria de Faltas -->
+        <div class="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-4 space-y-2">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Histórico de Auditoria de Ausências</p>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-gray-600">Total de infrações (Faltas/Tardios):</span>
+            <span class="font-bold text-gray-800">{{ selectedItem.infractionCount }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-gray-600">Recebeu 1ª Advertência:</span>
+            <span class="font-semibold" [ngClass]="selectedItem.receivedFirstWarning ? 'text-amber-600' : 'text-gray-400'">
+              {{ selectedItem.receivedFirstWarning ? 'Sim (Advertido)' : 'Não' }}
+            </span>
+          </div>
         </div>
       </div>
       

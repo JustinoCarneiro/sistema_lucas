@@ -61,11 +61,16 @@ public class PatientService {
         Patient patient = new Patient();
         patient.setName(dto.name());
         patient.setEmail(dto.email());
-        patient.setPassword(passwordEncoder.encode(dto.password())); // Criptografando
+        patient.setPassword(passwordEncoder.encode(dto.password()));
         patient.setRole(Role.PATIENT);
         patient.setCpf(dto.cpf());
-        
-        repository.save(patient);
+
+        try {
+            repository.save(patient);
+            repository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("Erro: Este CPF ou E-mail já está em uso por outra conta.");
+        }
     }
 
     @Transactional

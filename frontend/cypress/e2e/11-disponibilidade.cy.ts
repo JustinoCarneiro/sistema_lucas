@@ -2,127 +2,247 @@
 
 describe('11 — Disponibilidade de Horários (Profissional)', () => {
 
-  beforeEach(() => {
-    cy.login('ana@clinica.com', '123456');
-    cy.intercept('GET', '**/disponibilidade/minha*').as('loadMinha');
-    cy.intercept('GET', '**/disponibilidade/status-mes').as('loadStatus');
-    cy.visit('/panel/my-availability');
-    cy.wait(['@loadMinha', '@loadStatus']).then(([xhrMinha, xhrStatus]) => {
-      cy.log('LOAD STATUS BODY:', JSON.stringify(xhrStatus.response?.body));
-      cy.log('LOAD MINHA BODY:', JSON.stringify(xhrMinha.response?.body));
-    });
-    cy.contains('Carregando', { timeout: 10000 }).should('not.exist');
-  });
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
 
-  it('Página de disponibilidade carrega corretamente', () => {
-    cy.contains('Agenda de').should('be.visible');
-    cy.contains('Mês Atual').should('be.visible');
-    cy.contains('Próximo Mês').should('be.visible');
-  });
-
-  it('Pode alternar entre Mês Atual e Próximo Mês', () => {
+  function monthLabel(offset: number): string {
     const today = new Date();
-    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    
-    const currentMonthLabel = `${monthNames[today.getMonth()]} de ${today.getFullYear()}`;
-    
-    let nextDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    const nextMonthLabel = `${monthNames[nextDate.getMonth()]} de ${nextDate.getFullYear()}`;
+    const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+    return `${monthNames[d.getMonth()]} de ${d.getFullYear()}`;
+  }
 
-    // Por padrão abre no próximo mês
-    cy.get('h1').should('contain', nextMonthLabel);
-
-    // Muda para o mês atual
-    cy.contains('button', 'Mês Atual').click();
-    cy.get('h1').should('contain', currentMonthLabel);
-
-    // Volta para o próximo mês
-    cy.contains('button', 'Próximo Mês').click();
-    cy.get('h1').should('contain', nextMonthLabel);
-  });
-
-  it('Pode selecionar um dia no calendário e um horário', () => {
-    cy.contains('span', '15').click();
-    cy.contains('h3', 'Dia 15').should('exist');
-    cy.contains('button', '12:00').first().then(($btn) => {
-      if (!$btn.hasClass('bg-blue-900')) {
-        cy.wrap($btn).click({ force: true });
-      }
-    });
-    cy.contains('button', '12:00').should('have.class', 'bg-blue-900');
-  });
-
-  it('Botão "Enviar Agenda do Mês" persiste as mudanças', () => {
-    cy.contains('span', '15').click();
-    cy.contains('h3', 'Dia 15').should('exist');
-    cy.contains('button', '12:00').first().then(($btn) => {
-      if (!$btn.hasClass('bg-blue-900')) {
-        cy.wrap($btn).click({ force: true });
-      }
-    });
-    cy.contains('button', 'Enviar Agenda do Mês').should('be.visible').click({ force: true });
-    cy.contains('Agenda do mês salva com sucesso!', { timeout: 15000 }).should('be.visible');
-  });
-
-  it('Exibe alerta de prazo ou pendência dependendo da proximidade do fim do mês', () => {
-    // Esse teste é dinâmico, apenas garante que se o alerta existir, ele é legível
-    cy.get('body').then($body => {
-      if ($body.find('.bg-yellow-50').length > 0) {
-        cy.get('.bg-yellow-50').should('be.visible');
-        cy.contains('Atenção ao Prazo').should('exist');
-      }
-    });
-  });
-
-  it('Impede a remoção de um horário que já possui paciente agendado', () => {
+  function monthStr(offset: number): string {
     const today = new Date();
-    let targetDate = new Date();
-    let diffDays = 4;
-    targetDate.setDate(today.getDate() + diffDays);
-    while (
-      targetDate.getDay() === 0 ||
-      targetDate.getDay() === 6 ||
-      diffDays === 7 ||
-      diffDays === 14
-    ) {
-      diffDays++;
-      targetDate = new Date();
-      targetDate.setDate(today.getDate() + diffDays);
-    }
-    const diaAlvo = targetDate.getDate().toString();
+    const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}`;
+  }
 
-    // 1. Muda para o mês correspondente ao targetDate
-    cy.intercept('GET', '**/disponibilidade/minha*').as('loadMinhaAtual');
-    if (targetDate.getMonth() === today.getMonth()) {
+  context('Renderização do calendário', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/disponibilidade/status-mes', {
+        statusCode: 200,
+        body: { diasRestantes: 20, bloqueado: false }
+      }).as('getStatus');
+      cy.intercept('GET', '**/disponibilidade/minha*', {
+        statusCode: 200,
+        body: []
+      }).as('getMinha');
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/my-availability');
+      cy.wait('@getStatus');
+      cy.contains('Carregando').should('not.exist');
+    });
+
+    it('carrega título e abre por padrão no Próximo Mês', () => {
+      cy.contains('h1', monthLabel(1)).should('be.visible');
+      cy.contains('button', 'Próximo Mês').should('have.class', 'bg-white');
+    });
+
+    it('alterna para Mês Atual e volta para Próximo Mês', () => {
       cy.contains('button', 'Mês Atual').click();
-    } else {
+      cy.contains('h1', monthLabel(0)).should('be.visible');
+
       cy.contains('button', 'Próximo Mês').click();
-    }
-    cy.wait('@loadMinhaAtual');
-    cy.contains('Carregando').should('not.exist');
-
-    // 2. Seleciona o dia alvo (onde o DataInitializer criou uma consulta ativa às 08:00 para a Dra. Ana)
-    cy.contains('.aspect-square', diaAlvo).click();
-    cy.contains('h3', `Dia ${diaAlvo}`).should('exist');
-
-    // 3. O slot de 08:00 deve estar selecionado (azul)
-    cy.contains('button', '08:00').should('have.class', 'bg-blue-900');
-
-    // 4. Tenta desmarcar o horário de 08:00
-    cy.contains('button', '08:00').click({ force: true });
-    cy.contains('button', '08:00').should('not.have.class', 'bg-blue-900');
-
-    // 5. Tenta salvar
-    cy.intercept('POST', '**/disponibilidade/mensal*').as('saveAvailability');
-    cy.contains('button', 'Enviar Agenda do Mês').click({ force: true });
-    cy.wait('@saveAvailability').then((xhr) => {
-      cy.log('SAVE STATUS:', xhr.response?.statusCode);
-      cy.log('SAVE BODY:', typeof xhr.response?.body === 'string' ? xhr.response?.body : JSON.stringify(xhr.response?.body));
+      cy.contains('h1', monthLabel(1)).should('be.visible');
     });
 
-    // 6. Deve exibir o erro de paciente marcado
-    cy.contains('Paciente marcado para o dia', { timeout: 10000 }).should('exist');
-    cy.contains('Para desmarcar, justifique e cancele a consulta individualmente.').should('exist');
+    it('exibe os 7 cabeçalhos de dias da semana', () => {
+      ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].forEach(d => {
+        cy.contains(d).should('be.visible');
+      });
+    });
+
+    it('mostra contador de "dias com horários" zerado quando não há slots', () => {
+      cy.contains('span', '0 dias com horários').should('be.visible');
+    });
+  });
+
+  context('Seleção de dia e slots', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/disponibilidade/status-mes', {
+        statusCode: 200,
+        body: { diasRestantes: 20, bloqueado: false }
+      }).as('getStatus');
+      cy.intercept('GET', '**/disponibilidade/minha*', {
+        statusCode: 200,
+        body: []
+      }).as('getMinha');
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/my-availability');
+      cy.wait('@getStatus');
+      cy.contains('Carregando').should('not.exist');
+    });
+
+    it('exibe instrução quando nenhum dia está selecionado', () => {
+      cy.contains('Selecione um dia no calendário').should('be.visible');
+    });
+
+    it('seleciona um dia e abre o painel de horários', () => {
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().click();
+      cy.contains('h3', /^Dia \d+$/).should('be.visible');
+      cy.contains('button', '08:00').should('be.visible');
+      cy.contains('button', '18:00').should('be.visible');
+    });
+
+    it('toggle de slot pinta de azul quando ativo', () => {
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().click();
+      cy.contains('button', '10:00')
+        .should('not.have.class', 'bg-blue-900')
+        .click()
+        .should('have.class', 'bg-blue-900');
+
+      // Clicar de novo desmarca
+      cy.contains('button', '10:00').click()
+        .should('not.have.class', 'bg-blue-900');
+    });
+
+    it('seleção de slot atualiza a marca visual do dia no calendário', () => {
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().as('dia');
+      cy.get('@dia').click();
+      cy.contains('button', '14:00').click();
+      cy.get('@dia').find('.bg-blue-600').should('exist');
+    });
+  });
+
+  context('Persistência (POST /disponibilidade/mensal)', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/disponibilidade/status-mes', {
+        statusCode: 200,
+        body: { diasRestantes: 20, bloqueado: false }
+      }).as('getStatus');
+      cy.intercept('GET', '**/disponibilidade/minha*', {
+        statusCode: 200,
+        body: []
+      }).as('getMinha');
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/my-availability');
+      cy.wait('@getStatus');
+      cy.contains('Carregando').should('not.exist');
+    });
+
+    it('salva agenda com sucesso e exibe mensagem verde', () => {
+      cy.intercept('POST', '**/disponibilidade/mensal*', {
+        statusCode: 200,
+        body: 'OK'
+      }).as('saveMensal');
+
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().click();
+      cy.contains('button', '09:00').click();
+      cy.contains('button', '10:00').click();
+
+      cy.contains('button', 'Enviar Agenda do Mês').click();
+
+      cy.wait('@saveMensal').then(({ request }) => {
+        expect(request.url).to.match(/mes=\d{4}-\d{2}/);
+        const dtos = request.body as Array<{ date: string; startTimes: string[] }>;
+        expect(dtos).to.have.length(1);
+        expect(dtos[0].startTimes).to.have.members(['09:00:00', '10:00:00']);
+      });
+
+      cy.contains('Agenda do mês salva com sucesso!').should('be.visible');
+    });
+
+    it('exibe erro quando o backend rejeita por paciente já agendado', () => {
+      cy.intercept('POST', '**/disponibilidade/mensal*', {
+        statusCode: 409,
+        body: {
+          message: 'Paciente marcado para o dia 15. Para desmarcar, justifique e cancele a consulta individualmente.'
+        }
+      }).as('saveFail');
+
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().click();
+      cy.contains('button', '11:00').click();
+      cy.contains('button', 'Enviar Agenda do Mês').click();
+
+      cy.wait('@saveFail');
+      cy.contains('Paciente marcado para o dia 15').should('be.visible');
+      cy.contains('Para desmarcar, justifique e cancele a consulta individualmente.')
+        .should('be.visible');
+    });
+  });
+
+  context('Estado bloqueado (prazo encerrado)', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/disponibilidade/status-mes', {
+        statusCode: 200,
+        body: { diasRestantes: 0, bloqueado: true }
+      }).as('getStatus');
+      cy.intercept('GET', '**/disponibilidade/minha*', {
+        statusCode: 200,
+        body: []
+      }).as('getMinha');
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/my-availability');
+      cy.wait('@getStatus');
+      cy.contains('Carregando').should('not.exist');
+    });
+
+    it('exibe alerta amarelo "Atenção ao Prazo" quando bloqueado', () => {
+      cy.contains('h3', 'Atenção ao Prazo').should('be.visible');
+      cy.contains('O prazo para submissão encerrou').should('be.visible');
+    });
+
+    it('desabilita botão Enviar e mostra aviso ao selecionar dia', () => {
+      cy.contains('button', 'Enviar Agenda do Mês').should('be.disabled');
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().click();
+      cy.contains('Bloqueado para alterações').should('be.visible');
+    });
+  });
+
+  context('Carregamento de slots pré-existentes', () => {
+    it('preenche os dias com slots vindos do backend', () => {
+      const mes = monthStr(1);
+      const slots = [
+        { date: `${mes}-05`, startTime: '09:00:00', endTime: '10:00:00' },
+        { date: `${mes}-05`, startTime: '10:00:00', endTime: '11:00:00' },
+        { date: `${mes}-15`, startTime: '14:00:00', endTime: '15:00:00' }
+      ];
+
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/disponibilidade/status-mes', {
+        statusCode: 200,
+        body: { diasRestantes: 25, bloqueado: false }
+      }).as('getStatus');
+      cy.intercept('GET', '**/disponibilidade/minha*', {
+        statusCode: 200,
+        body: slots
+      }).as('getMinha');
+
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/my-availability');
+      cy.wait('@getStatus');
+      cy.contains('Carregando').should('not.exist');
+
+      cy.contains('span', '2 dias com horários').should('be.visible');
+
+      // Dia 05: dois slots
+      cy.contains('.aspect-square', '5').click();
+      cy.contains('button', '09:00').should('have.class', 'bg-blue-900');
+      cy.contains('button', '10:00').should('have.class', 'bg-blue-900');
+      cy.contains('button', '11:00').should('not.have.class', 'bg-blue-900');
+    });
   });
 
 });

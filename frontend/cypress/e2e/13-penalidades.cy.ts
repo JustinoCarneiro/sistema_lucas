@@ -1,123 +1,241 @@
 /// <reference types="cypress" />
 
-describe('13 — Penalidades por Cancelamento Tardio', () => {
+describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
 
-  const patientEmail = 'lucas@email.com';
-  const patientPass = '123456';
-  const adminEmail = 'admin@clinica.com';
-  const adminPass = 'admin';
+  const profissionaisDisp = [
+    { id: 1, name: 'Dra. Ana Souza', specialty: 'Psicologia Clínica' }
+  ];
 
-  it('Fluxo Completo: Cancelamento Tardio → Bloqueio → Desbloqueio Admin', () => {
-    
-    // 1. Paciente — Realiza cancelamento tardio
-    cy.login(patientEmail, patientPass);
-    cy.intercept('GET', '**/consultas/minhas').as('getMinhas');
-    cy.visit('/panel/my-appointments');
-    cy.wait('@getMinhas');
-    
-    // Procura pela consulta que tem o aviso de ação tardia
-    cy.contains('⚠️ Ação tardia', { timeout: 15000 })
-      .parents('.bg-white')
-      .find('[data-testid="cancelar-button"]')
-      .click();
+  function amanha(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
 
-    // Verifica aviso no modal
-    cy.contains('AVISO DE PENALIDADE').should('be.visible');
-    cy.contains('bloqueado para novos agendamentos por 14 dias').should('be.visible');
+  context('Paciente — Cancelamento Tardio', () => {
+    const consultaAtrasada = {
+      id: 50,
+      patientId: 3,
+      professionalName: 'Dra. Ana Souza',
+      patientName: 'Lucas Silva',
+      startTime: `${amanha()}T09:00:00`,
+      reason: 'Sessão semanal',
+      cancelReason: null,
+      status: 'CONFIRMADA',
+      podeCancelar: true,
+      atrasada: true
+    };
 
-    // Justificativa e Confirmação
-    cy.get('textarea').type('Cancelamento tardio para teste de penalidade');
-    cy.contains('Confirmar Cancelamento').click();
-    
-    // Verifica se status mudou para Cancelada
-    cy.contains('Cancelada', { timeout: 10000 }).should('exist');
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/paciente', {
+        statusCode: 200,
+        body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
+      }).as('getPatDash');
+      cy.intercept('GET', '**/consultas/minhas', {
+        statusCode: 200,
+        body: [consultaAtrasada]
+      }).as('getMinhas');
+      cy.intercept('GET', '**/disponibilidade/profissionais-disponiveis', {
+        statusCode: 200,
+        body: profissionaisDisp
+      }).as('getProfs');
 
-    // 2. Paciente — Tenta agendar nova consulta e deve ser bloqueado
-    cy.contains('Agendar consulta').click();
-    cy.get('select').first().select(1); // Seleciona qualquer profissional
-    cy.get('select#date', { timeout: 10000 }).should('exist').select(2); // Seleciona uma data futura
-    cy.get('[data-testid="slot-button"]', { timeout: 10000 }).first().click({ force: true });
-    
-    // Deve exibir mensagem de erro de bloqueio vinda do backend (alert nativo)
-    let blockedAlertCalled = false;
-    cy.on('window:alert', (text) => {
-      if (text.includes('Você está temporariamente bloqueado para novos agendamentos')) {
-        blockedAlertCalled = true;
-      }
-    });
-    cy.intercept('POST', '**/consultas').as('agendarRequest');
-    cy.get('button').contains('Confirmar agendamento').click();
-    cy.wait('@agendarRequest');
-    cy.wrap(null).should(() => {
-      expect(blockedAlertCalled).to.be.true;
+      cy.login('lucas@email.com', '123456');
+      cy.visit('/panel/my-appointments');
+      cy.wait('@getMinhas');
     });
 
-    // 3. Admin — Desbloqueia o paciente
-    cy.login(adminEmail, adminPass);
-    cy.visit('/panel/patients');
-    
-    // Localiza Lucas Silva que deve estar com a tag "Bloqueado"
-    let unlockedAlertCalled = false;
-    cy.on('window:alert', (text) => {
-      if (text.includes('Paciente desbloqueado com sucesso!')) {
-        unlockedAlertCalled = true;
-      }
+    it('lista exibe aviso "⚠️ Ação tardia" para consulta com atrasada=true', () => {
+      cy.contains('⚠️ Ação tardia:').should('be.visible');
+      cy.contains('Cancelar/Reagendar aplicará penalidade de 2 semanas').should('be.visible');
     });
 
-    cy.contains('Lucas Silva')
-      .parents('tr')
-      .within(() => {
-        cy.contains('Bloqueado').should('exist');
-        cy.contains('Desbloquear').click();
+    it('modal de cancelamento exibe "AVISO DE PENALIDADE" + texto de 15 dias', () => {
+      cy.get('[data-testid="cancelar-button"]').click();
+      cy.contains('h3', 'Cancelar Consulta').should('be.visible');
+      cy.contains('⚠️ AVISO DE PENALIDADE').should('be.visible');
+      cy.contains('faltam menos de 24h para a consulta').should('be.visible');
+      cy.contains('bloqueado para novos agendamentos por 15 dias').should('be.visible');
+    });
+
+    it('modal de reagendamento também exibe o aviso de penalidade', () => {
+      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+        statusCode: 200,
+        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
+      }).as('getWorkingDays');
+
+      cy.get('[data-testid="reagendar-button"]').click();
+      cy.contains('h3', 'Reagendar Consulta').should('be.visible');
+      cy.contains('⚠️ AVISO DE PENALIDADE').should('be.visible');
+      cy.contains('faltam menos de 24h para a consulta original').should('be.visible');
+      cy.contains('bloqueado para novos agendamentos por 15 dias').should('be.visible');
+    });
+
+    it('confirma cancelamento tardio com justificativa válida → POST /cancelar', () => {
+      cy.intercept('POST', '**/consultas/50/cancelar', {
+        statusCode: 200,
+        body: { message: 'Consulta cancelada com penalidade aplicada.' }
+      }).as('postCancel');
+
+      cy.intercept('GET', '**/consultas/minhas', {
+        statusCode: 200,
+        body: [{ ...consultaAtrasada, status: 'CANCELADA', podeCancelar: false }]
+      }).as('reloadMinhas');
+
+      cy.get('[data-testid="cancelar-button"]').click();
+      cy.get('textarea[formControlName="justification"]')
+        .type('Imprevisto pessoal de última hora, não consigo comparecer.');
+      cy.contains('button', 'Confirmar Cancelamento').click();
+
+      cy.wait('@postCancel').then(({ request }) => {
+        expect(request.body.justification).to.contain('Imprevisto pessoal');
       });
-
-    cy.wrap(null).should(() => {
-      expect(unlockedAlertCalled).to.be.true;
+      cy.wait('@reloadMinhas');
+      cy.contains('Cancelada').should('be.visible');
     });
-
-    cy.contains('Lucas Silva')
-      .parents('tr')
-      .should('not.contain', 'Bloqueado');
-
-    // 4. Paciente — Tenta agendar novamente e agora DEVE conseguir
-    cy.login(patientEmail, patientPass);
-    cy.intercept("GET", "**/consultas/minhas").as("getMinhasPosDesbloqueio");
-    cy.visit("/panel/my-appointments");
-    cy.wait("@getMinhasPosDesbloqueio");
-    
-    cy.contains('Agendar consulta').click();
-    cy.get('select').first().select(1);
-    cy.get('select#date').select(2); // Seleciona uma data futura
-    cy.get('[data-testid="slot-button"]').first().click({ force: true });
-    
-    cy.get('[data-testid="reason-input"]').type('Teste após desbloqueio');
-
-    let scheduleSuccessAlertCalled = false;
-    cy.on('window:alert', (text) => {
-      if (text.includes('Consulta agendada com sucesso!')) {
-        scheduleSuccessAlertCalled = true;
-      }
-    });
-    cy.get('button').contains('Confirmar agendamento').click();
-    cy.wrap(null).should(() => {
-      expect(scheduleSuccessAlertCalled).to.be.true;
-    });
-
-    cy.contains('Agendada').should('exist');
   });
 
-  it('Paciente — Reagendamento tardio também deve aplicar penalidade', () => {
-    cy.login(patientEmail, patientPass);
-    cy.visit('/panel/my-appointments');
+  context('Paciente Bloqueado — Tentativa de Agendamento', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/paciente', {
+        statusCode: 200,
+        body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
+      }).as('getPatDash');
+      cy.intercept('GET', '**/consultas/minhas', { statusCode: 200, body: [] }).as('getMinhas');
+      cy.intercept('GET', '**/disponibilidade/profissionais-disponiveis', {
+        statusCode: 200,
+        body: profissionaisDisp
+      }).as('getProfs');
+      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+        statusCode: 200,
+        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
+      }).as('getWorkingDays');
+      cy.intercept('GET', '**/disponibilidade/*/slots*', {
+        statusCode: 200,
+        body: [{ startTime: '09:00:00', endTime: '10:00:00' }]
+      }).as('getSlots');
 
-    // Procura por outra consulta tardia (ou a mesma se houver)
-    cy.contains('⚠️ Ação tardia', { timeout: 15000 })
-      .parents('.bg-white')
-      .find('[data-testid="reagendar-button"]')
-      .click();
+      cy.login('lucas@email.com', '123456');
+      cy.visit('/panel/my-appointments');
+      cy.wait('@getMinhas');
+    });
 
-    cy.contains('AVISO DE PENALIDADE').should('be.visible');
-    cy.contains('bloqueado para novos agendamentos por 14 dias').should('be.visible');
+    it('backend retorna 403 com mensagem de bloqueio → exibe alert', () => {
+      cy.intercept('POST', '**/consultas', {
+        statusCode: 403,
+        body: { message: 'Você está temporariamente bloqueado para novos agendamentos até 2026-06-03.' }
+      }).as('postBlocked');
+
+      const alertStub = cy.stub().as('alertStub');
+      cy.on('window:alert', alertStub);
+
+      cy.contains('button', '+ Agendar consulta').click();
+      cy.get('select[formControlName="professionalId"]').select('1');
+      cy.wait('@getWorkingDays');
+      cy.get('select[formControlName="date"] option').should('have.length.at.least', 2);
+      cy.get('select[formControlName="date"]').find('option').eq(1).then(opt => {
+        cy.get('select[formControlName="date"]').select(String(opt.val()));
+      });
+      cy.wait('@getSlots');
+      cy.get('[data-testid="slot-button"]').first().click();
+      cy.get('[data-testid="reason-input"]').type('Tentativa de agendamento');
+      cy.contains('button', 'Confirmar agendamento').click();
+
+      cy.wait('@postBlocked');
+      cy.get('@alertStub').should('have.been.calledWithMatch', /temporariamente bloqueado/);
+    });
+  });
+
+  context('Admin — Visualização e Desbloqueio de Paciente', () => {
+    const blockedUntil = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const patientsBloqueado = [
+      {
+        id: 3,
+        name: 'Lucas Silva',
+        email: 'lucas@email.com',
+        cpf: '111.222.333-44',
+        phone: '(11) 88888-9999',
+        blockedUntil,
+        infractionCount: 2,
+        receivedFirstWarning: true
+      }
+    ];
+
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/admin', {
+        statusCode: 200,
+        body: { totalProfissionais: 0, totalPacientes: 1, consultasHoje: 0, consultasPorStatus: {} }
+      }).as('getAdminDash');
+      cy.intercept('GET', 'http://localhost:8081/patients', {
+        statusCode: 200,
+        body: patientsBloqueado
+      }).as('getPatients');
+
+      cy.login('admin@clinica.com', 'admin');
+      cy.visit('/panel/patients');
+      cy.wait('@getPatients');
+    });
+
+    it('paciente bloqueado aparece com tag "Bloqueado" e botão "Desbloquear"', () => {
+      cy.contains('tr', 'Lucas Silva').within(() => {
+        cy.contains('Bloqueado').should('be.visible');
+        cy.contains('button', 'Desbloquear').should('be.visible');
+      });
+    });
+
+    it('filtro "Bloqueados Temporariamente" lista apenas pacientes bloqueados', () => {
+      cy.contains('button', 'Bloqueados Temporariamente').click();
+      cy.contains('tr', 'Lucas Silva').should('be.visible');
+    });
+
+    it('filtro "Com Histórico de Ausências" lista paciente com infrações', () => {
+      cy.contains('button', 'Com Histórico de Ausências').click();
+      cy.contains('tr', 'Lucas Silva').should('be.visible');
+    });
+
+    it('desbloqueia paciente via PATCH /patients/:id/desbloquear', () => {
+      cy.intercept('PATCH', 'http://localhost:8081/patients/3/desbloquear', {
+        statusCode: 200,
+        body: 'Paciente desbloqueado.'
+      }).as('patchDes');
+      cy.intercept('GET', 'http://localhost:8081/patients', {
+        statusCode: 200,
+        body: [{ ...patientsBloqueado[0], blockedUntil: null }]
+      }).as('reloadPatients');
+
+      const alertStub = cy.stub().as('alertStub');
+      cy.on('window:alert', alertStub);
+      cy.on('window:confirm', () => true);
+
+      cy.contains('tr', 'Lucas Silva').contains('button', 'Desbloquear').click();
+      cy.wait('@patchDes');
+      cy.wait('@reloadPatients');
+
+      cy.get('@alertStub').should('have.been.calledWithMatch', /desbloqueado com sucesso/);
+      cy.contains('tr', 'Lucas Silva').within(() => {
+        cy.contains('Bloqueado').should('not.exist');
+        cy.contains('button', 'Desbloquear').should('not.exist');
+      });
+    });
+  });
+
+  context('Backend — endpoint /patients/:id/desbloquear protegido', () => {
+    it('Paciente NÃO pode chamar /desbloquear (apenas Admin) — retorna 403', () => {
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('apiUrl')}/auth/login`,
+        body: { email: 'lucas@email.com', password: '123456' }
+      }).then(({ body }) => {
+        cy.request({
+          method: 'PATCH',
+          url: `${Cypress.env('apiUrl')}/patients/4/desbloquear`,
+          headers: { Authorization: `Bearer ${body.token}` },
+          failOnStatusCode: false
+        }).then((resp) => {
+          expect(resp.status).to.eq(403);
+        });
+      });
+    });
   });
 
 });

@@ -95,9 +95,10 @@ public class AvailabilityService {
             professionalId, inicio, fim, com.sistema.lucas.model.enums.StatusConsulta.CANCELADA
         );
 
-        // ✅ Apenas valida consultas que estão agendadas ou confirmadas (ativas)
+        // ✅ Valida consultas ativas (incluindo pendentes de aprovação)
         var consultasAtivas = consultasOcupadas.stream()
-            .filter(c -> c.getStatus() == com.sistema.lucas.model.enums.StatusConsulta.AGENDADA
+            .filter(c -> c.getStatus() == com.sistema.lucas.model.enums.StatusConsulta.AGUARDANDO_CONFIRMACAO
+                      || c.getStatus() == com.sistema.lucas.model.enums.StatusConsulta.AGENDADA
                       || c.getStatus() == com.sistema.lucas.model.enums.StatusConsulta.CONFIRMADA
                       || c.getStatus() == com.sistema.lucas.model.enums.StatusConsulta.CONFIRMADA_PROFISSIONAL)
             .toList();

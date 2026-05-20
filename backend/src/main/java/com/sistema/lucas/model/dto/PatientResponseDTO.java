@@ -17,7 +17,9 @@ public record PatientResponseDTO(
     String gender,
     String allergies,
     String address,
-    java.time.LocalDateTime blockedUntil
+    java.time.LocalDateTime blockedUntil,
+    int infractionCount,
+    boolean receivedFirstWarning
 ) {
     public PatientResponseDTO(Patient p) {
         this(
@@ -32,7 +34,9 @@ public record PatientResponseDTO(
             p.getGender(),
             p.getAllergies(),
             p.getAddress(),
-            p.getBlockedUntil()
+            p.getBlockedUntil(),
+            p.getInfractionCount(),
+            p.isReceivedFirstWarning()
         );
     }
 }

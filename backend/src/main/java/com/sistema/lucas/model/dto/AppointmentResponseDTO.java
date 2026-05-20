@@ -29,7 +29,8 @@ public record AppointmentResponseDTO(
             app.getCancelReason(),
             app.getStatus(),
             // ✅ Pode cancelar se o status permitir (mesmo se < 24h)
-            (app.getStatus() == StatusConsulta.AGENDADA
+            (app.getStatus() == StatusConsulta.AGUARDANDO_CONFIRMACAO
+                    || app.getStatus() == StatusConsulta.AGENDADA
                     || app.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL
                     || app.getStatus() == StatusConsulta.CONFIRMADA),
             // ✅ Indica se é uma ação tardia (penalidade será aplicada)

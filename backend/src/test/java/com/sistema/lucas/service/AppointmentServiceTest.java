@@ -75,7 +75,10 @@ class AppointmentServiceTest {
             )).thenReturn(List.of());
 
             assertDoesNotThrow(() -> appointmentService.agendar(dto, patientEmail));
-            verify(appointmentRepository, times(1)).save(java.util.Objects.requireNonNull(any(Appointment.class)));
+
+            var captor = org.mockito.ArgumentCaptor.forClass(Appointment.class);
+            verify(appointmentRepository, times(1)).save(captor.capture());
+            assertEquals(StatusConsulta.AGUARDANDO_CONFIRMACAO, captor.getValue().getStatus());
         }
 
         @Test
@@ -134,6 +137,88 @@ class AppointmentServiceTest {
         }
     }
 
+    // ──────────────────────── Fluxo de Aprovação ────────────────────────
+
+    @Nested
+    @DisplayName("Aprovação e Recusa de Solicitações Pendentes")
+    class AprovacaoTests {
+
+        @Test
+        @DisplayName("Profissional deve aprovar solicitação AGUARDANDO_CONFIRMACAO → AGENDADA")
+        void aprovarAgendamento_sucesso() {
+            Long id = 1L;
+            String emailProf = "ana@clinica.com";
+
+            var professional = new Professional();
+            professional.setEmail(emailProf);
+
+            var patient = new Patient();
+            patient.setName("João da Silva");
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setPatient(patient);
+            consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
+            consulta.setDateTime(LocalDateTime.now().plusDays(3));
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.aprovarAgendamento(id, emailProf));
+            assertEquals(StatusConsulta.AGENDADA, consulta.getStatus());
+            verify(appointmentRepository, times(1)).save(consulta);
+            verify(emailTemplateService, times(1)).notificarPacienteAgendamentoAceito(consulta);
+        }
+
+        @Test
+        @DisplayName("Profissional deve recusar solicitação com justificativa → CANCELADA")
+        void recusarAgendamento_comJustificativa() {
+            Long id = 2L;
+            String emailProf = "ana@clinica.com";
+            String motivo = "Agenda lotada neste período.";
+
+            var professional = new Professional();
+            professional.setEmail(emailProf);
+
+            var patient = new Patient();
+            patient.setName("Maria Souza");
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setPatient(patient);
+            consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
+            consulta.setDateTime(LocalDateTime.now().plusDays(2));
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.recusarAgendamento(id, emailProf, motivo));
+            assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
+            assertEquals(motivo, consulta.getCancelReason());
+            verify(emailTemplateService, times(1)).notificarPacienteAgendamentoRecusado(consulta, motivo);
+        }
+
+        @Test
+        @DisplayName("Profissional errado não pode aprovar consulta de outro profissional")
+        void aprovarAgendamento_profissionalErrado_lancaExcecao() {
+            Long id = 3L;
+
+            var professional = new Professional();
+            professional.setEmail("dono@clinica.com");
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.aprovarAgendamento(id, "outro@clinica.com"));
+            assertTrue(ex.getMessage().contains("não autorizada"));
+        }
+    }
+
     // ──────────────────────── Fluxo de Confirmação ────────────────────────
 
     @Nested
@@ -170,7 +255,7 @@ class AppointmentServiceTest {
     class CancelamentoReagendamentoTests {
 
         @Test
-        @DisplayName("Deve cancelar com sucesso se faltar mais de 24h e houver justificativa")
+        @DisplayName("Deve cancelar com sucesso se faltar mais de 24h sem aplicar penalidade")
         void cancelarComSucesso() {
             Long id = 1L;
             String email = "paciente@email.com";
@@ -182,7 +267,7 @@ class AppointmentServiceTest {
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
-            consulta.setDateTime(LocalDateTime.now().plusHours(25)); // OK: 25h > 24h
+            consulta.setDateTime(LocalDateTime.now().plusHours(25)); // 25h > 24h — sem penalidade
             consulta.setStatus(StatusConsulta.AGENDADA);
 
             when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
@@ -191,26 +276,90 @@ class AppointmentServiceTest {
             assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
             assertEquals(justificativa, consulta.getCancelReason());
             verify(auditLogService).log(anyString(), anyString(), anyString(), anyLong(), anyString());
+            // Sem penalidade: nenhum e-mail de infração deve ter sido enviado
+            verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
+            verify(emailTemplateService, never()).enviarAvisoBloqueioFalta(any(), any(), any());
         }
 
         @Test
-        @DisplayName("Deve falhar ao cancelar se faltar menos de 24h")
-        void erroCancelarMenos24h() {
+        @DisplayName("Cancelamento tardio (<24h) na 1ª infração aplica advertência, não bloqueia")
+        void cancelarTardio_aplicaAdvertencia() {
             Long id = 1L;
             String email = "paciente@email.com";
-            
+
+            var paciente = new Patient(); // infractionCount=0, receivedFirstWarning=false por padrão
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setDateTime(LocalDateTime.now().plusHours(23)); // 23h < 24h → penalidade
+            consulta.setStatus(StatusConsulta.AGENDADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.cancelar(id, email, "Emergência familiar"));
+
+            assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
+            assertEquals(1, paciente.getInfractionCount());
+            assertTrue(paciente.isReceivedFirstWarning());
+            assertNull(paciente.getBlockedUntil()); // 1ª infração: NÃO bloqueia
+            verify(emailTemplateService, times(1)).enviarAvisoPrimeiraFalta(paciente, consulta);
+            verify(emailTemplateService, never()).enviarAvisoBloqueioFalta(any(), any(), any());
+            verify(patientRepository, times(1)).save(paciente);
+        }
+
+        @Test
+        @DisplayName("Cancelamento tardio na 2ª infração bloqueia o paciente por 15 dias")
+        void cancelarTardio_reincidencia_bloqueiaPaciente() {
+            Long id = 2L;
+            String email = "paciente@email.com";
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+            paciente.setReceivedFirstWarning(true); // já foi advertido
+            paciente.setInfractionCount(1);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setDateTime(LocalDateTime.now().plusHours(10)); // < 24h
+            consulta.setStatus(StatusConsulta.CONFIRMADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.cancelar(id, email, "Não posso ir"));
+
+            assertEquals(2, paciente.getInfractionCount());
+            assertNotNull(paciente.getBlockedUntil());
+            assertTrue(paciente.getBlockedUntil().isAfter(LocalDateTime.now().plusDays(14)));
+            verify(emailTemplateService, times(1)).enviarAvisoBloqueioFalta(eq(paciente), eq(consulta), any());
+            verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
+        }
+
+        @Test
+        @DisplayName("Cancelamento de consulta AGUARDANDO_CONFIRMACAO não aplica penalidade")
+        void cancelarConsultaPendente_semPenalidade() {
+            Long id = 3L;
+            String email = "paciente@email.com";
+
             var paciente = new Patient();
             paciente.setEmail(email);
 
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
-            consulta.setDateTime(LocalDateTime.now().plusHours(23)); // ERRO: 23h < 24h
+            consulta.setDateTime(LocalDateTime.now().plusHours(2)); // < 24h mas pendente
+            consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
 
             when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
 
-            var ex = assertThrows(RuntimeException.class, () -> appointmentService.cancelar(id, email, "Justificativa"));
-            assertTrue(ex.getMessage().contains("24h de antecedência"));
+            assertDoesNotThrow(() -> appointmentService.cancelar(id, email, "Desisti do agendamento"));
+
+            assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
+            verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
+            verify(emailTemplateService, never()).enviarAvisoBloqueioFalta(any(), any(), any());
+            verify(patientRepository, never()).save(any()); // nenhum save de penalidade
         }
 
         @Test
@@ -226,12 +375,102 @@ class AppointmentServiceTest {
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
-            consulta.setDateTime(LocalDateTime.now().plusDays(1));
+            consulta.setDateTime(LocalDateTime.now().plusHours(25)); // > 24h: sem penalidade antes do throw
 
             when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
 
             var ex = assertThrows(RuntimeException.class, () -> appointmentService.reagendar(id, email, novaData, ""));
             assertEquals("A justificativa é obrigatória para o reagendamento.", ex.getMessage());
+        }
+    }
+
+    // ──────────────────────── Falta ────────────────────────
+
+    @Nested
+    @DisplayName("Marcação de Falta (Sistema de Infrações Progressivas)")
+    class FaltaTests {
+
+        @Test
+        @DisplayName("1ª falta: envia advertência por e-mail e não bloqueia o paciente")
+        void primeiraFalta_deveEnviarAdvertencia() {
+            Long id = 10L;
+            String emailProf = "ana@clinica.com";
+
+            var professional = new Professional();
+            professional.setEmail(emailProf);
+
+            var patient = new Patient(); // infractionCount=0, receivedFirstWarning=false
+            patient.setEmail("lucas@email.com");
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setPatient(patient);
+            consulta.setDateTime(LocalDateTime.now().minusHours(1));
+            consulta.setStatus(StatusConsulta.CONFIRMADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.marcarFalta(id, emailProf));
+
+            assertEquals(StatusConsulta.FALTA, consulta.getStatus());
+            assertEquals(1, patient.getInfractionCount());
+            assertTrue(patient.isReceivedFirstWarning());
+            assertNull(patient.getBlockedUntil()); // NÃO bloqueado
+            verify(emailTemplateService, times(1)).enviarAvisoPrimeiraFalta(patient, consulta);
+            verify(emailTemplateService, never()).enviarAvisoBloqueioFalta(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("2ª falta: bloqueia o paciente por 15 dias e envia e-mail de bloqueio")
+        void segundaFalta_deveBloquearPaciente() {
+            Long id = 11L;
+            String emailProf = "ana@clinica.com";
+
+            var professional = new Professional();
+            professional.setEmail(emailProf);
+
+            var patient = new Patient();
+            patient.setEmail("lucas@email.com");
+            patient.setReceivedFirstWarning(true); // já advertido
+            patient.setInfractionCount(1);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setPatient(patient);
+            consulta.setDateTime(LocalDateTime.now().minusHours(2));
+            consulta.setStatus(StatusConsulta.CONFIRMADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.marcarFalta(id, emailProf));
+
+            assertEquals(StatusConsulta.FALTA, consulta.getStatus());
+            assertEquals(2, patient.getInfractionCount());
+            assertNotNull(patient.getBlockedUntil());
+            assertTrue(patient.getBlockedUntil().isAfter(LocalDateTime.now().plusDays(14)));
+            verify(emailTemplateService, times(1)).enviarAvisoBloqueioFalta(eq(patient), eq(consulta), any());
+            verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
+        }
+
+        @Test
+        @DisplayName("Profissional errado não pode marcar falta em consulta de outro")
+        void falta_profissionalErrado_lancaExcecao() {
+            Long id = 12L;
+
+            var professional = new Professional();
+            professional.setEmail("dono@clinica.com");
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.marcarFalta(id, "outro@clinica.com"));
+            assertTrue(ex.getMessage().contains("não é o médico"));
         }
     }
 
