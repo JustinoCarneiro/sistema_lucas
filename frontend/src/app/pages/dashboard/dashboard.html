@@ -134,6 +134,17 @@
           Exportar Meus Atendimentos
         </button>
       </div>
+      <!-- Alert banner for pending confirmations -->
+      <div *ngIf="dados()?.pendentesConfirmacao > 0" class="mb-6 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 text-purple-700 dark:text-purple-300 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div>
+            <p class="font-bold text-sm">Ação necessária</p>
+            <p class="text-sm">Você tem {{ dados()?.pendentesConfirmacao }} agendamento(s) aguardando sua aprovação.</p>
+          </div>
+        </div>
+        <a routerLink="/panel/professional-appointments" class="px-4 py-2 bg-purple-100 dark:bg-purple-800/40 hover:bg-purple-200 dark:hover:bg-purple-700/50 rounded-lg text-sm font-semibold transition">Ver agendamentos</a>
+      </div>
 
       <!-- KPI cards -->
       <div class="grid grid-cols-12 gap-6 mb-6">
@@ -286,6 +297,17 @@
           <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Meu Painel</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Suas consultas, documentos e dados em um só lugar.</p>
         </div>
+      </div>
+      <!-- Alert banner for pending confirmations -->
+      <div *ngIf="dados()?.pendentesConfirmacao > 0" class="mb-6 p-4 rounded-xl bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 text-green-700 dark:text-green-300 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div>
+            <p class="font-bold text-sm">Confirme sua presença</p>
+            <p class="text-sm">Você tem {{ dados()?.pendentesConfirmacao }} consulta(s) aguardando confirmação de presença.</p>
+          </div>
+        </div>
+        <a routerLink="/panel/my-appointments" class="px-4 py-2 bg-green-100 dark:bg-green-800/40 hover:bg-green-200 dark:hover:bg-green-700/50 rounded-lg text-sm font-semibold transition">Minhas consultas</a>
       </div>
 
       <!-- KPI cards -->

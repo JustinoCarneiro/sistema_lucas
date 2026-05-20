@@ -47,6 +47,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Total de consultas por status para um paciente
     Long countByPatientEmailAndStatus(String email, StatusConsulta status);
 
+    // Total de consultas por status para um profissional
+    Long countByProfessionalEmailAndStatus(String email, StatusConsulta status);
+
+    // Busca consultas futuras pendentes de uma determinada ação
+    @Query("SELECT a FROM Appointment a WHERE a.status = :status AND a.dateTime > CURRENT_TIMESTAMP ORDER BY a.dateTime ASC")
+    List<Appointment> findPendentesNoFuturo(@Param("status") StatusConsulta status);
+
     // Consultas em um intervalo de datas (dashboard admin)
     @Query("SELECT a FROM Appointment a WHERE a.dateTime >= :inicio AND a.dateTime < :fim")
     List<Appointment> countByDateRange(

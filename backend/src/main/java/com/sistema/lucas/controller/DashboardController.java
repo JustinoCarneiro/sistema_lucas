@@ -65,6 +65,10 @@ public class DashboardController {
         dados.put("consultasHoje",
             appointmentRepository.findTodayAppointmentsByProfessionalEmail(email));
 
+        // Consultas pendentes de confirmação pelo profissional
+        dados.put("pendentesConfirmacao",
+            appointmentRepository.countByProfessionalEmailAndStatus(email, StatusConsulta.AGUARDANDO_CONFIRMACAO));
+
         // Próximas consultas agendadas
         dados.put("proximasConsultas",
             appointmentRepository.findProximasByProfissionalEmail(email, LocalDateTime.now()));
@@ -96,6 +100,10 @@ public class DashboardController {
         // Próxima consulta agendada
         dados.put("proximaConsulta",
             appointmentRepository.findProximaByPacienteEmail(email, LocalDateTime.now()));
+
+        // Consultas pendentes de confirmação de presença pelo paciente
+        dados.put("pendentesConfirmacao",
+            appointmentRepository.countByPatientEmailAndStatus(email, StatusConsulta.CONFIRMADA_PROFISSIONAL));
 
         // Total de consultas realizadas
         dados.put("totalRealizadas",

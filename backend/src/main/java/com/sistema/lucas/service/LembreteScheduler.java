@@ -65,4 +65,36 @@ public class LembreteScheduler {
             }
         }
     }
+
+    // Executa toda segunda-feira às 9h da manhã para alertar sobre pendências
+    @Scheduled(cron = "0 0 9 * * MON", zone = "America/Sao_Paulo")
+    public void notificarPendenciasSemanais() {
+        // Para profissionais: status AGUARDANDO_CONFIRMACAO
+        var pendentesProfissional = appointmentRepository.findPendentesNoFuturo(com.sistema.lucas.model.enums.StatusConsulta.AGUARDANDO_CONFIRMACAO);
+        java.util.Map<com.sistema.lucas.model.Professional, Long> qtdeProf = pendentesProfissional.stream()
+            .collect(java.util.stream.Collectors.groupingBy(com.sistema.lucas.model.Appointment::getProfessional, java.util.stream.Collectors.counting()));
+        
+        qtdeProf.forEach((prof, qtde) -> {
+            try {
+                emailTemplateService.enviarLembreteSemanalPendenciasProfissional(prof, qtde);
+                System.out.println("📧 Lembrete semanal enviado para profissional: " + prof.getEmail());
+            } catch (Exception e) {
+                System.err.println("⚠️ Falha ao enviar lembrete semanal (profissional): " + e.getMessage());
+            }
+        });
+
+        // Para pacientes: status CONFIRMADA_PROFISSIONAL
+        var pendentesPaciente = appointmentRepository.findPendentesNoFuturo(com.sistema.lucas.model.enums.StatusConsulta.CONFIRMADA_PROFISSIONAL);
+        java.util.Map<com.sistema.lucas.model.Patient, Long> qtdePac = pendentesPaciente.stream()
+            .collect(java.util.stream.Collectors.groupingBy(com.sistema.lucas.model.Appointment::getPatient, java.util.stream.Collectors.counting()));
+        
+        qtdePac.forEach((pac, qtde) -> {
+            try {
+                emailTemplateService.enviarLembreteSemanalPendenciasPaciente(pac, qtde);
+                System.out.println("📧 Lembrete semanal enviado para paciente: " + pac.getEmail());
+            } catch (Exception e) {
+                System.err.println("⚠️ Falha ao enviar lembrete semanal (paciente): " + e.getMessage());
+            }
+        });
+    }
 }

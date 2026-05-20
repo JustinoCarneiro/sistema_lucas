@@ -309,7 +309,7 @@ public class EmailTemplateService {
     // ─── Lembrete de Prazo de Agenda ──────────────────────────────────────────
     
     public void enviarLembreteSubmissaoAgenda(com.sistema.lucas.model.Professional prof, java.time.YearMonth mesAlvo, boolean urgente) {
-        String nomeMes = mesAlvo.getMonth().getDisplayName(java.time.format.TextStyle.FULL, new java.util.Locale("pt", "BR"));
+        String nomeMes = mesAlvo.getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("pt-BR"));
         nomeMes = nomeMes.substring(0, 1).toUpperCase() + nomeMes.substring(1);
         
         String urlSistema = "http://localhost:8082"; // Idealmente viria de um config
@@ -330,6 +330,40 @@ public class EmailTemplateService {
                 urgente ? "Sua agenda precisa ser preenchida hoje para evitar transtornos no agendamento de pacientes." 
                         : "Após este período, iniciaremos os avisos diários de pendência.",
                 urlSistema + "/panel/availability"
+            )
+        );
+    }
+
+    // ─── Lembretes Semanais de Pendências ───────────────────────────────────
+
+    public void enviarLembreteSemanalPendenciasProfissional(com.sistema.lucas.model.Professional prof, long qtdePendentes) {
+        String urlSistema = "http://localhost:8082/panel/professional-appointments";
+        emailService.enviar(
+            prof.getEmail(),
+            "Lembrete: Você tem agendamentos pendentes de confirmação",
+            buildPremiumTemplate(
+                "Agendamentos Pendentes",
+                "Olá, Dr(a). " + prof.getName() + "!",
+                "Você tem <b>" + qtdePendentes + "</b> agendamento(s) pendente(s) de aprovação na sua agenda.",
+                "Ação Necessária",
+                "Por favor, acesse o sistema para Confirmar ou Recusar as consultas solicitadas pelos pacientes.",
+                urlSistema
+            )
+        );
+    }
+
+    public void enviarLembreteSemanalPendenciasPaciente(Patient paciente, long qtdePendentes) {
+        String urlSistema = "http://localhost:8082/panel/my-appointments";
+        emailService.enviar(
+            paciente.getEmail(),
+            "Lembrete: Confirme sua presença na consulta",
+            buildPremiumTemplate(
+                "Confirmação de Presença",
+                "Olá, " + paciente.getName() + "!",
+                "Você tem <b>" + qtdePendentes + "</b> consulta(s) aguardando sua confirmação de presença.",
+                "Confirmação Necessária",
+                "Por favor, acesse o sistema para confirmar sua presença ou cancelar o agendamento com antecedência.",
+                urlSistema
             )
         );
     }
