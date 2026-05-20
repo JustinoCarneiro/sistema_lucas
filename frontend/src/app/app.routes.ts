@@ -18,11 +18,13 @@ import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password
 import { ResetPasswordComponent } from './pages/reset-password/reset-password';
 import { VerifyEmail } from './pages/verify-email/verify-email';
 import { MyAvailabilityComponent } from './pages/my-availability/my-availability';
+import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: Register },
+  { path: 'privacidade', component: PrivacyPolicyComponent },
   { path: 'verify-email', component: VerifyEmail },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },

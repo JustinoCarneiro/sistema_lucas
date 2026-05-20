@@ -4,10 +4,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 
 public record PatientCreateDTO(
-    @NotBlank String name, 
-    @NotBlank @Email String email, 
-    @NotBlank String password, 
-    @NotBlank String cpf, 
-    String whatsapp, 
-    String healthPlan
+    @NotBlank String name,
+    @NotBlank @Email String email,
+    @NotBlank String password,
+    @NotBlank String cpf,
+    String whatsapp,
+    String healthPlan,
+    // LGPD — consentimento expresso aos Termos de Uso e Política de Privacidade.
+    boolean termsAccepted
 ) {}

@@ -36,7 +36,7 @@ class AuthControllerTest {
 
     @Test
     void registrarSucesso() throws Exception {
-        var dto = new RegisterDTO("Novo Usuario", "novo@email.com", "senha123", "111.111.111-11", "11999998888");
+        var dto = new RegisterDTO("Novo Usuario", "novo@email.com", "senha123", "111.111.111-11", "11999998888", true);
         
         org.mockito.Mockito.when(userRepository.findByEmail(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
 
@@ -71,7 +71,7 @@ class AuthControllerTest {
 
     @Test
     void registrarEmailDuplicado() throws Exception {
-        var dto = new RegisterDTO("Usuario Duplicado", "jaexiste@email.com", "senha123", "222.222.222-22", "11999997777");
+        var dto = new RegisterDTO("Usuario Duplicado", "jaexiste@email.com", "senha123", "222.222.222-22", "11999997777", true);
         
         org.mockito.Mockito.when(userRepository.findByEmail("jaexiste@email.com")).thenReturn(new com.sistema.lucas.model.User());
 

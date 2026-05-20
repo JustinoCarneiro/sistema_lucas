@@ -24,11 +24,14 @@ export class Register {
 
   constructor() {
     this.registerForm = this.fb.group({
-      name:     ['', Validators.required],
-      email:    ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      cpf:      ['', Validators.required],
-      whatsapp: ['', Validators.required]
+      name:          ['', Validators.required],
+      email:         ['', [Validators.required, Validators.email]],
+      password:      ['', [Validators.required, Validators.minLength(6)]],
+      cpf:           ['', Validators.required],
+      whatsapp:      ['', Validators.required],
+      // LGPD — consentimento expresso obrigatório (Validators.requiredTrue
+      // mantém o formulário inválido enquanto o checkbox não for marcado).
+      termsAccepted: [false, Validators.requiredTrue]
     });
   }
 
@@ -61,7 +64,7 @@ export class Register {
 
     this.isLoading.set(true);
 
-    const { name, email, password, cpf, whatsapp } = this.registerForm.value;
+    const { name, email, password, cpf, whatsapp, termsAccepted } = this.registerForm.value;
 
     const payload = {
       name,
@@ -69,7 +72,8 @@ export class Register {
       password,
       cpf,
       phone: whatsapp,
-      role: 'PATIENT'
+      role: 'PATIENT',
+      termsAccepted
     };
 
     this.authService.registerPatient(payload).subscribe({

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null") // matchers Mockito (any()) retornam null por design
 class PatientServiceTest {
 
     @InjectMocks
@@ -41,7 +42,7 @@ class PatientServiceTest {
         @Test
         @DisplayName("Não deve cadastrar paciente com CPF já existente (verificação em memória)")
         void cadastrarCpfDuplicado() {
-            var dto = new PatientCreateDTO("Lucas Paciente", "paciente@teste.com", "123456", "111.222.333-44", "5511999998888", "Plano Saude X");
+            var dto = new PatientCreateDTO("Lucas Paciente", "paciente@teste.com", "123456", "111.222.333-44", "5511999998888", "Plano Saude X", true);
 
             // A verificação de CPF usa findAll() + stream (campo criptografado não é pesquisável por SQL)
             var existente = new Patient();
@@ -56,7 +57,7 @@ class PatientServiceTest {
         @Test
         @DisplayName("Deve cadastrar um paciente com sucesso quando os dados são válidos")
         void cadastrarComSucesso() {
-            var dto = new PatientCreateDTO("Novo Paciente", "novo@teste.com", "senha123", "000.000.000-00", "5511000000000", "Plano Y");
+            var dto = new PatientCreateDTO("Novo Paciente", "novo@teste.com", "senha123", "000.000.000-00", "5511000000000", "Plano Y", true);
 
             // findAll() retorna lista vazia → CPF não duplicado
             when(patientRepository.findAll()).thenReturn(List.of());
@@ -72,7 +73,7 @@ class PatientServiceTest {
         @Test
         @DisplayName("Cadastro concorrente: DataIntegrityViolation no flush é convertida em mensagem amigável")
         void cadastrarConcorrente_deveCapturarDataIntegrity() {
-            var dto = new PatientCreateDTO("Concurrent User", "concurrent@test.com", "senha123", "999.888.777-66", "5511000000001", "Plano Z");
+            var dto = new PatientCreateDTO("Concurrent User", "concurrent@test.com", "senha123", "999.888.777-66", "5511000000001", "Plano Z", true);
 
             when(patientRepository.findAll()).thenReturn(List.of()); // passa a verificação em memória
             when(patientRepository.existsByEmail(dto.email())).thenReturn(false);

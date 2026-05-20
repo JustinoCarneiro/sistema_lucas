@@ -41,6 +41,25 @@ public class Patient extends User { // Herança estabelecida aqui
     private int infractionCount = 0;
     private boolean receivedFirstWarning = false;
 
+    // LGPD: marcador de soft-delete por anonimização. Quando false, o paciente
+    // foi anonimizado para preservar a integridade de prontuários/consultas
+    // (exigência do CFM — retenção de prontuários por 20 anos).
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
+    // LGPD: consentimento expresso aos Termos de Uso e Política de Privacidade,
+    // registrado no momento do cadastro (Art. 7º, I e Art. 8º da Lei 13.709/2018).
+    @Column(name = "terms_accepted", nullable = false)
+    private boolean termsAccepted = false;
+
+    // LGPD: prova demonstrável do consentimento (Art. 8º §1) — quando foi dado
+    // e a versão dos termos vigente naquele momento.
+    @Column(name = "terms_accepted_at")
+    private java.time.LocalDateTime termsAcceptedAt;
+
+    @Column(name = "terms_version")
+    private String termsVersion;
+
     @PrePersist
     @PreUpdate
     public void normalizePatient() {

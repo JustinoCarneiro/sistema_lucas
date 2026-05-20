@@ -35,6 +35,9 @@ public class DataInitializer implements CommandLineRunner {
     @org.springframework.beans.factory.annotation.Value("${app.admin.password}")
     private String adminPassword;
 
+    @org.springframework.beans.factory.annotation.Value("${app.lgpd.terms-version}")
+    private String termsVersion;
+
     @Override
     public void run(String... args) throws Exception {
         if (professionalRepository.count() > 0) {
@@ -113,6 +116,9 @@ public class DataInitializer implements CommandLineRunner {
             lucas.setPassword(passwordEncoder.encode("123456"));
             lucas.setRole(Role.PATIENT);
             lucas.setVerified(true);
+            lucas.setTermsAccepted(true);
+            lucas.setTermsAcceptedAt(agora);
+            lucas.setTermsVersion(termsVersion);
             lucas.setCpf("111.222.333-44");
             lucas.setPhone("11888889999");
             // Pré-seta advertência recebida para que o teste E2E de penalidades
@@ -127,6 +133,9 @@ public class DataInitializer implements CommandLineRunner {
             maria.setPassword(passwordEncoder.encode("123456"));
             maria.setRole(Role.PATIENT);
             maria.setVerified(true);
+            maria.setTermsAccepted(true);
+            maria.setTermsAcceptedAt(agora);
+            maria.setTermsVersion(termsVersion);
             maria.setCpf("222.333.444-55");
             maria.setPhone("11999998888");
             patientRepository.save(maria);
@@ -137,6 +146,9 @@ public class DataInitializer implements CommandLineRunner {
             joao.setPassword(passwordEncoder.encode("123456"));
             joao.setRole(Role.PATIENT);
             joao.setVerified(true);
+            joao.setTermsAccepted(true);
+            joao.setTermsAcceptedAt(agora);
+            joao.setTermsVersion(termsVersion);
             joao.setCpf("333.444.555-66");
             joao.setPhone("11999990003");
             patientRepository.save(joao);

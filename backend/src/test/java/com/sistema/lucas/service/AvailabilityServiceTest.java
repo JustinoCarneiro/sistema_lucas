@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null") // matchers Mockito (any()) retornam null por design
 class AvailabilityServiceTest {
 
     @InjectMocks
@@ -66,7 +67,7 @@ class AvailabilityServiceTest {
             
             // Deve deletar os antigos e salvar os novos
             verify(availabilityRepository, times(1)).deleteByProfessionalEmailAndDateBetween(email, proximoMes.atDay(1), proximoMes.atEndOfMonth());
-            verify(availabilityRepository, times(2)).save(java.util.Objects.requireNonNull(any(ProfessionalAvailability.class)));
+            verify(availabilityRepository, times(2)).save(any(ProfessionalAvailability.class));
         }
 
         @Test

@@ -30,6 +30,10 @@ public class AuthController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private com.sistema.lucas.security.service.EmailVerificationService emailVerificationService;
 
+    // LGPD — versão vigente dos termos, registrada junto ao consentimento.
+    @org.springframework.beans.factory.annotation.Value("${app.lgpd.terms-version}")
+    private String termsVersion;
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
@@ -45,6 +49,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Email já cadastrado");
         }
 
+        // LGPD — o cadastro só prossegue mediante consentimento expresso.
+        if (!data.termsAccepted()) {
+            return ResponseEntity.badRequest()
+                .body("É necessário aceitar os Termos de Uso e a Política de Privacidade.");
+        }
+
         String encryptedPassword = passwordEncoder.encode(data.password());
 
         Patient newPatient = new Patient();
@@ -55,6 +65,10 @@ public class AuthController {
         newPatient.setCpf(data.cpf());     // ✅ novo
         newPatient.setPhone(data.phone()); // ✅ novo
         newPatient.setVerified(false);
+        // LGPD — consentimento registrado com prova demonstrável (Art. 8º §1)
+        newPatient.setTermsAccepted(true);
+        newPatient.setTermsAcceptedAt(java.time.LocalDateTime.now());
+        newPatient.setTermsVersion(termsVersion);
         patientRepository.save(newPatient);
 
         // ✅ Envia e-mail de verificação

@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null") // matchers Mockito (any()) retornam null por design
 class AppointmentServiceTest {
 
     @InjectMocks
