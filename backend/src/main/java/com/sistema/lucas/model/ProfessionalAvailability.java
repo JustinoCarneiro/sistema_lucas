@@ -8,7 +8,7 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "professional_availability",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"professional_id", "available_date", "startTime"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"professional_id", "available_date", "start_time"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class ProfessionalAvailability {
 
