@@ -1,19 +1,141 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* Fonte Inter — base tipográfica do template Mosaic (frontend/template-ref) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=fallback');
+
 @import "tailwindcss";
 
+/* Variante `dark:` acionada pela classe `.dark` no <html> (ThemeService) */
+@custom-variant dark (&:is(.dark *));
+
+/* =========================================================================
+   Design tokens portados do template Mosaic (frontend/template-ref).
+   Mantemos o azul da marca (blue-*) como cor de destaque — o template usa
+   violeta, mas aqui só adotamos sombras, tipografia e a paleta de cinzas.
+   ========================================================================= */
+@theme {
+  /* Sombra suave: cards "flutuam" sem precisar de borda dura */
+  --shadow-sm: 0 1px 1px 0 rgb(0 0 0 / 0.05), 0 1px 2px 0 rgb(0 0 0 / 0.02);
+
+  /* Inter como família padrão (substitui o sans-serif do sistema) */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-inter: "Inter", sans-serif;
+
+  /* Paleta de cinzas do Mosaic — levemente mais fria que o default */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #bfc4cd;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Escala tipográfica do Mosaic — line-height e tracking calibrados */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5715;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-base--letter-spacing: -0.01em;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.5;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.33;
+  --text-2xl--letter-spacing: -0.01em;
+  --text-3xl: 1.88rem;
+  --text-3xl--line-height: 1.33;
+  --text-3xl--letter-spacing: -0.01em;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 1.25;
+  --text-4xl--letter-spacing: -0.02em;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1.25;
+  --text-5xl--letter-spacing: -0.02em;
+
+  --breakpoint-xs: 480px;
+}
+
+/*
+  No Tailwind v4 a cor de borda padrão é `currentColor`. O Mosaic restaura
+  o comportamento v3 (borda cinza) para que `border` sozinho fique discreto.
+*/
 @layer base {
-  button, 
-  a, 
-  select, 
-  input[type="checkbox"], 
-  input[type="radio"], 
-  input[type="file"], 
-  input[type="submit"], 
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Tema escuro: cor de fundo base e ajustes nativos do navegador */
+  html.dark {
+    color-scheme: dark;
+    background-color: var(--color-gray-900);
+  }
+
+  .dark *,
+  .dark ::after,
+  .dark ::before,
+  .dark ::backdrop,
+  .dark ::file-selector-button {
+    border-color: var(--color-gray-700, currentColor);
+  }
+}
+
+/* Utilitários portados do utility-patterns.css do Mosaic (tipografia + botões).
+   A seção de forms do template foi omitida — depende do plugin
+   @tailwindcss/forms, que não está instalado neste projeto. */
+@layer components {
+  .h1 { @apply text-4xl font-extrabold tracking-tighter; }
+  .h2 { @apply text-3xl font-extrabold tracking-tighter; }
+  .h3 { @apply text-3xl font-extrabold; }
+  .h4 { @apply text-2xl font-extrabold tracking-tight; }
+
+  @media (width >= theme(--breakpoint-md)) {
+    .h1 { @apply text-5xl; }
+    .h2 { @apply text-4xl; }
+  }
+
+  .btn,
+  .btn-lg,
+  .btn-sm,
+  .btn-xs {
+    @apply font-medium text-sm inline-flex items-center justify-center border border-transparent rounded-lg leading-5 shadow-xs transition;
+  }
+  .btn    { @apply px-3 py-2; }
+  .btn-lg { @apply px-4 py-3; }
+  .btn-sm { @apply px-2 py-1; }
+  .btn-xs { @apply px-2 py-0.5; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer base {
+  button,
+  a,
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="submit"],
   [role="button"] {
     cursor: pointer;
   }
-  
+
   button:disabled,
   input:disabled,
   select:disabled {

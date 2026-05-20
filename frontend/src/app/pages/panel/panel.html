@@ -1,5 +1,5 @@
 <!-- frontend/src/app/pages/panel/panel.html -->
-<div class="min-h-screen flex bg-gray-50 font-sans">
+<div class="min-h-screen flex bg-gray-50 dark:bg-gray-900 font-sans">
 
   <!-- Mobile Overlay -->
   <div *ngIf="isSidebarOpen" class="fixed inset-0 bg-blue-950/50 z-30 lg:hidden" (click)="closeSidebar()"></div>
@@ -198,24 +198,37 @@
   </aside>
 
   <!-- Conteúdo principal -->
-  <main class="flex-1 h-screen overflow-y-auto bg-gray-50/50 relative w-full">
-    <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-8 sticky top-0 z-10 w-full">
-      <button (click)="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-700 mr-4 shrink-0">
+  <main class="flex-1 h-screen overflow-y-auto bg-gray-50/50 dark:bg-gray-900 relative w-full">
+    <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 lg:px-8 sticky top-0 z-10 w-full">
+      <button (click)="toggleSidebar()" class="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mr-4 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
       <!-- User / Branding on mobile to fill space -->
-      <span class="lg:hidden text-lg font-bold text-blue-900 absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
+      <span class="lg:hidden text-lg font-bold text-blue-900 dark:text-blue-400 absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
         <img src="logo.jpeg" alt="Logo" class="w-6 h-6 rounded">
         Projeto Lucas
       </span>
 
-      <!-- Date string -->
-      <span class="text-sm font-medium text-gray-500 ml-auto hidden sm:block">
-        {{ today | date:'mediumDate' }}
-      </span>
+      <!-- Alternador de tema + data -->
+      <div class="ml-auto flex items-center gap-3">
+        <button (click)="theme.toggle()" type="button" aria-label="Alternar tema claro/escuro"
+          class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition">
+          <!-- Sol: visível no tema escuro (clique para clarear) -->
+          <svg *ngIf="theme.isDark()" class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+            <path d="M10 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 1a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Zm7-5a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1ZM5 10a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1Zm10.66-5.66a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.42l.7-.7a1 1 0 0 1 1.42 0ZM6.46 13.54a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.41l.71-.71a1 1 0 0 1 1.41 0Zm9.2 1.42-.7-.71a1 1 0 0 0-1.42 1.41l.71.71a1 1 0 0 0 1.41-1.41ZM4.34 4.34a1 1 0 0 1 1.42 0l.7.7A1 1 0 0 1 5.05 6.47l-.71-.72a1 1 0 0 1 0-1.41Z"/>
+          </svg>
+          <!-- Lua: visível no tema claro (clique para escurecer) -->
+          <svg *ngIf="!theme.isDark()" class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+            <path d="M10 2a8 8 0 1 0 7.43 11.04A6 6 0 0 1 10 5.5 6 6 0 0 1 10.96 2.2 8.06 8.06 0 0 0 10 2Z"/>
+          </svg>
+        </button>
+        <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block">
+          {{ today | date:'mediumDate' }}
+        </span>
+      </div>
     </header>
 
     <div class="p-4 lg:p-8">

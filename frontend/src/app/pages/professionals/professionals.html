@@ -2,8 +2,8 @@
 <div class="p-8">
   <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
     <div>
-      <h2 class="text-3xl font-bold text-gray-800">Corpo Clínico</h2>
-      <p class="text-gray-500 font-medium">Gerencie os profissionais de saúde cadastrados no sistema.</p>
+      <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Corpo Clínico</h2>
+      <p class="text-gray-500 dark:text-gray-400 font-medium">Gerencie os profissionais de saúde cadastrados no sistema.</p>
     </div>
     <button *ngIf="!isEditing()" (click)="mostrarFormulario.set(!mostrarFormulario())"
       class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md w-full sm:w-auto">
@@ -11,52 +11,52 @@
     </button>
   </div>
 
-  <div *ngIf="mostrarFormulario()" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
-    <h3 class="text-lg font-bold text-gray-700 mb-4">
+  <div *ngIf="mostrarFormulario()" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm mb-8">
+    <h3 class="text-lg font-bold text-gray-700 dark:text-gray-200 mb-4">
       {{ isEditing() ? 'Editar Profissional' : 'Novo Profissional' }}
     </h3>
     <form [formGroup]="professionalForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Nome completo</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Nome completo</label>
         <input type="text" formControlName="name" placeholder="Ex: Dra. Ana Souza"
-          class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700/30">
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">E-mail</label>
         <input type="email" formControlName="email" placeholder="profissional@clinica.com"
-          class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700/30">
       </div>
       <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de registro</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Tipo de registro</label>
           <select formControlName="tipoRegistro"
-            class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700/30">
             <option value="CRP">CRP</option>
             <option value="CRM">CRM</option>
             <option value="OUTRO">Outro</option>
           </select>
         </div>
         <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Número do registro</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Número do registro</label>
           <input type="text" formControlName="registroConselho" placeholder="Ex: CRP-06 123456"
-            class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700/30">
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Especialidade</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Especialidade</label>
         <input type="text" formControlName="specialty" placeholder="Ex: Psicologia Clínica"
-          class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700/30">
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
           Senha {{ isEditing() ? '(deixe em branco para não alterar)' : '' }}
         </label>
         <input type="password" formControlName="password" placeholder="••••••••"
-          class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700/30">
       </div>
       <div class="md:col-span-2 flex flex-col sm:flex-row gap-3 justify-end mt-2">
         <button *ngIf="isEditing()" type="button" (click)="cancelEdit()"
-          class="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition font-medium">
+          class="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-700/30 transition font-medium">
           Cancelar
         </button>
         <button type="submit" [disabled]="professionalForm.invalid"
@@ -67,32 +67,32 @@
     </form>
   </div>
 
-  <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+  <div class="hidden md:block bg-white dark:bg-gray-800 shadow-sm rounded-xl overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <thead class="bg-gray-50 dark:bg-gray-700/30">
         <tr>
-          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Nome</th>
-          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Especialidade</th>
-          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Registro</th>
-          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">E-mail</th>
-          <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Ações</th>
+          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Nome</th>
+          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Especialidade</th>
+          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Registro</th>
+          <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">E-mail</th>
+          <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Ações</th>
         </tr>
       </thead>
-      <tbody class="bg-white divide-y divide-gray-100">
+      <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700/60">
         <tr *ngFor="let prof of professionals()" class="hover:bg-blue-50/50 transition-colors">
           <td class="px-6 py-4 whitespace-nowrap">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
                 {{ prof.name.charAt(0) }}
               </div>
-              <span class="text-sm font-semibold text-gray-800">{{ prof.name }}</span>
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ prof.name }}</span>
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ prof.specialty || '—' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <span class="font-medium text-gray-700">{{ prof.tipoRegistro }}</span> {{ prof.registroConselho }}
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{{ prof.specialty || '—' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ prof.tipoRegistro }}</span> {{ prof.registroConselho }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">{{ prof.email }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 italic">{{ prof.email }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
             <button (click)="editProfessional(prof)" class="text-blue-600 hover:text-blue-900 mr-4 transition">Editar</button>
             <button (click)="deleteProfessional(prof.id)" class="text-red-600 hover:text-red-900 transition">Excluir</button>
@@ -107,22 +107,22 @@
 
   <!-- Mobile Cards -->
   <div class="md:hidden space-y-4">
-    <div *ngFor="let prof of professionals()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
+    <div *ngFor="let prof of professionals()" class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex flex-col gap-3">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
           {{ prof.name.charAt(0) }}
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-base font-bold text-gray-800 truncate">{{ prof.name }}</p>
-          <p class="text-sm text-gray-500 truncate">{{ prof.specialty || 'Sem especialidade' }}</p>
+          <p class="text-base font-bold text-gray-800 dark:text-gray-100 truncate">{{ prof.name }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ prof.specialty || 'Sem especialidade' }}</p>
         </div>
       </div>
-      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 pt-3 mt-1 gap-2">
+      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 dark:border-gray-700/60 pt-3 mt-1 gap-2">
         <button (click)="openDetails(prof)" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
           Ver detalhes
         </button>
         <div class="flex gap-3">
-          <button (click)="editProfessional(prof)" class="text-sm font-semibold text-gray-500 hover:text-blue-600 transition">
+          <button (click)="editProfessional(prof)" class="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-600 transition">
             Editar
           </button>
           <button (click)="deleteProfessional(prof.id)" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
@@ -131,40 +131,40 @@
         </div>
       </div>
     </div>
-    <div *ngIf="professionals().length === 0" class="p-10 text-center text-gray-400 bg-white rounded-2xl border border-gray-200">
+    <div *ngIf="professionals().length === 0" class="p-10 text-center text-gray-400 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
       Nenhum profissional cadastrado no sistema.
     </div>
   </div>
 
   <!-- Identificacao Modal -->
   <div *ngIf="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" (click)="closeDetails()">
-    <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
-      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
+      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
       
       <div class="flex items-center gap-4 mb-6 pt-2">
-        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
           {{ selectedItem.name.charAt(0) }}
         </div>
         <div>
-          <h3 class="text-xl font-bold text-gray-800">{{ selectedItem.name }}</h3>
-          <p class="text-sm text-gray-500">Profissional</p>
+          <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ selectedItem.name }}</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Profissional</p>
         </div>
       </div>
 
       <div class="space-y-4">
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Especialidade</p>
-          <p class="text-sm font-medium text-gray-800">{{ selectedItem.specialty || '—' }}</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.specialty || '—' }}</p>
         </div>
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Registro ({{ selectedItem.tipoRegistro }})</p>
-          <p class="text-sm font-medium text-gray-800">{{ selectedItem.registroConselho || '—' }}</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.registroConselho || '—' }}</p>
         </div>
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">E-mail</p>
-          <p class="text-sm font-medium text-gray-800">{{ selectedItem.email || '—' }}</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.email || '—' }}</p>
         </div>
       </div>
       

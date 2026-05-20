@@ -23,3 +23,6 @@ APRESENTACAO_CLIENTE.*
 
 # Scripts de debug
 debug_*.js
+
+# Arquivos de referencia visual
+/template-ref/

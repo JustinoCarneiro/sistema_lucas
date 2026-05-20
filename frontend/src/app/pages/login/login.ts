@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../security/auth.service';
+import { ThemeService } from '../../theme.service';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +18,7 @@ export class LoginComponent {
   isLoading = signal(false);
 
   private authService = inject(AuthService);
+  readonly theme = inject(ThemeService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
 

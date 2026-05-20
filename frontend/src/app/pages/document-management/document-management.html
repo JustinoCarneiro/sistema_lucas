@@ -3,8 +3,8 @@
 
   <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
     <div>
-      <h2 class="text-3xl font-bold text-gray-800">Documentos</h2>
-      <p class="text-gray-500">Crie e gerencie documentos para seus pacientes.</p>
+      <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Documentos</h2>
+      <p class="text-gray-500 dark:text-gray-400">Crie e gerencie documentos para seus pacientes.</p>
     </div>
     <button (click)="mostrarFormulario.set(!mostrarFormulario())"
       class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md w-full sm:w-auto">
@@ -13,45 +13,45 @@
   </div>
 
   <div *ngIf="mostrarFormulario()"
-    class="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
-    <h3 class="text-lg font-semibold text-gray-700 mb-4">Novo documento</h3>
+    class="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Novo documento</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Paciente</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Paciente</label>
         <select [(ngModel)]="form.pacienteId"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="">Selecione...</option>
           <option *ngFor="let p of pacientes()" [value]="p.id">{{ p.name }}</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Tipo de documento</label>
         <select [(ngModel)]="form.tipo"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="">Selecione...</option>
           <option *ngFor="let t of tiposDocumento" [value]="t.value">{{ t.label }}</option>
         </select>
       </div>
       <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Título</label>
         <input type="text" [(ngModel)]="form.titulo" placeholder="Ex: Laudo de avaliação — Janeiro 2025"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
       </div>
       <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Conteúdo em texto (opcional)</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Conteúdo em texto (opcional)</label>
         <textarea [(ngModel)]="form.conteudoTexto" rows="6" placeholder="Digite o conteúdo..."
-          class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none">
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none">
         </textarea>
       </div>
       <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Upload de PDF (opcional)</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Upload de PDF (opcional)</label>
         <input type="file" accept="application/pdf" (change)="onArquivoSelecionado($event)"
-          class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-gray-50">
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-gray-50 dark:bg-gray-700/30">
         <p *ngIf="form.nomeArquivo" class="text-xs text-green-600 mt-1">✓ {{ form.nomeArquivo }}</p>
       </div>
       <div class="md:col-span-2 flex items-center gap-3">
         <input type="checkbox" id="disponivel" [(ngModel)]="form.disponivel" class="w-4 h-4 accent-blue-600">
-        <label for="disponivel" class="text-sm text-gray-700">Disponibilizar para o paciente imediatamente</label>
+        <label for="disponivel" class="text-sm text-gray-700 dark:text-gray-200">Disponibilizar para o paciente imediatamente</label>
       </div>
       <div class="md:col-span-2 flex justify-end mt-2">
         <button (click)="salvar()"
@@ -65,33 +65,33 @@
   <div *ngIf="isLoading()" class="text-center text-gray-400 py-10">Carregando documentos...</div>
 
   <div *ngIf="!isLoading() && documentos().length === 0"
-    class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 rounded-2xl text-center text-gray-400">
+    class="bg-gray-50 dark:bg-gray-700/30 border-2 border-dashed border-gray-200 dark:border-gray-700 p-10 rounded-2xl text-center text-gray-400">
     Nenhum documento criado ainda.
   </div>
 
   <div *ngIf="!isLoading() && documentos().length > 0"
-    class="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    class="hidden md:block bg-white dark:bg-gray-800 shadow-sm rounded-xl overflow-x-auto">
     <table class="w-full text-sm">
-      <thead class="bg-gray-50 border-b border-gray-200">
+      <thead class="bg-gray-50 dark:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700">
         <tr>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Título</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Tipo</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Paciente</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Data</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Visível</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Ações</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Título</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Tipo</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Paciente</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Data</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Visível</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let doc of documentos()" class="border-t border-gray-100 hover:bg-gray-50">
-          <td class="px-4 py-3 font-medium text-gray-800">{{ doc.titulo }}</td>
-          <td class="px-4 py-3 text-gray-600">{{ tiposLabel[doc.tipo] }}</td>
-          <td class="px-4 py-3 text-gray-600">{{ doc.nomePaciente }}</td>
-          <td class="px-4 py-3 text-gray-500">{{ doc.criadoEm | date:'dd/MM/yyyy' }}</td>
+        <tr *ngFor="let doc of documentos()" class="border-t border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:bg-gray-700/30">
+          <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{{ doc.titulo }}</td>
+          <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ tiposLabel[doc.tipo] }}</td>
+          <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ doc.nomePaciente }}</td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ doc.criadoEm | date:'dd/MM/yyyy' }}</td>
           <td class="px-4 py-3">
             <button (click)="alterarDisponibilidade(doc)" title="Clique para alterar"
               class="text-xs font-bold px-3 py-1.5 rounded-full outline-none transition cursor-pointer hover:-translate-y-px active:translate-y-0 shadow-sm border"
-              [ngClass]="doc.disponivel ? 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border-gray-200'">
+              [ngClass]="doc.disponivel ? 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-700'">
               {{ doc.disponivel ? 'Sim' : 'Não' }}
             </button>
           </td>
@@ -114,24 +114,24 @@
 
   <!-- Mobile Cards -->
   <div *ngIf="!isLoading() && documentos().length > 0" class="md:hidden space-y-4">
-    <div *ngFor="let doc of documentos()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-3">
+    <div *ngFor="let doc of documentos()" class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex flex-col gap-3">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-base font-bold text-gray-800 truncate">{{ doc.titulo }}</p>
-          <p class="text-sm text-gray-500 truncate">{{ tiposLabel[doc.tipo] }}</p>
+          <p class="text-base font-bold text-gray-800 dark:text-gray-100 truncate">{{ doc.titulo }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ tiposLabel[doc.tipo] }}</p>
         </div>
       </div>
       <div>
         <button (click)="alterarDisponibilidade(doc)" title="Clique para alterar"
           class="text-xs font-bold px-3 py-1.5 rounded-full outline-none transition cursor-pointer hover:-translate-y-px active:translate-y-0 shadow-sm border"
-          [ngClass]="doc.disponivel ? 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border-gray-200'">
+          [ngClass]="doc.disponivel ? 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-700'">
           {{ doc.disponivel ? 'Disponível' : 'Oculto' }}
         </button>
       </div>
-      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 pt-3 mt-1 gap-2">
+      <div class="flex flex-wrap justify-between items-center border-t border-gray-100 dark:border-gray-700/60 pt-3 mt-1 gap-2">
         <button (click)="openDetails(doc)" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
           Ver detalhes
         </button>
@@ -146,45 +146,45 @@
 
   <!-- Identificacao Modal -->
   <div *ngIf="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" (click)="closeDetails()">
-    <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
-      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm relative shadow-2xl" (click)="$event.stopPropagation()">
+      <button (click)="closeDetails()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
       
       <div class="flex items-center gap-4 mb-6 pt-2">
-        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </div>
         <div>
-          <h3 class="text-xl font-bold text-gray-800">Documento</h3>
-          <p class="text-sm text-gray-500">{{ tiposLabel[selectedItem.tipo] }}</p>
+          <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Documento</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ tiposLabel[selectedItem.tipo] }}</p>
         </div>
       </div>
 
       <div class="space-y-4">
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Título</p>
-          <p class="text-sm font-medium text-gray-800">{{ selectedItem.titulo }}</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.titulo }}</p>
         </div>
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Paciente</p>
-          <p class="text-sm font-medium text-gray-800">{{ selectedItem.nomePaciente }}</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.nomePaciente }}</p>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Data</p>
-            <p class="text-sm font-medium text-gray-800">{{ selectedItem.criadoEm | date:'dd/MM/yyyy' }}</p>
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.criadoEm | date:'dd/MM/yyyy' }}</p>
           </div>
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Status</p>
-            <p class="text-sm font-medium text-gray-800">{{ selectedItem.disponivel ? 'Disponível' : 'Oculto' }}</p>
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.disponivel ? 'Disponível' : 'Oculto' }}</p>
           </div>
         </div>
 
         <div *ngIf="selectedItem.conteudoTexto" class="mt-4">
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Conteúdo do Documento</p>
-          <div class="p-4 bg-gray-50 border border-gray-100 rounded-lg max-h-48 overflow-y-auto w-full break-words">
-            <p class="text-sm text-gray-700 whitespace-pre-line">{{ selectedItem.conteudoTexto }}</p>
+          <div class="p-4 bg-gray-50 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700/60 rounded-lg max-h-48 overflow-y-auto w-full wrap-break-word">
+            <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{{ selectedItem.conteudoTexto }}</p>
           </div>
         </div>
 

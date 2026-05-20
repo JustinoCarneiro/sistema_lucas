@@ -1,22 +1,33 @@
 <!-- frontend/src/app/pages/login/login.html -->
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
-  <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/50">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-colors duration-300 relative">
+  <!-- Theme toggle -->
+  <button (click)="theme.toggle()" type="button" aria-label="Alternar tema claro/escuro"
+    class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700 transition">
+    <svg *ngIf="theme.isDark()" class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+      <path d="M10 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 1a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Zm7-5a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1ZM5 10a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1Zm10.66-5.66a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.42l.7-.7a1 1 0 0 1 1.42 0ZM6.46 13.54a1 1 0 0 1 0 1.42l-.7.7a1 1 0 1 1-1.42-1.41l.71-.71a1 1 0 0 1 1.41 0Zm9.2 1.42-.7-.71a1 1 0 0 0-1.42 1.41l.71.71a1 1 0 0 0 1.41-1.41ZM4.34 4.34a1 1 0 0 1 1.42 0l.7.7A1 1 0 0 1 5.05 6.47l-.71-.72a1 1 0 0 1 0-1.41Z"/>
+    </svg>
+    <svg *ngIf="!theme.isDark()" class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+      <path d="M10 2a8 8 0 1 0 7.43 11.04A6 6 0 0 1 10 5.5 6 6 0 0 1 10.96 2.2 8.06 8.06 0 0 0 10 2Z"/>
+    </svg>
+  </button>
+
+  <div class="bg-white dark:bg-gray-800 p-6 sm:p-10 rounded-xl shadow-lg w-full max-w-md">
 
     <!-- Logo -->
     <div class="text-center mb-10">
       <div class="mx-auto w-32 h-32 mb-4 overflow-hidden rounded-2xl shadow-lg">
         <img src="logo.jpeg" alt="Projeto Lucas Logo" class="w-full h-full object-cover">
       </div>
-      <h2 class="text-3xl font-extrabold text-blue-900 tracking-tight">
-        Projeto <span class="text-blue-600">Lucas</span>
+      <h2 class="text-3xl font-extrabold text-blue-900 dark:text-blue-400 tracking-tight">
+        Projeto <span class="text-blue-600 dark:text-blue-300">Lucas</span>
       </h2>
-      <p class="text-gray-500 mt-1 font-medium italic">Lugar de cuidado, amor e salvação</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">Lugar de cuidado, amor e salvação</p>
     </div>
 
     <!-- Mensagem de erro — usa signal com () -->
     <div *ngIf="errorMessage()"
-      class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-r-lg flex items-center shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+      class="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 text-sm rounded-r-lg flex items-center shadow-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 shrink-0" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd"
           d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
           clip-rule="evenodd" />
@@ -28,47 +39,47 @@
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
 
       <div>
-        <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">E-mail</label>
+        <label for="email" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">E-mail</label>
         <input type="email" id="email" formControlName="email"
           placeholder="seu@email.com"
-          class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200">
+          class="block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500">
         <span *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-          class="text-xs text-red-500 mt-1 ml-1 font-medium">
+          class="text-xs text-red-500 dark:text-red-400 mt-1 ml-1 font-medium">
           E-mail inválido.
         </span>
       </div>
 
       <div>
-        <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Senha</label>
+        <label for="password" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Senha</label>
         <input type="password" id="password" formControlName="password"
           placeholder="••••••••"
-          class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200">
+          class="block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500">
       </div>
 
       <div class="flex items-center justify-between text-sm">
-        <label class="flex items-center text-gray-600 cursor-pointer gap-2">
+        <label class="flex items-center text-gray-600 dark:text-gray-400 cursor-pointer gap-2">
           <input type="checkbox"
-            class="rounded border-gray-300 text-blue-800 shadow-sm focus:ring-blue-200">
+            class="rounded border-gray-300 dark:border-gray-600 text-blue-800 shadow-sm focus:ring-blue-200">
           Lembrar-me
         </label>
         <a routerLink="/forgot-password"
-          class="text-blue-800 hover:text-blue-900 font-medium hover:underline">
+          class="text-blue-800 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-medium hover:underline">
           Esqueceu a senha?
         </a>
       </div>
 
       <button type="submit" [disabled]="loginForm.invalid || isLoading()"
-        class="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-lg shadow-blue-800/30 text-sm font-bold text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-800 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:shadow-none">
+        class="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-lg shadow-blue-800/30 text-sm font-bold text-white bg-blue-800 hover:bg-blue-900 dark:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-800 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:shadow-none">
         {{ isLoading() ? 'Entrando...' : 'Entrar no sistema' }}
       </button>
 
     </form>
 
     <!-- Rodapé -->
-    <div class="mt-8 text-center border-t border-gray-100 pt-6">
-      <p class="text-sm text-gray-600">Ainda não é paciente?</p>
+    <div class="mt-8 text-center border-t border-gray-100 dark:border-gray-700 pt-6">
+      <p class="text-sm text-gray-600 dark:text-gray-400">Ainda não é paciente?</p>
       <a routerLink="/register"
-        class="mt-2 inline-block text-blue-800 font-bold hover:text-blue-900 transition">
+        class="mt-2 inline-block text-blue-800 dark:text-blue-400 font-bold hover:text-blue-900 dark:hover:text-blue-300 transition">
         Crie a sua conta aqui &rarr;
       </a>
     </div>

@@ -4,6 +4,7 @@ import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../security/auth.service';
 import { PatientService } from '../patients/patients.service';
+import { ThemeService } from '../../theme.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -19,6 +20,7 @@ export class PanelComponent implements OnInit {
   private authService = inject(AuthService);
   private http = inject(HttpClient);
   private patientService = inject(PatientService);
+  readonly theme = inject(ThemeService);
 
   userRole: string | null = '';
   userName = signal<string>('Carregando...');

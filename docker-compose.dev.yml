@@ -1,0 +1,18 @@
+# Override de DESENVOLVIMENTO — aplicado apenas pelo deploy-dev.sh
+# (docker compose -f docker-compose.yml -f docker-compose.dev.yml ...).
+# Troca o frontend de "nginx servindo build de produção" para
+# "ng serve em modo watch", com o código montado via volume → hot-reload.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    # Instala deps (dentro do container, p/ evitar incompatibilidade
+    # de binários host/alpine) e sobe o dev server na porta 80.
+    command: sh -c "npm install && npx ng serve --host 0.0.0.0 --port 80 --poll 2000"
+    volumes:
+      # Código-fonte montado: editar no host reflete no container.
+      - ./frontend:/app
+      # Volume anônimo blinda node_modules do container (não é
+      # sobrescrito pelo node_modules do host).
+      - /app/node_modules

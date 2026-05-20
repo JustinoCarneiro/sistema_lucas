@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-gray-50 py-10 px-4">
-  <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4 transition-colors duration-300">
+  <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
 
     <!-- Cabeçalho -->
     <div class="p-8 bg-blue-900 text-center">
@@ -8,15 +8,15 @@
       <p class="text-blue-300 text-xs mt-2">Versão {{ versao }}</p>
     </div>
 
-    <div class="p-8 space-y-6 text-sm text-gray-700 leading-relaxed">
+    <div class="p-8 space-y-6 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
 
-      <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+      <p class="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
         Este documento é um modelo base e deve ser revisado e validado pelo
         responsável jurídico da clínica antes da entrada em produção.
       </p>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">1. Controlador dos Dados</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">1. Controlador dos Dados</h2>
         <p>
           A clínica operadora do Projeto Lucas é a controladora dos dados pessoais tratados
           nesta plataforma, sendo responsável pelas decisões referentes ao tratamento.
@@ -24,7 +24,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">2. Dados Coletados</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">2. Dados Coletados</h2>
         <p>Para a prestação dos serviços de saúde, coletamos:</p>
         <ul class="list-disc pl-6 mt-2 space-y-1">
           <li><strong>Dados de identificação:</strong> nome, e-mail, CPF, telefone/WhatsApp, data de nascimento, gênero e endereço;</li>
@@ -35,7 +35,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">3. Finalidade e Base Legal</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">3. Finalidade e Base Legal</h2>
         <p>
           Os dados são tratados para agendamento de consultas, gestão de prontuários e
           documentos clínicos, e comunicação com o paciente. As bases legais são o
@@ -46,7 +46,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">4. Compartilhamento</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">4. Compartilhamento</h2>
         <p>
           Seus dados não são vendidos nem cedidos a terceiros para fins comerciais.
           Há compartilhamento operacional estritamente necessário com o serviço de envio
@@ -56,7 +56,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">5. Segurança</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">5. Segurança</h2>
         <p>
           Dados sensíveis são <strong>criptografados em repouso</strong>; senhas são
           protegidas com algoritmo de hash forte (Argon2id); o acesso a prontuários e
@@ -66,7 +66,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">6. Retenção e Eliminação</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">6. Retenção e Eliminação</h2>
         <p>
           Os prontuários são mantidos pelo prazo mínimo de <strong>20 anos</strong>
           a contar do último registro, conforme a Resolução CFM nº 1.821/2007.
@@ -76,7 +76,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">7. Direitos do Titular</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">7. Direitos do Titular</h2>
         <p>Nos termos do Art. 18 da LGPD, você pode a qualquer momento:</p>
         <ul class="list-disc pl-6 mt-2 space-y-1">
           <li>confirmar a existência e acessar seus dados;</li>
@@ -88,7 +88,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">8. Encarregado (DPO)</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">8. Encarregado (DPO)</h2>
         <p>
           Para exercer seus direitos ou esclarecer dúvidas sobre o tratamento dos seus
           dados, contate o Encarregado pela Proteção de Dados da clínica pelo canal
@@ -97,7 +97,7 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 mb-2">9. Consentimento</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">9. Consentimento</h2>
         <p>
           Ao marcar a caixa de aceite no cadastro, você declara ter lido e compreendido
           este documento e consente, de forma livre e informada, com o tratamento dos
@@ -106,9 +106,9 @@
         </p>
       </section>
 
-      <div class="pt-4 border-t border-gray-100 text-center">
+      <div class="pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
         <a routerLink="/register"
-          class="inline-block bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md">
+          class="inline-block bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md">
           Voltar ao cadastro
         </a>
       </div>
