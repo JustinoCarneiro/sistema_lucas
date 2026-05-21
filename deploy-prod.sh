@@ -14,6 +14,10 @@ echo "🚀 Iniciando Deploy PRODUÇÃO (usando .env)..."
 # No modo produção, passamos o perfil 'prod' para o Spring Boot
 export SPRING_PROFILES_ACTIVE=prod
 
+echo "🔒 Processando Docker Secrets..."
+chmod +x setup-secrets.sh
+./setup-secrets.sh
+
 docker compose --env-file .env up -d --build --remove-orphans
 
 echo "✅ Deploy de produção finalizado com sucesso Porto: 80"

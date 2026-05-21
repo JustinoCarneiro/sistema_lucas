@@ -29,6 +29,9 @@ public class PatientService {
     @Autowired
     private ProntuarioRepository prontuarioRepository;
 
+    @Autowired
+    private CpfHashService cpfHashService;
+
     // LGPD — versão vigente dos termos, registrada junto ao consentimento.
     @org.springframework.beans.factory.annotation.Value("${app.lgpd.terms-version}")
     private String termsVersion;
@@ -37,27 +40,17 @@ public class PatientService {
         return repository.findAll();
     }
 
-    // Verificação de CPF em memória (necessária pois o campo está criptografado com IV aleatório)
+    // AUD-11: Verificação de CPF via hash no banco (sem carregar todos em memória)
     private boolean cpfExiste(String cpf) {
-        String normalizado = normalizarCpf(cpf);
-        return repository.findAll().stream()
-            .anyMatch(p -> normalizado.equals(p.getCpf()));
+        String hash = cpfHashService.hash(cpf);
+        return repository.existsByCpfHash(hash);
     }
 
     private boolean cpfExisteParaOutro(String cpf, String emailAtual) {
-        String normalizado = normalizarCpf(cpf);
-        return repository.findAll().stream()
-            .filter(p -> !p.getEmail().equals(emailAtual))
-            .anyMatch(p -> normalizado.equals(p.getCpf()));
-    }
-
-    private String normalizarCpf(String cpf) {
-        if (cpf == null) return null;
-        String c = cpf.replaceAll("[^0-9]", "");
-        if (c.length() == 11) {
-            return c.substring(0, 3) + "." + c.substring(3, 6) + "." + c.substring(6, 9) + "-" + c.substring(9, 11);
-        }
-        return c;
+        String hash = cpfHashService.hash(cpf);
+        return repository.findByCpfHash(hash)
+            .map(p -> !p.getEmail().equals(emailAtual))
+            .orElse(false);
     }
 
     @Transactional
@@ -80,6 +73,8 @@ public class PatientService {
         patient.setPassword(passwordEncoder.encode(dto.password()));
         patient.setRole(Role.PATIENT);
         patient.setCpf(dto.cpf());
+        // AUD-03: Hash HMAC-SHA256 com pepper (substituindo SHA-256 puro)
+        patient.setCpfHash(cpfHashService.hash(dto.cpf()));
         // LGPD — consentimento registrado com prova demonstrável (Art. 8º §1)
         patient.setTermsAccepted(true);
         patient.setTermsAcceptedAt(java.time.LocalDateTime.now());
@@ -205,6 +200,8 @@ public class PatientService {
                 throw new RuntimeException("Erro: CPF já cadastrado por outro usuário.");
             }
             patient.setCpf(dto.cpf());
+            // AUD-03: Atualizar o hash HMAC ao alterar o CPF
+            patient.setCpfHash(cpfHashService.hash(dto.cpf()));
         }
 
         if (dto.phone() != null) patient.setPhone(dto.phone());

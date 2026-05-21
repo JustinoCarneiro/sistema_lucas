@@ -27,7 +27,7 @@ echo "💾 Iniciando backup Local (Homologação)"
 echo "==============================================="
 LOCAL_FILE="$BACKUP_DIR/backup_homolog_$TIMESTAMP.sql.gz"
 
-docker exec lucas-db pg_dump -U postgres sistema_lucas | gzip > "$LOCAL_FILE"
+docker exec lucas-db pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$LOCAL_FILE"
 if [ $? -eq 0 ]; then
     echo "✅ Backup local salvo: $LOCAL_FILE"
 else
@@ -49,7 +49,7 @@ echo "Conectando via SSH em $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP..."
 
 # Comando que será executado na máquina de produção via SSH
 REMOTE_CMD="mkdir -p $REMOTE_BACKUP_DIR && \
-docker exec lucas-db pg_dump -U postgres sistema_lucas | gzip > $REMOTE_BACKUP_DIR/$PROD_FILE && \
+docker exec lucas-db pg_dump -U \"$DB_USER\" \"$DB_NAME\" | gzip > $REMOTE_BACKUP_DIR/$PROD_FILE && \
 echo $REMOTE_BACKUP_DIR/$PROD_FILE && \
 find $REMOTE_BACKUP_DIR -name 'backup_prod_*.sql.gz' -mtime +7 -delete"
 

@@ -10,11 +10,6 @@
 
     <div class="p-8 space-y-6 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
 
-      <p class="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
-        Este documento é um modelo base e deve ser revisado e validado pelo
-        responsável jurídico da clínica antes da entrada em produção.
-      </p>
-
       <section>
         <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">1. Controlador dos Dados</h2>
         <p>
@@ -34,75 +29,157 @@
         </ul>
       </section>
 
+      <!-- AUD-05: Base legal corrigida — separação prontuário vs conta -->
       <section>
         <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">3. Finalidade e Base Legal</h2>
         <p>
           Os dados são tratados para agendamento de consultas, gestão de prontuários e
-          documentos clínicos, e comunicação com o paciente. As bases legais são o
-          <strong>consentimento do titular</strong> (Art. 7º, I) e a
-          <strong>tutela da saúde por profissionais de saúde</strong> (Art. 11, II, "f"),
-          além do cumprimento de obrigações legais e regulatórias.
+          documentos clínicos, e comunicação com o paciente.
+        </p>
+        <p class="mt-2">As bases legais aplicáveis são:</p>
+        <ul class="list-disc pl-6 mt-2 space-y-1">
+          <li><strong>Criação e manutenção da conta:</strong> consentimento do titular (Art. 7º, I) e execução de contrato (Art. 7º, V);</li>
+          <li><strong>Dados de saúde (prontuários, alergias, documentos clínicos):</strong> tutela da saúde, em procedimento realizado por profissionais de saúde habilitados (Art. 11, II, "a") — esta base é <strong>independente do consentimento</strong> e não pode ser afetada pela sua revogação;</li>
+          <li><strong>Retenção obrigatória de prontuários:</strong> cumprimento de obrigação legal (Lei nº 13.787/2018 e Resolução CFM nº 1.821/2007) — mínimo de 20 anos;</li>
+          <li><strong>Trilha de auditoria:</strong> garantia da segurança e prevenção à fraude (Art. 7º, X e Art. 11, II, "g").</li>
+        </ul>
+      </section>
+
+      <!-- Seção nova: Dados Sensíveis (recomendação da auditoria) -->
+      <section>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">4. Dados Sensíveis de Saúde</h2>
+        <p>
+          O Sistema Lucas trata dados pessoais sensíveis relativos à sua saúde — incluindo
+          histórico de alergias, anotações de prontuário e documentos clínicos. Esse tratamento
+          é realizado por profissionais de saúde habilitados, com a finalidade exclusiva de
+          <strong>tutela da sua saúde</strong>, com fundamento no Art. 11, inciso II, alínea "a", da LGPD.
+        </p>
+        <p class="mt-2">
+          Por se tratar de registro clínico de guarda obrigatória, o prontuário será mantido
+          pelo <strong>prazo legal de 20 anos</strong>, ainda que você solicite o encerramento da sua
+          conta — hipótese em que seus dados de identificação serão anonimizados de forma irreversível.
+        </p>
+        <p class="mt-2">
+          Todos os dados sensíveis são <strong>criptografados em repouso</strong> (AES-GCM)
+          e acessíveis exclusivamente ao profissional de saúde responsável pelo seu atendimento.
+        </p>
+      </section>
+
+      <!-- AUD-08: Informar transferência internacional -->
+      <section>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">5. Compartilhamento e Transferência Internacional</h2>
+        <p>
+          O Sistema Lucas <strong>não comercializa nem cede</strong> seus dados pessoais a terceiros
+          para fins comerciais ou publicitários. O compartilhamento ocorre exclusivamente com
+          prestadores de serviço que atuam como operadores, sob contrato e instrução do Controlador:
+        </p>
+        <ul class="list-disc pl-6 mt-2 space-y-1">
+          <li><strong>Provedor de infraestrutura de hospedagem:</strong> para armazenamento seguro dos dados;</li>
+          <li><strong>Google LLC (Gmail SMTP):</strong> exclusivamente para envio de e-mails de verificação de conta,
+            redefinição de senha e lembretes de consulta.</li>
+        </ul>
+        <p class="mt-3 p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg text-xs text-amber-700 dark:text-amber-300">
+          <strong>Transferência internacional (Art. 33 da LGPD):</strong> O envio de e-mails implica
+          transferência de dados de contato (nome e e-mail) para servidores localizados nos
+          <strong>Estados Unidos</strong>, operados pela Google LLC, amparada por cláusulas contratuais
+          de proteção equivalentes às exigidas pela LGPD. Seus dados sensíveis de saúde
+          <strong>jamais</strong> são incluídos nessa transferência.
         </p>
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">4. Compartilhamento</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">6. Segurança</h2>
         <p>
-          Seus dados não são vendidos nem cedidos a terceiros para fins comerciais.
-          Há compartilhamento operacional estritamente necessário com o serviço de envio
-          de e-mails (verificação de conta e notificações) e, quando exigido, com
-          autoridades públicas no cumprimento de obrigação legal.
-        </p>
-      </section>
-
-      <section>
-        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">5. Segurança</h2>
-        <p>
-          Dados sensíveis são <strong>criptografados em repouso</strong>; senhas são
+          Dados sensíveis são <strong>criptografados em repouso</strong> (AES-GCM); senhas são
           protegidas com algoritmo de hash forte (Argon2id); o acesso a prontuários e
           documentos é <strong>registrado em trilha de auditoria</strong>. Aplicamos
-          controle de acesso por perfil (paciente, profissional, administrador).
+          controle de acesso por perfil (paciente, profissional, administrador) e
+          proteção contra ataques de força bruta.
         </p>
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">6. Retenção e Eliminação</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">7. Retenção e Eliminação</h2>
         <p>
           Os prontuários são mantidos pelo prazo mínimo de <strong>20 anos</strong>
-          a contar do último registro, conforme a Resolução CFM nº 1.821/2007.
-          Encerrado o prazo legal e atendidas as obrigações regulatórias, os dados são
-          eliminados ou anonimizados de forma irreversível.
+          a contar do último registro, conforme a Resolução CFM nº 1.821/2007 e a Lei nº 13.787/2018.
+          Tokens de verificação e redefinição de senha são eliminados automaticamente após
+          o uso ou expiração (máximo 24 horas). Encerrado o prazo legal e atendidas as obrigações
+          regulatórias, os dados são eliminados ou anonimizados de forma irreversível.
         </p>
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">7. Direitos do Titular</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">8. Direitos do Titular</h2>
         <p>Nos termos do Art. 18 da LGPD, você pode a qualquer momento:</p>
         <ul class="list-disc pl-6 mt-2 space-y-1">
           <li>confirmar a existência e acessar seus dados;</li>
           <li>corrigir dados incompletos, inexatos ou desatualizados (tela "Meu Perfil");</li>
-          <li>solicitar a portabilidade dos seus dados ("Exportar Meus Dados");</li>
+          <li>solicitar a portabilidade dos seus dados em formato estruturado (JSON);</li>
           <li>solicitar a anonimização ou eliminação dos dados desnecessários;</li>
-          <li>revogar o consentimento — a exclusão da conta encerra o consentimento, observada a retenção legal de prontuários descrita no item 6.</li>
+          <li>revogar o consentimento para a manutenção da conta — a exclusão encerra o consentimento,
+            observada a retenção legal de prontuários descrita no item 7;</li>
+          <li>obter informações sobre as entidades com as quais seus dados são compartilhados.</li>
         </ul>
+        <p class="mt-2">
+          As solicitações serão respondidas em até <strong>15 dias</strong>, conforme o Art. 19, II da LGPD.
+        </p>
       </section>
 
+      <!-- AUD-09: DPO placeholder -->
       <section>
-        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">8. Encarregado (DPO)</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">9. Encarregado (DPO)</h2>
         <p>
           Para exercer seus direitos ou esclarecer dúvidas sobre o tratamento dos seus
-          dados, contate o Encarregado pela Proteção de Dados da clínica pelo canal
-          de atendimento informado na recepção.
+          dados, contate o Encarregado pela Proteção de Dados:
+        </p>
+        <p class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
+          <strong>Canal de atendimento:</strong> entre em contato pela recepção da clínica
+          ou pelo e-mail informado no rodapé do site institucional.
         </p>
       </section>
 
       <section>
-        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">9. Consentimento</h2>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">10. Consentimento</h2>
         <p>
           Ao marcar a caixa de aceite no cadastro, você declara ter lido e compreendido
           este documento e consente, de forma livre e informada, com o tratamento dos
-          seus dados pessoais para as finalidades aqui descritas. A data e a versão do
-          aceite são registradas para fins de comprovação.
+          seus dados pessoais para a criação e manutenção da sua conta e para o recebimento
+          de comunicações operacionais. A data e a versão do aceite são registradas para
+          fins de comprovação (Art. 8º, §1º).
+        </p>
+        <p class="mt-2">
+          <strong>Nota importante:</strong> o tratamento dos seus dados de saúde (prontuários e
+          documentos clínicos) fundamenta-se na tutela da saúde (Art. 11, II, "a") e
+          <strong>não depende deste consentimento</strong>, sendo mantido pelo prazo legal mesmo
+          em caso de revogação.
+        </p>
+      </section>
+
+      <!-- AUD-12: Compromisso de comunicação de incidentes -->
+      <section>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">11. Incidentes de Segurança</h2>
+        <p>
+          Em caso de incidente de segurança que possa acarretar risco ou dano relevante
+          aos titulares, o Controlador compromete-se a comunicar o fato à
+          <strong>Autoridade Nacional de Proteção de Dados (ANPD)</strong> e aos titulares
+          afetados em prazo razoável, conforme o Art. 48 da LGPD, informando:
+        </p>
+        <ul class="list-disc pl-6 mt-2 space-y-1">
+          <li>a natureza dos dados pessoais afetados;</li>
+          <li>os titulares envolvidos;</li>
+          <li>as medidas técnicas e de segurança utilizadas;</li>
+          <li>os riscos relacionados ao incidente;</li>
+          <li>as medidas adotadas para reverter ou mitigar os efeitos do prejuízo.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-bold text-blue-900 dark:text-blue-400 mb-2">12. Atualizações desta Política</h2>
+        <p>
+          Esta Política poderá ser atualizada periodicamente. A versão vigente é identificada
+          no topo deste documento. Alterações significativas serão comunicadas por meio de
+          aviso no sistema. O versionamento garante rastreabilidade do consentimento prestado.
         </p>
       </section>
 

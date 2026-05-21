@@ -33,25 +33,12 @@ export class AuthService {
   }
 
   getUserRole(): string | null {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.role || null;
-    } catch {
-      return null;
-    }
+    return localStorage.getItem('role');
   }
 
   isVerified(): boolean {
-    const token = localStorage.getItem('token');
-    if (!token) return true;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.verified === true;
-    } catch {
-      return true;
-    }
+    const verified = localStorage.getItem('verified');
+    return verified === 'true';
   }
 
   verifyEmail(token: string) {
@@ -60,12 +47,33 @@ export class AuthService {
     });
   }
 
+  refreshToken() {
+    // SEC-03: Rota para rotacionar o refresh token e renovar a sessão
+    return this.http.post(`${environment.apiUrl}/auth/refresh`, {}, { withCredentials: true });
+  }
+
   logout() {
-    localStorage.removeItem('token');
-    this.router.navigate(['/login']);
+    // SEC-01: Chama o backend para invalidar o Cookie HttpOnly
+    this.http.post(`${environment.apiUrl}/auth/logout`, {}, { withCredentials: true }).subscribe({
+      next: () => {
+        this.clearLocalSession();
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.clearLocalSession();
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  clearLocalSession() {
+    localStorage.removeItem('role');
+    localStorage.removeItem('verified');
   }
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    // O backend validará a autenticação de fato pelo Cookie, mas o frontend
+    // utiliza essa flag para esconder as rotas nas Guards
+    return !!localStorage.getItem('role');
   }
 }

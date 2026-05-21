@@ -40,9 +40,12 @@ public class ExportController {
     @GetMapping("/patient")
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<String> exportPatient(Principal principal) {
-        auditLogService.log(principal.getName(), "EXPORTACAO", "Portabilidade", null, "Exportou seus próprios dados clínicos (Portabilidade)");
-        String csv = exportService.exportPatientData(principal.getName());
-        return createCsvResponse(csv, "meus_dados_clinicos.csv");
+        auditLogService.log(principal.getName(), "EXPORTACAO", "Portabilidade", null, "Exportou seus próprios dados (Portabilidade LGPD — JSON)");
+        String json = exportService.exportPatientData(principal.getName());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=meus_dados.json")
+                .contentType(MediaType.parseMediaType("application/json"))
+                .body(json);
     }
 
     @GetMapping("/patients")

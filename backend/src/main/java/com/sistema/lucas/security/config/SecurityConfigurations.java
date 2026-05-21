@@ -48,6 +48,8 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.POST, "/auth/esqueci-senha").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/redefinir-senha").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

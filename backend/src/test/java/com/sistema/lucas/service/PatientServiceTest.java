@@ -14,8 +14,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -33,6 +33,9 @@ class PatientServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private CpfHashService cpfHashService;
+
     // ──────────────────────── Cadastro ────────────────────────
 
     @Nested
@@ -40,14 +43,13 @@ class PatientServiceTest {
     class CadastroTests {
 
         @Test
-        @DisplayName("Não deve cadastrar paciente com CPF já existente (verificação em memória)")
+        @DisplayName("Não deve cadastrar paciente com CPF já existente (verificação via hash)")
         void cadastrarCpfDuplicado() {
             var dto = new PatientCreateDTO("Lucas Paciente", "paciente@teste.com", "123456", "111.222.333-44", "5511999998888", "Plano Saude X", true);
 
-            // A verificação de CPF usa findAll() + stream (campo criptografado não é pesquisável por SQL)
-            var existente = new Patient();
-            existente.setCpf("111.222.333-44");
-            when(patientRepository.findAll()).thenReturn(List.of(existente));
+            // AUD-11: Verificação agora usa existsByCpfHash (consulta direta no banco)
+            when(cpfHashService.hash(any())).thenReturn("hash-do-cpf");
+            when(patientRepository.existsByCpfHash("hash-do-cpf")).thenReturn(true);
 
             var exception = assertThrows(RuntimeException.class, () -> patientService.create(dto));
             assertTrue(exception.getMessage().contains("CPF já cadastrado"));
@@ -59,8 +61,9 @@ class PatientServiceTest {
         void cadastrarComSucesso() {
             var dto = new PatientCreateDTO("Novo Paciente", "novo@teste.com", "senha123", "000.000.000-00", "5511000000000", "Plano Y", true);
 
-            // findAll() retorna lista vazia → CPF não duplicado
-            when(patientRepository.findAll()).thenReturn(List.of());
+            // existsByCpfHash retorna false → CPF não duplicado
+            when(cpfHashService.hash(any())).thenReturn("hash-novo");
+            when(patientRepository.existsByCpfHash("hash-novo")).thenReturn(false);
             when(patientRepository.existsByEmail(dto.email())).thenReturn(false);
             when(passwordEncoder.encode(dto.password())).thenReturn("senhaCriptografada");
 
@@ -75,7 +78,8 @@ class PatientServiceTest {
         void cadastrarConcorrente_deveCapturarDataIntegrity() {
             var dto = new PatientCreateDTO("Concurrent User", "concurrent@test.com", "senha123", "999.888.777-66", "5511000000001", "Plano Z", true);
 
-            when(patientRepository.findAll()).thenReturn(List.of()); // passa a verificação em memória
+            when(cpfHashService.hash(any())).thenReturn("hash-concurrent");
+            when(patientRepository.existsByCpfHash("hash-concurrent")).thenReturn(false);
             when(patientRepository.existsByEmail(dto.email())).thenReturn(false);
             when(passwordEncoder.encode(dto.password())).thenReturn("hash");
             // flush lança exceção de violação de constraint (race condition)

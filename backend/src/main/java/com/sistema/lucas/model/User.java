@@ -1,5 +1,6 @@
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import com.sistema.lucas.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,6 +33,14 @@ public class User implements UserDetails { // <-- 1. Adicionado implements UserD
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // SEC-02: Fundação para MFA (TOTP)
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "totp_secret")
+    private String totpSecret;
 
     public User(String email, String password, Role role) {
         this.email = email;

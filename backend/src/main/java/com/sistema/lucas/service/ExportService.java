@@ -55,29 +55,85 @@ public class ExportService {
         return csv.toString();
     }
 
+    /**
+     * AUD-06 (LGPD Art. 18, V — Portabilidade):
+     * Exportação completa dos dados do titular em formato JSON estruturado,
+     * incluindo dados cadastrais, prontários, documentos e consultas.
+     */
     public String exportPatientData(String email) {
-        StringBuilder csv = new StringBuilder();
-        csv.append("TIPO;TITULO;DATA;NOTAS/CONTEUDO\n");
-        
-        // Prontuários do paciente
+        Patient patient = patientRepository.findByEmail(email).orElse(null);
+        if (patient == null) return "{\"erro\": \"Paciente não encontrado\"}";
+
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+
+        // 1. Dados cadastrais
+        json.append("  \"dados_cadastrais\": {\n");
+        json.append("    \"nome\": \"").append(esc(patient.getName())).append("\",\n");
+        json.append("    \"email\": \"").append(esc(patient.getEmail())).append("\",\n");
+        json.append("    \"cpf\": \"").append(maskCpf(patient.getCpf())).append("\",\n");
+        json.append("    \"telefone\": \"").append(esc(patient.getPhone())).append("\",\n");
+        json.append("    \"endereco\": \"").append(esc(patient.getAddress())).append("\",\n");
+        json.append("    \"data_nascimento\": \"").append(patient.getBirthDate() != null ? patient.getBirthDate().toString() : "").append("\",\n");
+        json.append("    \"genero\": \"").append(esc(patient.getGender())).append("\",\n");
+        json.append("    \"contato_emergencia_nome\": \"").append(esc(patient.getEmergencyContactName())).append("\",\n");
+        json.append("    \"contato_emergencia_telefone\": \"").append(esc(patient.getEmergencyContactPhone())).append("\",\n");
+        json.append("    \"alergias\": \"").append(esc(patient.getAllergies())).append("\"\n");
+        json.append("  },\n");
+
+        // 2. Prontários
         List<Prontuario> prontuarios = prontuarioRepository.findAll().stream()
                 .filter(p -> p.getPatient().getEmail().equals(email))
                 .collect(Collectors.toList());
-        for (Prontuario p : prontuarios) {
-            String notasSeguras = p.getNotas() != null ? p.getNotas().replace("\"", "'").replace("\n", " ") : "";
-            csv.append(String.format("PRONTUARIO;Atendimento;%s;\"%s\"\n",
-                    p.getCriadoEm(), notasSeguras));
+        json.append("  \"prontuarios\": [\n");
+        for (int i = 0; i < prontuarios.size(); i++) {
+            Prontuario p = prontuarios.get(i);
+            json.append("    {\"data\": \"").append(p.getCriadoEm()).append("\", ");
+            json.append("\"profissional\": \"").append(esc(p.getProfessional().getName())).append("\", ");
+            json.append("\"notas\": \"").append(esc(p.getNotas())).append("\"}");
+            json.append(i < prontuarios.size() - 1 ? ",\n" : "\n");
         }
+        json.append("  ],\n");
 
-        // Documentos disponíveis para o paciente
+        // 3. Documentos
         List<Documento> docs = documentoRepository.findByPacienteEmailAndDisponivelTrueOrderByCriadoEmDesc(email);
-        for (Documento d : docs) {
-            String conteudoSeguro = d.getConteudoTexto() != null ? d.getConteudoTexto().replace("\"", "'").replace("\n", " ") : "PDF";
-            csv.append(String.format("DOCUMENTO;%s;%s;\"%s\"\n",
-                    d.getTitulo(), d.getCriadoEm(), conteudoSeguro));
+        json.append("  \"documentos\": [\n");
+        for (int i = 0; i < docs.size(); i++) {
+            Documento d = docs.get(i);
+            json.append("    {\"titulo\": \"").append(esc(d.getTitulo())).append("\", ");
+            json.append("\"tipo\": \"").append(esc(d.getTipo() != null ? d.getTipo().name() : "")).append("\", ");
+            json.append("\"data\": \"").append(d.getCriadoEm()).append("\"}");
+            json.append(i < docs.size() - 1 ? ",\n" : "\n");
         }
+        json.append("  ],\n");
 
-        return csv.toString();
+        // 4. Consultas
+        List<Appointment> consultas = appointmentRepository.findByPatientId(patient.getId());
+        json.append("  \"consultas\": [\n");
+        for (int i = 0; i < consultas.size(); i++) {
+            Appointment a = consultas.get(i);
+            json.append("    {\"data\": \"").append(a.getDateTime()).append("\", ");
+            json.append("\"profissional\": \"").append(esc(a.getProfessional() != null ? a.getProfessional().getName() : "")).append("\", ");
+            json.append("\"status\": \"").append(a.getStatus()).append("\"}");
+            json.append(i < consultas.size() - 1 ? ",\n" : "\n");
+        }
+        json.append("  ],\n");
+
+        // 5. Metadados LGPD
+        json.append("  \"lgpd\": {\n");
+        json.append("    \"consentimento_aceito\": ").append(patient.isTermsAccepted()).append(",\n");
+        json.append("    \"data_consentimento\": \"").append(patient.getTermsAcceptedAt() != null ? patient.getTermsAcceptedAt().toString() : "").append("\",\n");
+        json.append("    \"versao_termos\": \"").append(esc(patient.getTermsVersion())).append("\",\n");
+        json.append("    \"data_exportacao\": \"").append(java.time.LocalDateTime.now()).append("\"\n");
+        json.append("  }\n");
+
+        json.append("}");
+        return json.toString();
+    }
+
+    private String esc(String val) {
+        if (val == null) return "";
+        return val.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
     }
 
     public String exportPatientsData() {

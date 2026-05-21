@@ -2,6 +2,9 @@
 .env
 .env.*
 
+# AUD-04: Segredos locais do Docker Compose
+/secrets/
+
 # Logs de aplicação
 logs.txt
 *.log

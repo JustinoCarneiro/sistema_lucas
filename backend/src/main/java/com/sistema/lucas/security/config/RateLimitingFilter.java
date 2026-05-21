@@ -41,8 +41,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 🛡️ Segurança: Aplicar Barreira contra Bot de Brute-Force nas rotas abertas
-        if (path.startsWith("/auth/")) {
+        // 🛡️ SEC-04: Barreira contra brute-force em rotas públicas E sensíveis
+        if (path.startsWith("/auth/") || path.startsWith("/export/") ||
+            path.startsWith("/prontuarios/") || path.startsWith("/documentos/")) {
             String ip = request.getRemoteAddr();
             Bucket bucket = resolveBucket(ip);
 

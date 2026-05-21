@@ -2,6 +2,8 @@ package com.sistema.lucas.config.jpa;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,20 +17,31 @@ import java.util.Base64;
 @Converter
 public class EncryptionConverter implements AttributeConverter<String, String> {
 
+    private static final Logger log = LoggerFactory.getLogger(EncryptionConverter.class);
     private static final String GCM_ALGORITHM = "AES/GCM/NoPadding";
     private static final String ECB_ALGORITHM = "AES/ECB/PKCS5Padding";
     private static final int IV_LENGTH = 12;
     private static final int TAG_LENGTH = 128;
     private static final String GCM_PREFIX = "GCM:";
-    private final SecretKeySpec key;
+    private final SecretKeySpec newKey;
+    private final SecretKeySpec oldKey;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public EncryptionConverter(@Value("${api.security.encryption.key}") String encryptionKey) {
-        // Garantir que a chave tenha 16 bytes para AES-128
-        byte[] keyBytes = new byte[16];
-        byte[] providedBytes = encryptionKey.getBytes();
-        System.arraycopy(providedBytes, 0, keyBytes, 0, Math.min(providedBytes.length, 16));
-        this.key = new SecretKeySpec(keyBytes, "AES");
+    public EncryptionConverter(
+            @Value("${api.security.encryption.key}") String encryptionKey,
+            @Value("${api.security.encryption.key.old}") String oldEncryptionKey) {
+            
+        // Chave Nova: AES-256 (32 bytes)
+        byte[] newKeyBytes = new byte[32];
+        byte[] providedNewBytes = encryptionKey.getBytes();
+        System.arraycopy(providedNewBytes, 0, newKeyBytes, 0, Math.min(providedNewBytes.length, 32));
+        this.newKey = new SecretKeySpec(newKeyBytes, "AES");
+
+        // Chave Antiga: AES-128 (16 bytes)
+        byte[] oldKeyBytes = new byte[16];
+        byte[] providedOldBytes = oldEncryptionKey.getBytes();
+        System.arraycopy(providedOldBytes, 0, oldKeyBytes, 0, Math.min(providedOldBytes.length, 16));
+        this.oldKey = new SecretKeySpec(oldKeyBytes, "AES");
     }
 
     @Override
@@ -38,7 +51,8 @@ public class EncryptionConverter implements AttributeConverter<String, String> {
             byte[] iv = new byte[IV_LENGTH];
             secureRandom.nextBytes(iv);
             Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, iv));
+            // AUD-01: Sempre encriptar com a nova chave AES-256
+            cipher.init(Cipher.ENCRYPT_MODE, newKey, new GCMParameterSpec(TAG_LENGTH, iv));
             byte[] encrypted = cipher.doFinal(attribute.getBytes());
             byte[] combined = new byte[IV_LENGTH + encrypted.length];
             System.arraycopy(iv, 0, combined, 0, IV_LENGTH);
@@ -60,17 +74,56 @@ public class EncryptionConverter implements AttributeConverter<String, String> {
                 System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
                 byte[] ciphertext = new byte[combined.length - IV_LENGTH];
                 System.arraycopy(combined, IV_LENGTH, ciphertext, 0, ciphertext.length);
-                Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
-                cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, iv));
-                return new String(cipher.doFinal(ciphertext));
+                try {
+                    // Tenta AES-256 primeiro
+                    Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
+                    cipher.init(Cipher.DECRYPT_MODE, newKey, new GCMParameterSpec(TAG_LENGTH, iv));
+                    return new String(cipher.doFinal(ciphertext));
+                } catch (javax.crypto.AEADBadTagException e) {
+                    // AUD-01: Fallback para AES-128 se a tag de autenticação falhar
+                    Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
+                    cipher.init(Cipher.DECRYPT_MODE, oldKey, new GCMParameterSpec(TAG_LENGTH, iv));
+                    return new String(cipher.doFinal(ciphertext));
+                }
             }
             // Formato legado: AES/ECB (migração automática na próxima gravação)
             Cipher cipher = Cipher.getInstance(ECB_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, key);
+            cipher.init(Cipher.DECRYPT_MODE, oldKey);
             return new String(cipher.doFinal(Base64.getDecoder().decode(dbData)));
-        } catch (Exception e) {
-            // Dado sem criptografia (pré-migração) — retorna o original
+        } catch (IllegalArgumentException e) {
+            // É texto plano legado (não é Base64). Retornamos como está para que o Runner consiga ler e recifrar.
             return dbData;
+        } catch (Exception e) {
+            // AUD-02: NÃO retornar dado bruto se for falha criptográfica real — registrar e lançar erro explícito
+            log.error("Falha ao descriptografar dado no banco (possível corrupção ou chave incorreta). " +
+                      "Tamanho do dado: {} caracteres", dbData.length(), e);
+            throw new RuntimeException("Erro ao descriptografar dado sensível — verifique a chave de criptografia", e);
+        }
+    }
+
+    // Utilitário para o Batch Migration Runner saber se precisa forçar UPDATE
+    public boolean isEncryptedWithOldKey(String dbData) {
+        if (dbData == null) return false;
+        try {
+            if (dbData.startsWith(GCM_PREFIX)) {
+                byte[] combined = Base64.getDecoder().decode(dbData.substring(GCM_PREFIX.length()));
+                byte[] iv = new byte[IV_LENGTH];
+                System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
+                byte[] ciphertext = new byte[combined.length - IV_LENGTH];
+                System.arraycopy(combined, IV_LENGTH, ciphertext, 0, ciphertext.length);
+                
+                Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
+                cipher.init(Cipher.DECRYPT_MODE, newKey, new GCMParameterSpec(TAG_LENGTH, iv));
+                cipher.doFinal(ciphertext);
+                return false; // Decifrou com a nova = Não precisa migrar
+            }
+            return true; // É ECB legado = Precisa migrar
+        } catch (javax.crypto.AEADBadTagException e) {
+            return true; // Falhou GCM com a nova = Precisa migrar
+        } catch (IllegalArgumentException e) {
+            return true; // É texto plano legado (não é Base64) = Precisa migrar
+        } catch (Exception e) {
+            return false;
         }
     }
 }

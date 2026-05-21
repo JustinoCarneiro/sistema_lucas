@@ -41,7 +41,10 @@ export class LoginComponent {
 
     this.authService.login(this.loginForm.value).subscribe({
       next: (response: any) => {
-        localStorage.setItem('token', response.token);
+        // SEC-01: O token agora é um Cookie HttpOnly invisível para o frontend.
+        // O frontend armazena apenas metadados da sessão para interface.
+        localStorage.setItem('role', response.role);
+        localStorage.setItem('verified', String(response.verified));
         this.isLoading.set(false);
         this.router.navigate(['/panel']);
       },

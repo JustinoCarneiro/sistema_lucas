@@ -9,4 +9,7 @@ import java.util.Optional;
 public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Long> {
     Optional<VerificationToken> findByToken(String token);
     Optional<VerificationToken> findByUser(User user);
+
+    // AUD-07: Expurgo automático de tokens expirados
+    long deleteByExpiryDateBefore(java.time.LocalDateTime date);
 }

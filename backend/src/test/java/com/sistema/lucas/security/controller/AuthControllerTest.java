@@ -29,6 +29,9 @@ class AuthControllerTest {
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private com.sistema.lucas.security.service.EmailVerificationService emailVerificationService;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private com.sistema.lucas.service.CpfHashService cpfHashService;
+
     @BeforeEach
     void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(java.util.Objects.requireNonNull(context)).build();

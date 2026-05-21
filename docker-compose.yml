@@ -6,7 +6,9 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_pass
+    secrets:
+      - db_pass
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -30,18 +32,20 @@ services:
       # Repassando as variáveis do .env para o container Java
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
       DB_PORT: ${DB_PORT}
-      JWT_SECRET: ${JWT_SECRET}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-      MAIL_USERNAME: ${MAIL_USERNAME} # ✅ novo
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_USERNAME: ${MAIL_USERNAME}
       FRONTEND_URL: ${FRONTEND_URL}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL}
-      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
       INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    secrets:
+      - db_pass
+      - jwt_secret
+      - mail_password
+      - initial_admin_password
+      - encryption_key
+      - encryption_key_old
     ports:
       - "8081:8081"
     networks:
@@ -67,3 +71,17 @@ networks:
 
 volumes:
   lucas-db-data:
+
+secrets:
+  db_pass:
+    file: ./secrets/db_pass.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  mail_password:
+    file: ./secrets/mail_password.txt
+  initial_admin_password:
+    file: ./secrets/initial_admin_password.txt
+  encryption_key:
+    file: ./secrets/encryption_key.txt
+  encryption_key_old:
+    file: ./secrets/encryption_key_old.txt

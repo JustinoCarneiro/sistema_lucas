@@ -70,7 +70,8 @@ public class Patient extends User { // Herança estabelecida aqui
             } else {
                 this.cpf = c;
             }
-            this.cpfHash = gerarCpfHash(c);
+            // AUD-03: cpfHash agora é gerado pelo CpfHashService (HMAC-SHA256 com pepper)
+            // e atribuído na camada de serviço (PatientService), não mais aqui na entidade.
         }
         if (this.phone != null) {
             String p = this.phone.replaceAll("[^0-9]", "");
@@ -91,22 +92,6 @@ public class Patient extends User { // Herança estabelecida aqui
             } else {
                 this.emergencyContactPhone = ep;
             }
-        }
-    }
-
-    private String gerarCpfHash(String cleanCpf) {
-        try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(cleanCpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro interno ao gerar hash do CPF", e);
         }
     }
 }

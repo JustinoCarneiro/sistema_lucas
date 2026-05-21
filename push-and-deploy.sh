@@ -25,6 +25,7 @@ SERVER_PATH="~/sistema/sistema_lucas/"
 echo "📡 Transferindo arquivos para o servidor ($SERVER_IP)..."
 
 rsync -avz --exclude 'node_modules' --exclude 'dist' --exclude '.git' --exclude 'target' \
+--exclude 'backups' --exclude 'secrets' \
 ./ $SERVER_USER@$SERVER_IP:$SERVER_PATH
 
 if [ $? -ne 0 ]; then

@@ -11,4 +11,8 @@ import java.util.Optional;
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
     Optional<PasswordResetToken> findByToken(String token);
     void deleteByUserId(Long userId);
+
+    // AUD-07: Expurgo automático de tokens expirados e já utilizados
+    long deleteByExpiracaoBefore(java.time.LocalDateTime date);
+    long deleteByUsadoTrue();
 }
