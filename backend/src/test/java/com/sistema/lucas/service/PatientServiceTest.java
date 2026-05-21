@@ -2,7 +2,10 @@ package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Patient;
 import com.sistema.lucas.model.dto.PatientCreateDTO;
+import com.sistema.lucas.model.dto.PatientUpdateDTO;
+import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.PatientRepository;
+import com.sistema.lucas.repository.ProntuarioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,8 +15,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -35,6 +40,17 @@ class PatientServiceTest {
 
     @Mock
     private CpfHashService cpfHashService;
+
+    @Mock
+    private AppointmentRepository appointmentRepository;
+
+    @Mock
+    private ProntuarioRepository prontuarioRepository;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setup() {
+        ReflectionTestUtils.setField(patientService, "termsVersion", "1.0");
+    }
 
     // ──────────────────────── Cadastro ────────────────────────
 
@@ -122,6 +138,98 @@ class PatientServiceTest {
 
             var ex = assertThrows(RuntimeException.class, () -> patientService.desbloquear(99L));
             assertTrue(ex.getMessage().contains("não encontrado"));
+        }
+    }
+
+    // ──────────────────────── Atualização de perfil ────────────────────────
+
+    @Nested
+    @DisplayName("Atualização de perfil de paciente")
+    class UpdateProfileTests {
+
+        private Patient pacientePadrao() {
+            var p = new Patient();
+            p.setId(1L); p.setEmail("lucas@test.com"); p.setName("Lucas"); p.setCpf("11111111111");
+            return p;
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção quando novo CPF já pertence a outro paciente")
+        void updateMyProfile_cpfDuplicado_lancaExcecao() {
+            var patient = pacientePadrao();
+            when(patientRepository.findByEmail("lucas@test.com")).thenReturn(Optional.of(patient));
+
+            // CPF diferente do atual → cpfExisteParaOutro retorna true
+            when(cpfHashService.hash(any())).thenReturn("hash-novo-cpf");
+            var outroPaciente = new Patient(); outroPaciente.setEmail("outro@test.com");
+            when(patientRepository.findByCpfHash("hash-novo-cpf")).thenReturn(Optional.of(outroPaciente));
+
+            var dto = new PatientUpdateDTO(null, null, "222.222.222-22", null, null, null, null, null, null, null, null);
+            var ex = assertThrows(RuntimeException.class, () -> patientService.updateMyProfile("lucas@test.com", dto));
+            assertTrue(ex.getMessage().contains("CPF já cadastrado"));
+        }
+
+        @Test
+        @DisplayName("Deve regenerar cpfHash ao alterar CPF para um não duplicado")
+        void updateMyProfile_novoCpf_regeneraHash() {
+            var patient = pacientePadrao();
+            when(patientRepository.findByEmail("lucas@test.com")).thenReturn(Optional.of(patient));
+            when(cpfHashService.hash(any())).thenReturn("hash-33333333333");
+            when(patientRepository.findByCpfHash("hash-33333333333")).thenReturn(Optional.empty());
+
+            var dto = new PatientUpdateDTO(null, null, "333.333.333-33", null, null, null, null, null, null, null, null);
+            assertDoesNotThrow(() -> patientService.updateMyProfile("lucas@test.com", dto));
+
+            verify(cpfHashService, times(2)).hash(any()); // cpfExisteParaOutro + setCpfHash
+            verify(patientRepository).save(any(Patient.class));
+        }
+    }
+
+    // ──────────────────────── Exclusão LGPD ────────────────────────
+
+    @Nested
+    @DisplayName("Exclusão e anonimização LGPD")
+    class ExclusaoTests {
+
+        private Patient pacienteSemVinculos() {
+            var p = new Patient(); p.setId(1L); p.setEmail("lucas@test.com"); p.setName("Lucas");
+            return p;
+        }
+
+        @Test
+        @DisplayName("Deve excluir fisicamente paciente sem vínculos clínicos")
+        void delete_semVinculos_exclusaoFisica() {
+            var patient = pacienteSemVinculos();
+            when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
+            when(appointmentRepository.findByPatientId(1L)).thenReturn(List.of());
+            when(prontuarioRepository.findByPatientIdOrderByCriadoEmDesc(1L)).thenReturn(List.of());
+
+            patientService.delete(1L);
+
+            verify(patientRepository).delete(patient);
+        }
+
+        @Test
+        @DisplayName("Deve anonimizar paciente com vínculos clínicos (não excluir)")
+        void delete_comVinculos_anonimizacao() {
+            var patient = pacienteSemVinculos();
+            patient.setPassword("senha-atual");
+            when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
+
+            // tem consultas → força anonimização
+            when(appointmentRepository.findByPatientId(1L))
+                .thenReturn(List.of(new com.sistema.lucas.model.Appointment()));
+
+            when(passwordEncoder.encode(any())).thenReturn("senha-aleatoria-hash");
+
+            patientService.delete(1L);
+
+            // NÃO deve ter chamado delete físico
+            verify(patientRepository, never()).delete(any(Patient.class));
+            // Deve ter marcado como inativo e salvo
+            assertFalse(patient.isActive());
+            assertTrue(patient.getEmail().contains("deleted.local"));
+            verify(patientRepository).save(patient);
         }
     }
 }

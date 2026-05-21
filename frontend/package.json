@@ -7,7 +7,8 @@
     "build": "ng build",
     "test": "ng test",
     "cypress:open": "ELECTRON_RUN_AS_NODE= npx cypress open",
-    "cypress:run": "ELECTRON_RUN_AS_NODE= npx cypress run"
+    "cypress:run": "ELECTRON_RUN_AS_NODE= npx cypress run",
+    "test:all": "ng test && ELECTRON_RUN_AS_NODE= npx cypress run"
   },
   "prettier": {
     "printWidth": 100,

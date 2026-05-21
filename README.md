@@ -31,15 +31,16 @@ A segurança é o pilar central do Sistema Lucas, implementada em múltiplas cam
 *   **Autenticação**: Stateless via **JWT (JSON Web Token)** com expiração configurável.
 *   **Hashing de Senhas**: Utilização do algoritmo **Argon2id** (vencedor do Password Hashing Competition), oferecendo proteção superior contra ataques de força bruta e dicionário.
 *   **RBAC (Role-Based Access Control)**: Controle de acesso granular baseado em permissões (@PreAuthorize) no nível de endpoint.
+*   **Gestão de Sessão**: Rate Limiting (Bucket4j) e expiração por inatividade para evitar sequestro de sessão.
 
-### 3.2 Proteção de Dados (Data-at-Rest)
-*   **Criptografia AES**: Dados sensíveis (como `notas` de prontuário e arquivos de documentos) são criptografados antes de serem salvos no banco.
-    *   **Algoritmo**: AES-128 (configurável para AES-256).
-    *   **Implementação**: Via [EncryptionConverter.java](file:///home/marcos/Applications/sistema_lucas/backend/src/main/java/com/sistema/lucas/config/jpa/EncryptionConverter.java), garantindo criptografia transparente no nível de persistência.
+### 3.2 Proteção de Dados e Privacidade (LGPD)
+*   **Criptografia AES-128 GCM**: Dados sensíveis textuais (como `notas` de prontuário e títulos de documentos) são criptografados antes de serem salvos no banco de dados via `EncryptionConverter`.
+*   **Proteção de PII (CPF)**: O CPF dos usuários é armazenado via **Hashing unidirecional (HMAC-SHA256)**, garantindo a unicidade do registro sem expor o dado real em caso de vazamento.
+*   **Direito ao Esquecimento (Anonimização)**: Ao solicitar exclusão da conta, pacientes com vínculos clínicos ativos (consultas/prontuários) sofrem **anonimização irreversível** em vez de deleção física, preservando o histórico médico exigido pelo CFM enquanto atende à LGPD.
 
 ### 3.3 Verificação de Identidade
 *   **Fluxo de E-mail**: Novas contas são criadas com o status `verified = false`. O sistema envia automaticamente um e-mail com um token único de verificação (expira em 24h).
-*   **Banner Informativo**: O frontend exibe um aviso visual para usuários com e-mail ainda não validado.
+*   **Recuperação de Senha**: Fluxo seguro via e-mail com token temporário para redefinição de credenciais.
 
 ### 3.4 Rastreabilidade e Auditoria
 *   **Audit Log**: Todas as visualizações e exportações de dados sensíveis são registradas em uma tabela de auditoria dedicada, capturando:
@@ -49,18 +50,15 @@ A segurança é o pilar central do Sistema Lucas, implementada em múltiplas cam
 
 ---
 
-## 🆕 4. Novas Funcionalidades
-*   **Gestão de Disponibilidade Profissional**: Interface intuitiva para profissionais configurarem seus dias e horários de trabalho semanais, com geração automática de slots de 1h.
-*   **Fluxo de Agendamento Guiado**: Pacientes visualizam apenas profissionais com disponibilidade configurada, escolhendo data e hora em tempo real.
-*   **Ciclo de Confirmação Invertido**: Segurança reforçada onde o agendamento passa pelos estados:
-    1.  `AGENDADA` (Aguardando profissional)
-    2.  `CONFIRMADA_PROFISSIONAL` (Aguardando paciente)
-    3.  `CONFIRMADA` (Presença confirmada por ambas as partes)
-*   **Registro de Pacientes**: Formulário completo com máscaras (CPF, WhatsApp) e validação em tempo real.
-*   **Verificação de E-mail**: Integração com Mailtrap/SMTP para validação segura de novas contas.
-*   **Notificações In-page**: Feedback de sucesso e erro via Signals, eliminando alertas pop-up intrusivos.
-*   **Roteamento SPA Seguro**: Configuração Nginx customizada com `try_files` para garantir funcionamento perfeito das rotas Angular em ambiente Docker.
-*   **Blindagem de Concorrência**: `UNIQUE CONSTRAINT` no banco de dados para a dupla `(professional_id, date_time)`, garantindo imunidade técnica total contra duplicação de horários (*race conditions*).
+## 🆕 4. Funcionalidades Principais
+*   **Gestão de Disponibilidade Profissional**: Interface intuitiva para profissionais configurarem seus dias e horários de trabalho mensais (Mês Atual e Próximo Mês), com geração automática de slots.
+*   **Fluxo de Agendamento Guiado**: Pacientes visualizam apenas profissionais com disponibilidade configurada.
+*   **Ciclo de Confirmação Invertido**: Segurança reforçada onde o agendamento passa por: `AGENDADA` (Aguardando profissional) → `CONFIRMADA_PROFISSIONAL` (Aguardando paciente) → `CONFIRMADA`.
+*   **Sistema de Penalidades (Anti-Absenteísmo)**: Cancelamentos com menos de 24h ou ausências (faltas) geram infrações automáticas. A 2ª infração resulta em um **bloqueio de 15 dias** para novos agendamentos.
+*   **Alertas de Consultas Atrasadas**: Notificações por e-mail e banners urgentes no dashboard do profissional caso existam consultas com data passada pendentes de atualização de status.
+*   **Prontuário Eletrônico**: Evolução clínica cronológica com garantia de acesso exclusivo ao médico vinculado (IDOR protection).
+*   **Gestão de Documentos**: Upload e download seguros de exames e laudos, visíveis para o paciente.
+*   **Exportação de Dados**: Relatórios em CSV e PDF (Admin) com registro em Audit Log.
 
 ---
 
@@ -82,14 +80,15 @@ Na produção, a base nasce vazia. Para evitar credenciais no código-fonte, o s
 
 ---
 
-## ✅ 6. Qualidade e Testes
-O sistema conta com uma suíte robusta de testes automatizados:
-*   **Cypress (E2E)**: Localizado em `frontend/cypress/e2e/`. 
-    *   **11-disponibilidade**: Valida toda a configuração de grade horária do profissional.
-    *   **12-agendamento-confirmacao**: Testa o ciclo completo de reserva e o fluxo de confirmações mútua.
-    *   **Autenticação**: Cobre registro, login e proteção de rotas.
-*   **JUnit (Integração)**: Localizado em `backend/src/test/`.
-    *   Cobre endpoints de autenticação, lógica de disponibilidade e criptografia AES.
+## ✅ 6. Qualidade e Testes (Roadmap)
+O sistema possui uma estratégia de testes documentada e em franca expansão (veja `roadmap_testes.md`), visando cobrir ~435 cenários de negócio críticos:
+
+*   **Cypress (E2E Frontend)**: Localizado em `frontend/cypress/e2e/`. 
+    *   Possui **13 suítes ativas** cobrindo E2E de Autenticação, Agendamentos, Disponibilidade, Penalidades e Painel Admin.
+    *   Suítes programadas: Recuperação de Senha, Verificação de E-mail, Privacidade e Consultas Atrasadas.
+*   **Vitest (Unitários Frontend)**: Localizado junto aos componentes Angular em `frontend/src/app/pages/`.
+*   **JUnit 5 + Mockito (Unitários/Integração Backend)**: Localizado em `backend/src/test/java/`.
+    *   Cobre `AppointmentService`, LGPD/Anonimização, Criptografia AES, Autenticação e Controllers via `@WebMvcTest`.
 
 ---
 

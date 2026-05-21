@@ -48,17 +48,17 @@ describe('MyAppointmentsComponent (Lógica de Datas)', () => {
     vi.useRealTimers();
   });
 
-  it('deve incluir o próprio dia se o profissional atende hoje', () => {
+  it('quando hoje é o dia configurado, retorna a PRÓXIMA ocorrência (nunca hoje)', () => {
     const days = ['WEDNESDAY'];
-    
+
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 3, 15)); // Hoje é Quarta
+    vi.setSystemTime(new Date(2026, 3, 15)); // Hoje é Quarta (15/04/2026)
 
     component.generateAvailableDates(days);
     const dates = component.availableDates();
 
     expect(dates.length).toBe(1);
-    expect(dates[0].value).toBe('2026-04-15');
+    expect(dates[0].value).toBe('2026-04-22'); // Próxima quarta (7 dias depois)
     expect(dates[0].label).toContain('quarta-feira');
 
     vi.useRealTimers();

@@ -74,6 +74,38 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
       cy.url({ timeout: 6000 }).should('include', '/login');
     });
 
+    it('checkbox LGPD obrigatório — formulário inválido sem aceite', () => {
+      cy.get('input[formControlName="name"]').type('Teste LGPD');
+      cy.get('input[formControlName="email"]').type('lgpd@test.com');
+      cy.get('input[formControlName="password"]').type('senha123');
+      cy.get('input[formControlName="cpf"]').type('11122233344');
+      cy.get('input[formControlName="whatsapp"]').type('11999998877');
+      // checkbox termsAccepted ainda não foi marcado
+      cy.get('button[type="submit"]').should('be.disabled');
+
+      cy.get('input[type="checkbox"]#termsAccepted').check();
+      cy.get('button[type="submit"]').should('not.be.disabled');
+    });
+
+    it('CPF duplicado → 409 com mensagem de CPF já cadastrado', () => {
+      cy.intercept('POST', '**/auth/register', {
+        statusCode: 409,
+        body: { message: 'CPF já cadastrado.' }
+      }).as('postRegisterCpfDup');
+
+      cy.get('input[formControlName="name"]').type('Outro Nome');
+      cy.get('input[formControlName="email"]').type('outro@email.com');
+      cy.get('input[formControlName="password"]').type('senha123');
+      cy.get('input[formControlName="cpf"]').type('11122233344');
+      cy.get('input[formControlName="whatsapp"]').type('11999998877');
+      cy.get('input[type="checkbox"]#termsAccepted').check();
+
+      cy.get('button[type="submit"]').click();
+      cy.wait('@postRegisterCpfDup');
+
+      cy.contains('CPF já cadastrado').should('be.visible');
+    });
+
     it('mostra mensagem de erro quando e-mail já existe', () => {
       cy.intercept('POST', '**/auth/register', {
         statusCode: 409,

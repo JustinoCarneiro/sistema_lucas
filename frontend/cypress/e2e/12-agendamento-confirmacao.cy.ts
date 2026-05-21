@@ -183,6 +183,84 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
     });
   });
 
+  context('Paciente — Reagendamento', () => {
+    beforeEach(() => {
+      const dataAlvoLocal = proximaSegunda();
+      cy.intercept('GET', '**/dashboard/paciente', {
+        statusCode: 200,
+        body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
+      }).as('getPatDash');
+      cy.intercept('GET', '**/consultas/minhas', {
+        statusCode: 200,
+        body: [
+          {
+            id: 77,
+            patientId: 3,
+            professionalName: 'Dra. Ana Souza',
+            patientName: 'Lucas Silva',
+            startTime: `${dataAlvoLocal}T09:00:00`,
+            reason: 'Sessão',
+            cancelReason: null,
+            status: 'AGENDADA',
+            podeCancelar: true,
+            atrasada: false
+          }
+        ]
+      }).as('getMinhasAgendada');
+      cy.intercept('GET', '**/disponibilidade/profissionais-disponiveis', {
+        statusCode: 200,
+        body: profissionaisDisp
+      }).as('getProfs');
+      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+        statusCode: 200,
+        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
+      }).as('getWorkingDays');
+      cy.intercept('GET', '**/disponibilidade/*/slots*', {
+        statusCode: 200,
+        body: [{ startTime: '10:00:00', endTime: '11:00:00' }]
+      }).as('getSlots');
+
+      cy.login('lucas@email.com', '123456');
+      cy.visit('/panel/my-appointments');
+      cy.wait('@getMinhasAgendada');
+    });
+
+    it('reagendamento sem justificativa → botão Confirmar Reagendamento desabilitado', () => {
+      cy.get('[data-testid="reagendar-button"]').first().click();
+      cy.contains('h3', 'Reagendar Consulta').should('be.visible');
+
+      // Seleciona profissional e data/slot sem preencher justificativa
+      cy.get('select').first().select('1');
+      cy.wait('@getWorkingDays');
+
+      cy.contains('button', /Confirmar Reagendamento/i).should('be.disabled');
+    });
+
+    it('lista mostra consulta com status CONCLUIDA com badge "Concluída"', () => {
+      cy.intercept('GET', '**/consultas/minhas', {
+        statusCode: 200,
+        body: [
+          {
+            id: 88,
+            patientId: 3,
+            professionalName: 'Dra. Ana Souza',
+            patientName: 'Lucas Silva',
+            startTime: '2026-04-01T09:00:00',
+            reason: 'Sessão concluída',
+            cancelReason: null,
+            status: 'CONCLUIDA',
+            podeCancelar: false,
+            atrasada: false
+          }
+        ]
+      }).as('getConcluida');
+
+      cy.visit('/panel/my-appointments');
+      cy.wait('@getConcluida');
+      cy.contains('Concluída').should('be.visible');
+    });
+  });
+
   context('Profissional — Aprovação / Recusa de pendente', () => {
     const consultasHoje: any[] = [];
     const todasConsultasComPendente = [

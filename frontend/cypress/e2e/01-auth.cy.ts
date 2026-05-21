@@ -213,6 +213,58 @@ describe('01 — Autenticação', () => {
   });
 
   // ────────────────────────────────────────────────────────────────────────
+  // RATE LIMITING E SESSÃO
+  // ────────────────────────────────────────────────────────────────────────
+  context('Rate limiting e sessão expirada', () => {
+    beforeEach(() => {
+      cy.clearLocalStorage();
+      cy.visit('/login');
+    });
+
+    it('backend retorna 429 (Too Many Requests) → exibe mensagem de bloqueio temporário', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 429,
+        body: { message: 'Muitas tentativas. Tente novamente em alguns minutos.' }
+      }).as('loginRateLimit');
+
+      cy.get('input#email').type('lucas@email.com');
+      cy.get('input#password').type('senhaErrada');
+      cy.get('button[type="submit"]').click();
+
+      cy.wait('@loginRateLimit');
+      cy.get('div[class*="bg-red"]').should('be.visible');
+      cy.url().should('include', '/login');
+    });
+
+    it('token expirado no localStorage → authGuard redireciona para /login', () => {
+      const expiredToken = (() => {
+        const h = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const p = btoa(JSON.stringify({ sub: 'lucas@email.com', role: 'PATIENT', verified: true, exp: 1 }));
+        return `${h}.${p}.fake`;
+      })();
+
+      cy.window().then(win => win.localStorage.setItem('token', expiredToken));
+      cy.visit('/panel/dashboard');
+      cy.url({ timeout: 8000 }).should('include', '/login');
+    });
+
+    it('login com conta não verificada → backend retorna 403 → exibe mensagem de erro', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 403,
+        body: { message: 'E-mail não verificado. Verifique sua caixa de entrada.' }
+      }).as('loginUnverified');
+
+      cy.get('input#email').type('novo@email.com');
+      cy.get('input#password').type('senha123');
+      cy.get('button[type="submit"]').click();
+
+      cy.wait('@loginUnverified');
+      cy.get('div[class*="bg-red"]').should('be.visible');
+      cy.url().should('include', '/login');
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────────────────
   // LOGOUT — limpa token e redireciona para /login
   // ────────────────────────────────────────────────────────────────────────
   context('Logout', () => {

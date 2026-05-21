@@ -208,6 +208,39 @@ describe('11 — Disponibilidade de Horários (Profissional)', () => {
     });
   });
 
+  context('Mês Atual com prazo encerrado (offset=0 bloqueado)', () => {
+    it('ao alternar para "Mês Atual" com status bloqueado, slots permanecem readonly', () => {
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/disponibilidade/status-mes', {
+        statusCode: 200,
+        body: { diasRestantes: 0, bloqueado: true }
+      }).as('getStatus');
+      cy.intercept('GET', '**/disponibilidade/minha*', {
+        statusCode: 200,
+        body: []
+      }).as('getMinha');
+
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/my-availability');
+      cy.wait('@getStatus');
+      cy.contains('Carregando').should('not.exist');
+
+      // Alternar para a aba Mês Atual (offset = 0)
+      cy.contains('button', 'Mês Atual').click();
+      cy.contains('h1', monthLabel(0)).should('be.visible');
+
+      // Botão Enviar deve permanecer desabilitado
+      cy.contains('button', 'Enviar Agenda do Mês').should('be.disabled');
+
+      // Selecionar um dia exibe aviso de bloqueio
+      cy.get('.aspect-square').filter(':not(.opacity-0)').first().click();
+      cy.contains('Bloqueado para alterações').should('be.visible');
+    });
+  });
+
   context('Carregamento de slots pré-existentes', () => {
     it('preenche os dias com slots vindos do backend', () => {
       const mes = monthStr(1);

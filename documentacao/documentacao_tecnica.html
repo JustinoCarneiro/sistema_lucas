@@ -99,6 +99,7 @@
   <li>Segurança da Informação</li>
   <li>Conformidade LGPD — Implementação Técnica</li>
   <li>Infraestrutura, Deploy e Continuidade</li>
+  <li>Qualidade e Testes</li>
 </ol>
 
 <h2 class="pb">1. Visão Geral do Sistema</h2>
@@ -423,6 +424,20 @@
   Recomenda-se a verificação periódica da integridade das cópias e o armazenamento
   redundante fora do servidor de produção.
 </p>
+
+<h2 class="pb">11. Qualidade e Testes</h2>
+<p>
+  A garantia da integridade operacional do sistema baseia-se em uma estratégia contínua de testes em múltiplas camadas.
+  Um roadmap completo e em expansão (focado em atingir ~435 cenários de teste) orienta o time de engenharia.
+</p>
+<ul>
+  <li><strong>Testes End-to-End (Cypress)</strong>: Validam os fluxos críticos na perspectiva do usuário, como autenticação programática, penalidades por faltas, gestão de agendas (disponibilidade) e alertas do dashboard.</li>
+  <li><strong>Testes Unitários de Frontend (Vitest)</strong>: Garantem o isolamento da lógica dos componentes e serviços Angular, como tratamento de estado, signals e navegação.</li>
+  <li><strong>Testes Unitários e de Integração (JUnit + Mockito)</strong>: Focam em regras de negócio críticas (LGPD, anonimização, criptografia AES, agendamento concorrente e IDOR) e na camada REST via <code>@WebMvcTest</code>.</li>
+</ul>
+<div class="box ok">
+  A cobertura exaustiva de testes mitiga riscos de regressão durante refatorações, protegendo as lógicas de isolamento de dados do paciente e as chaves de proteção criptográfica.
+</div>
 
 <div class="footer-note">
   Documento técnico do Sistema Lucas — versão 1.0, emitido em 21 de maio de 2026.

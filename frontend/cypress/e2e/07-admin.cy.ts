@@ -114,6 +114,22 @@ describe('07 — Painel Administrativo', () => {
       cy.get('@alertStub').should('have.been.calledWithMatch', /atualizado com sucesso/);
     });
 
+    it('tenta excluir profissional com consultas ativas → DELETE force retorna 409 → exibe erro', () => {
+      cy.intercept('DELETE', '**/professionals/force/1', {
+        statusCode: 409,
+        body: { message: 'Não é possível excluir: profissional possui consultas ativas.' }
+      }).as('delConflict');
+
+      const alertStub = cy.stub().as('alertStub');
+      cy.on('window:alert', alertStub);
+      cy.on('window:confirm', () => true);
+
+      cy.contains('tr', 'Dra. Ana Souza').contains('button', 'Excluir').click();
+
+      cy.wait('@delConflict');
+      cy.get('@alertStub').should('have.been.calledWithMatch', /Não é possível excluir|consultas ativas/);
+    });
+
     it('exclui profissional via DELETE /professionals/force/{id} (com confirm)', () => {
       cy.intercept('DELETE', '**/professionals/force/2', {
         statusCode: 204

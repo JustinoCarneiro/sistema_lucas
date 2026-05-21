@@ -219,6 +219,58 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
     });
   });
 
+  context('Profissional — Marcar Falta (penalidade progressiva)', () => {
+    const consultaHoje = {
+      id: 60,
+      patientName: 'Lucas Silva',
+      professionalName: 'Dra. Ana Souza',
+      startTime: new Date().toISOString(),
+      reason: 'Sessão semanal',
+      status: 'CONFIRMADA',
+      podeCancelar: true,
+      atrasada: false
+    };
+
+    beforeEach(() => {
+      cy.intercept('GET', '**/dashboard/profissional', {
+        statusCode: 200,
+        body: { consultasHoje: [], proximasConsultas: [], totalPacientes: 0, ultimosProntuarios: [], documentosRecentes: [] }
+      }).as('getProfDash');
+      cy.intercept('GET', '**/consultas/profissional/hoje', {
+        statusCode: 200,
+        body: [consultaHoje]
+      }).as('getHoje');
+      cy.intercept('GET', '**/consultas/profissional/todas', {
+        statusCode: 200,
+        body: []
+      }).as('getTodas');
+
+      cy.login('ana@clinica.com', '123456');
+      cy.visit('/panel/professional-appointments');
+      cy.wait('@getHoje');
+    });
+
+    it('profissional marca falta → PATCH /falta → alert de confirmação e lista recarrega', () => {
+      cy.intercept('PATCH', '**/consultas/60/falta', {
+        statusCode: 200,
+        body: 'OK'
+      }).as('patchFalta');
+      cy.intercept('GET', '**/consultas/profissional/hoje', {
+        statusCode: 200,
+        body: [{ ...consultaHoje, status: 'FALTA' }]
+      }).as('reloadHoje');
+
+      const alertStub = cy.stub().as('alertStub');
+      cy.on('window:alert', alertStub);
+
+      cy.contains('Lucas Silva').should('be.visible');
+      cy.contains('button', /Paciente faltou/i).click();
+
+      cy.wait('@patchFalta');
+      cy.get('@alertStub').should('have.been.calledWithMatch', /faltante|falta/i);
+    });
+  });
+
   context('Backend — endpoint /patients/:id/desbloquear protegido', () => {
     it('Paciente NÃO pode chamar /desbloquear (apenas Admin) — retorna 403', () => {
       cy.request({
