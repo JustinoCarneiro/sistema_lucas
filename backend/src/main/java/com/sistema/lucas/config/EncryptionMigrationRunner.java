@@ -3,6 +3,7 @@ package com.sistema.lucas.config;
 import com.sistema.lucas.config.jpa.EncryptionConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,9 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(EncryptionMigrationRunner.class);
 
+    @Value("${app.migration.crypto.enabled:false}")
+    private boolean enabled;
+
     private final JdbcTemplate jdbcTemplate;
     private final EncryptionConverter encryptionConverter;
 
@@ -40,6 +44,10 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        if (!enabled) {
+            log.info("[AUD-01] EncryptionMigrationRunner desabilitado (app.migration.crypto.enabled=false). Skipping.");
+            return;
+        }
         log.info("[AUD-01] Iniciando verificação de Batch Migration das chaves AES...");
 
         int totalMigrated = 0;
@@ -47,12 +55,16 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         // 1. Users (totp_secret)
         Integer usersMigrated = jdbcTemplate.query("SELECT id, totp_secret FROM users WHERE totp_secret IS NOT NULL", rs -> {
             int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String encryptedVal = rs.getString("totp_secret");
                 if (encryptionConverter.isEncryptedWithOldKey(encryptedVal)) {
-                    jdbcTemplate.update("UPDATE users SET totp_secret = ? WHERE id = ?", reencrypt(encryptedVal), rs.getLong("id"));
+                    batch.add(new Object[]{reencrypt(encryptedVal), rs.getLong("id")});
                     count++;
                 }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE users SET totp_secret = ? WHERE id = ?", batch);
             }
             return count;
         });
@@ -61,6 +73,7 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         // 2. Patient
         Integer patientsMigrated = jdbcTemplate.query("SELECT id, cpf, phone, emergency_contact_name, emergency_contact_phone, allergies, address FROM patient", rs -> {
             int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String cpf = rs.getString("cpf");
                 String phone = rs.getString("phone");
@@ -76,10 +89,12 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
                     encryptionConverter.isEncryptedWithOldKey(allergies) ||
                     encryptionConverter.isEncryptedWithOldKey(address)) {
 
-                    jdbcTemplate.update("UPDATE patient SET cpf = ?, phone = ?, emergency_contact_name = ?, emergency_contact_phone = ?, allergies = ?, address = ? WHERE id = ?",
-                            reencrypt(cpf), reencrypt(phone), reencrypt(eName), reencrypt(ePhone), reencrypt(allergies), reencrypt(address), rs.getLong("id"));
+                    batch.add(new Object[]{reencrypt(cpf), reencrypt(phone), reencrypt(eName), reencrypt(ePhone), reencrypt(allergies), reencrypt(address), rs.getLong("id")});
                     count++;
                 }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE patient SET cpf = ?, phone = ?, emergency_contact_name = ?, emergency_contact_phone = ?, allergies = ?, address = ? WHERE id = ?", batch);
             }
             return count;
         });
@@ -88,6 +103,7 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         // 3. Professional
         Integer professionalsMigrated = jdbcTemplate.query("SELECT id, cpf, phone, address FROM professional", rs -> {
             int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String cpf = rs.getString("cpf");
                 String phone = rs.getString("phone");
@@ -97,10 +113,12 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
                     encryptionConverter.isEncryptedWithOldKey(phone) ||
                     encryptionConverter.isEncryptedWithOldKey(address)) {
 
-                    jdbcTemplate.update("UPDATE professional SET cpf = ?, phone = ?, address = ? WHERE id = ?",
-                            reencrypt(cpf), reencrypt(phone), reencrypt(address), rs.getLong("id"));
+                    batch.add(new Object[]{reencrypt(cpf), reencrypt(phone), reencrypt(address), rs.getLong("id")});
                     count++;
                 }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE professional SET cpf = ?, phone = ?, address = ? WHERE id = ?", batch);
             }
             return count;
         });
@@ -109,12 +127,16 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         // 4. Prontuarios (notas clínicas)
         Integer prontuariosMigrated = jdbcTemplate.query("SELECT id, notas FROM prontuarios", rs -> {
             int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String notas = rs.getString("notas");
                 if (encryptionConverter.isEncryptedWithOldKey(notas)) {
-                    jdbcTemplate.update("UPDATE prontuarios SET notas = ? WHERE id = ?", reencrypt(notas), rs.getLong("id"));
+                    batch.add(new Object[]{reencrypt(notas), rs.getLong("id")});
                     count++;
                 }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE prontuarios SET notas = ? WHERE id = ?", batch);
             }
             return count;
         });
@@ -123,15 +145,18 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         // 5. Documentos (conteúdo de texto e PDF em Base64)
         Integer documentosMigrated = jdbcTemplate.query("SELECT id, conteudo_texto, arquivo_base64 FROM documentos", rs -> {
             int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String conteudo = rs.getString("conteudo_texto");
                 String arquivo = rs.getString("arquivo_base64");
                 if (encryptionConverter.isEncryptedWithOldKey(conteudo) ||
                     encryptionConverter.isEncryptedWithOldKey(arquivo)) {
-                    jdbcTemplate.update("UPDATE documentos SET conteudo_texto = ?, arquivo_base64 = ? WHERE id = ?",
-                            reencrypt(conteudo), reencrypt(arquivo), rs.getLong("id"));
+                    batch.add(new Object[]{reencrypt(conteudo), reencrypt(arquivo), rs.getLong("id")});
                     count++;
                 }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE documentos SET conteudo_texto = ?, arquivo_base64 = ? WHERE id = ?", batch);
             }
             return count;
         });
@@ -140,15 +165,18 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         // 6. Appointments (motivo da consulta e motivo de cancelamento)
         Integer appointmentsMigrated = jdbcTemplate.query("SELECT id, reason, cancel_reason FROM appointments", rs -> {
             int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String reason = rs.getString("reason");
                 String cancelReason = rs.getString("cancel_reason");
                 if (encryptionConverter.isEncryptedWithOldKey(reason) ||
                     encryptionConverter.isEncryptedWithOldKey(cancelReason)) {
-                    jdbcTemplate.update("UPDATE appointments SET reason = ?, cancel_reason = ? WHERE id = ?",
-                            reencrypt(reason), reencrypt(cancelReason), rs.getLong("id"));
+                    batch.add(new Object[]{reencrypt(reason), reencrypt(cancelReason), rs.getLong("id")});
                     count++;
                 }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE appointments SET reason = ?, cancel_reason = ? WHERE id = ?", batch);
             }
             return count;
         });

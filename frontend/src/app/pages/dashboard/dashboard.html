@@ -134,6 +134,24 @@
           Exportar Meus Atendimentos
         </button>
       </div>
+      <!-- Alert banner: consultas atrasadas (urgente) -->
+      <div *ngIf="dados()?.consultasAtrasadas > 0"
+        class="mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+          <div>
+            <p class="font-bold text-sm">Ação urgente necessária</p>
+            <p class="text-sm">Você tem {{ dados()?.consultasAtrasadas }} consulta(s) com data passada aguardando atualização de status.</p>
+          </div>
+        </div>
+        <a routerLink="/panel/professional-appointments"
+          class="px-4 py-2 bg-red-100 dark:bg-red-800/40 hover:bg-red-200 dark:hover:bg-red-700/50 rounded-lg text-sm font-semibold transition whitespace-nowrap">
+          Ver atrasadas
+        </a>
+      </div>
+
       <!-- Alert banner for pending confirmations -->
       <div *ngIf="dados()?.pendentesConfirmacao > 0" class="mb-6 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 text-purple-700 dark:text-purple-300 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-3">

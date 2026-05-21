@@ -1,6 +1,7 @@
 package com.sistema.lucas.model.dto;
 
 import com.sistema.lucas.model.Professional;
+import com.sistema.lucas.model.enums.ModalidadeAtendimento;
 import com.sistema.lucas.model.enums.TipoRegistro;
 
 import java.time.LocalDate;
@@ -16,7 +17,8 @@ public record ProfessionalResponseDTO(
     String phone,
     LocalDate birthDate,
     String gender,
-    String address
+    String address,
+    ModalidadeAtendimento modalidadeAtendimento
 ) {
     public ProfessionalResponseDTO(Professional p) {
         this(
@@ -30,7 +32,8 @@ public record ProfessionalResponseDTO(
             p.getPhone(),
             p.getBirthDate(),
             p.getGender(),
-            p.getAddress()
+            p.getAddress(),
+            p.getModalidadeAtendimento() != null ? p.getModalidadeAtendimento() : ModalidadeAtendimento.PRESENCIAL
         );
     }
 }

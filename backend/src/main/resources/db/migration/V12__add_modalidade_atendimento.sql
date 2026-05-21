@@ -1,0 +1,2 @@
+ALTER TABLE professional
+    ADD COLUMN IF NOT EXISTS modalidade_atendimento VARCHAR(20) NOT NULL DEFAULT 'PRESENCIAL';

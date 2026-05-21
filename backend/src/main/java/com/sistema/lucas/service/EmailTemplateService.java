@@ -371,6 +371,38 @@ public class EmailTemplateService {
         );
     }
 
+    // ─── Alerta de Consultas Atrasadas ───────────────────────────────────────
+
+    public void enviarAlertaConsultasAtrasadas(com.sistema.lucas.model.Professional profissional,
+                                               java.util.List<Appointment> atrasadas) {
+        String urlAgenda = "http://localhost:8082/panel/professional-appointments";
+        int total = atrasadas.size();
+
+        StringBuilder lista = new StringBuilder();
+        for (Appointment a : atrasadas) {
+            lista.append("• ")
+                 .append(a.getDateTime().format(FMT))
+                 .append(" — ")
+                 .append(a.getPatient().getName())
+                 .append(" (").append(a.getStatus().name()).append(")")
+                 .append("<br>");
+        }
+
+        emailService.enviar(
+            profissional.getEmail(),
+            "⚠️ URGENTE: " + total + " consulta(s) com status pendente após a data",
+            buildPremiumTemplate(
+                "Consultas Atrasadas — Ação Urgente",
+                "Olá, Dr(a). " + profissional.getName() + "!",
+                "As consultas abaixo já passaram da data/hora agendada, mas ainda estão com status pendente.<br><br>" + lista,
+                "Ação imediata necessária",
+                "Acesse o sistema e atualize o status de cada consulta (Concluída, Paciente Faltou ou Cancelada).",
+                "Ver Consultas Atrasadas",
+                urlAgenda
+            )
+        );
+    }
+
     // ─── Template HTML base ──────────────────────────────────────────────────
 
     private String buildTemplate(

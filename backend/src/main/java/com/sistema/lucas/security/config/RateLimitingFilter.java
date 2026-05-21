@@ -44,7 +44,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // 🛡️ SEC-04: Barreira contra brute-force em rotas públicas E sensíveis
         if (path.startsWith("/auth/") || path.startsWith("/export/") ||
             path.startsWith("/prontuarios/") || path.startsWith("/documentos/")) {
-            String ip = request.getRemoteAddr();
+            String ip = request.getHeader("X-Forwarded-For");
+            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+                ip = request.getRemoteAddr();
+            } else {
+                ip = ip.split(",")[0].trim();
+            }
+            
             Bucket bucket = resolveBucket(ip);
 
             if (!bucket.tryConsume(1)) {

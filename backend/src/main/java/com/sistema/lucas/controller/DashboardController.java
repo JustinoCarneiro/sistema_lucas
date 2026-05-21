@@ -69,6 +69,13 @@ public class DashboardController {
         dados.put("pendentesConfirmacao",
             appointmentRepository.countByProfessionalEmailAndStatus(email, StatusConsulta.AGUARDANDO_CONFIRMACAO));
 
+        // Consultas com data passada e status ainda pendente (requer ação urgente)
+        dados.put("consultasAtrasadas",
+            appointmentRepository.countAtrasadasByProfessionalEmail(
+                email, LocalDateTime.now(),
+                List.of(StatusConsulta.AGUARDANDO_CONFIRMACAO, StatusConsulta.AGENDADA,
+                        StatusConsulta.CONFIRMADA_PROFISSIONAL, StatusConsulta.CONFIRMADA)));
+
         // Próximas consultas agendadas
         dados.put("proximasConsultas",
             appointmentRepository.findProximasByProfissionalEmail(email, LocalDateTime.now()));

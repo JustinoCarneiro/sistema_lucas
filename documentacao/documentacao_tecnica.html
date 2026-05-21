@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sistema Lucas — Documentação Técnica</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 22mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #1f2937; font-size: 10.5pt; line-height: 1.55; margin: 0;
+  }
+  h1, h2, h3, h4 { color: #1e3a8a; line-height: 1.25; }
+  h1 { font-size: 21pt; margin: 0 0 4px; }
+  h2 {
+    font-size: 14pt; margin: 26px 0 8px; padding-bottom: 4px;
+    border-bottom: 2px solid #1e3a8a; page-break-after: avoid;
+  }
+  h3 { font-size: 11.5pt; margin: 16px 0 5px; page-break-after: avoid; }
+  h4 { font-size: 10.5pt; margin: 12px 0 4px; color: #374151; page-break-after: avoid; }
+  p { margin: 5px 0; text-align: justify; }
+  ul, ol { margin: 5px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code {
+    background: #f1f5f9; color: #be123c; padding: 1px 4px;
+    border-radius: 3px; font-family: "Courier New", monospace; font-size: 9pt;
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9pt;
+    page-break-inside: avoid;
+  }
+  th { background: #1e3a8a; color: #fff; text-align: left; padding: 5px 7px; }
+  td { border: 1px solid #d1d5db; padding: 4px 7px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .cover {
+    height: 247mm; display: flex; flex-direction: column;
+    justify-content: center; page-break-after: always; text-align: center;
+  }
+  .cover .badge {
+    display: inline-block; background: #1e3a8a; color: #fff;
+    padding: 6px 18px; border-radius: 20px; font-size: 9pt;
+    letter-spacing: 1.5px; margin-bottom: 22px;
+  }
+  .cover h1 { font-size: 34pt; color: #1e3a8a; }
+  .cover .sub { font-size: 14pt; color: #475569; margin-top: 6px; }
+  .cover .meta {
+    margin-top: 60px; font-size: 9.5pt; color: #64748b;
+    border-top: 1px solid #cbd5e1; padding-top: 18px;
+    display: inline-block; text-align: left;
+  }
+  .cover .meta td { border: none; padding: 2px 14px 2px 0; background: none; }
+  .box {
+    background: #eff6ff; border-left: 4px solid #1e3a8a;
+    padding: 8px 12px; margin: 10px 0; border-radius: 4px;
+    page-break-inside: avoid;
+  }
+  .box.warn { background: #fef2f2; border-left-color: #dc2626; }
+  .box.ok { background: #f0fdf4; border-left-color: #16a34a; }
+  .tag {
+    display: inline-block; font-size: 7.5pt; font-weight: bold;
+    padding: 1px 6px; border-radius: 3px; color: #fff; vertical-align: middle;
+  }
+  .tag.crit { background: #dc2626; } .tag.ok { background: #16a34a; }
+  .toc li { margin: 3px 0; }
+  .footer-note {
+    margin-top: 28px; padding-top: 10px; border-top: 1px solid #cbd5e1;
+    font-size: 8.5pt; color: #64748b; font-style: italic;
+  }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div><span class="badge">DOCUMENTAÇÃO TÉCNICA</span></div>
+  <h1>Sistema Lucas</h1>
+  <div class="sub">Plataforma de Prontuário Eletrônico e Gestão Clínica</div>
+  <div class="sub" style="font-size:11pt; margin-top:18px;">
+    Manual Técnico — Arquitetura, Funcionalidades e Conformidade LGPD
+  </div>
+  <table class="meta">
+    <tr><td><strong>Público-alvo</strong></td><td>Equipe técnica, desenvolvedores e administradores de TI</td></tr>
+    <tr><td><strong>Versão do documento</strong></td><td>1.0</td></tr>
+    <tr><td><strong>Data de emissão</strong></td><td>21 de maio de 2026</td></tr>
+    <tr><td><strong>Stack</strong></td><td>Spring Boot 3.4 · Angular 21 · PostgreSQL 15 · Docker</td></tr>
+    <tr><td><strong>Classificação</strong></td><td>Documento interno</td></tr>
+  </table>
+</div>
+
+<h2>Sumário</h2>
+<ol class="toc">
+  <li>Visão Geral do Sistema</li>
+  <li>Arquitetura Técnica</li>
+  <li>Modelo de Dados e Migrações</li>
+  <li>Perfis de Acesso e Controle de Permissões</li>
+  <li>Módulos Funcionais</li>
+  <li>Máquina de Estados de Consultas</li>
+  <li>Rotinas Automatizadas</li>
+  <li>Segurança da Informação</li>
+  <li>Conformidade LGPD — Implementação Técnica</li>
+  <li>Infraestrutura, Deploy e Continuidade</li>
+</ol>
+
+<h2 class="pb">1. Visão Geral do Sistema</h2>
+<p>
+  O <strong>Sistema Lucas</strong> é uma plataforma full-stack de gestão clínica e
+  prontuário eletrônico, desenvolvida para um instituto de atendimento à saúde sem
+  fins lucrativos. O sistema concentra três grandes domínios funcionais: o
+  <strong>agendamento de consultas</strong>, a <strong>gestão de prontuários e
+  documentos clínicos</strong> e a <strong>administração de usuários e agendas</strong>.
+</p>
+<p>
+  Por tratar dados pessoais sensíveis de saúde (Art. 5º, II da LGPD), o sistema foi
+  arquitetado com forte ênfase em conformidade legal: criptografia em repouso,
+  trilha de auditoria, controle de acesso por perfil, registro demonstrável de
+  consentimento e anonimização irreversível compatível com a retenção legal de
+  prontuários.
+</p>
+
+<h3>1.1 Características principais</h3>
+<table>
+  <tr><th>Domínio</th><th>Descrição</th></tr>
+  <tr><td>Arquitetura</td><td>Monólito modular containerizado (backend, frontend e banco em contêineres separados)</td></tr>
+  <tr><td>Comunicação</td><td>API REST stateless com autenticação JWT</td></tr>
+  <tr><td>Persistência</td><td>PostgreSQL 15 com versionamento de schema via Flyway</td></tr>
+  <tr><td>Reatividade frontend</td><td>Angular 21 com componentes standalone e Signals</td></tr>
+  <tr><td>Notificações</td><td>E-mails transacionais e lembretes agendados via SMTP</td></tr>
+  <tr><td>Conformidade</td><td>LGPD — Lei nº 13.709/2018 (dados sensíveis de saúde)</td></tr>
+</table>
+
+<h2>2. Arquitetura Técnica</h2>
+
+<h3>2.1 Pilha tecnológica</h3>
+<table>
+  <tr><th>Camada</th><th>Tecnologia</th><th>Versão</th></tr>
+  <tr><td>Frontend</td><td>Angular (standalone components, Signals)</td><td>21</td></tr>
+  <tr><td>Backend</td><td>Spring Boot / Java</td><td>3.4 / Java 21</td></tr>
+  <tr><td>Banco de dados</td><td>PostgreSQL</td><td>15</td></tr>
+  <tr><td>Servidor web / proxy</td><td>nginx (serve o frontend e termina TLS)</td><td>—</td></tr>
+  <tr><td>Orquestração</td><td>Docker Compose</td><td>—</td></tr>
+  <tr><td>Migrações de schema</td><td>Flyway</td><td>—</td></tr>
+</table>
+
+<h3>2.2 Arquitetura em camadas (backend)</h3>
+<p>O backend segue uma arquitetura estritamente em camadas:</p>
+<p style="text-align:center; font-weight:bold; color:#1e3a8a;">
+  Controller &rarr; Service &rarr; Repository &rarr; Entity
+</p>
+<table>
+  <tr><th>Camada</th><th>Pacote</th><th>Responsabilidade</th></tr>
+  <tr><td>Controller</td><td><code>controller/</code></td><td>Endpoints REST; nunca expõem entidades JPA diretamente — sempre DTOs</td></tr>
+  <tr><td>Service</td><td><code>service/</code></td><td>Regras de negócio; cada método público é uma fronteira transacional</td></tr>
+  <tr><td>Repository</td><td><code>repository/</code></td><td>Interfaces Spring Data JPA de acesso a dados</td></tr>
+  <tr><td>Model</td><td><code>model/</code></td><td>Entidades JPA, DTOs (Java Records) e enums</td></tr>
+  <tr><td>Security</td><td><code>security/</code></td><td>Filtro JWT, rate limiting, tratamento global de exceções</td></tr>
+  <tr><td>Config</td><td><code>config/</code></td><td>Inicializadores, conversores JPA, runners de migração</td></tr>
+</table>
+
+<h3>2.3 Estrutura do frontend</h3>
+<p>
+  O frontend é organizado em componentes standalone do Angular 21, um por página,
+  cada qual com seu arquivo <code>.ts</code>, <code>.html</code> e geralmente um
+  <code>.service.ts</code> dedicado. O módulo de segurança (<code>app/security/</code>)
+  concentra o serviço de autenticação, o guard de rotas e o interceptor HTTP, que
+  injeta o token JWT em todas as requisições. O serviço de inatividade
+  (<code>inactivity.service.ts</code>) encerra automaticamente sessões ociosas.
+</p>
+
+<h2>3. Modelo de Dados e Migrações</h2>
+
+<h3>3.1 Entidades principais</h3>
+<table>
+  <tr><th>Entidade</th><th>Descrição</th></tr>
+  <tr><td><code>User</code></td><td>Usuário base do sistema; armazena credenciais (hash Argon2id) e papel</td></tr>
+  <tr><td><code>Patient</code></td><td>Paciente — herda de User; dados cadastrais e de saúde</td></tr>
+  <tr><td><code>Professional</code></td><td>Profissional de saúde — herda de User; registro de conselho, especialidade e modalidade de atendimento</td></tr>
+  <tr><td><code>Appointment</code></td><td>Consulta agendada; carrega o estado da máquina de estados</td></tr>
+  <tr><td><code>ProfessionalAvailability</code></td><td>Janelas de disponibilidade da agenda do profissional</td></tr>
+  <tr><td><code>Prontuario</code></td><td>Registro clínico — notas de atendimento (criptografadas)</td></tr>
+  <tr><td><code>Documento</code></td><td>Documentos clínicos (laudos, receitas, exames) em conteúdo criptografado</td></tr>
+  <tr><td><code>AuditLog</code></td><td>Trilha de auditoria de acesso a dados sensíveis</td></tr>
+  <tr><td><code>RefreshToken</code> / <code>TokenDenylist</code></td><td>Renovação rotativa de sessão e revogação de tokens</td></tr>
+  <tr><td><code>VerificationToken</code> / <code>PasswordResetToken</code></td><td>Tokens de uso único para verificação de e-mail e redefinição de senha</td></tr>
+</table>
+
+<h3>3.2 Histórico de migrações Flyway</h3>
+<p>
+  O schema é versionado por Flyway; as migrações executam automaticamente na
+  inicialização. <strong>Migrações existentes nunca são alteradas</strong> — toda
+  mudança gera um novo arquivo <code>V{n}__descrição.sql</code>.
+</p>
+<table>
+  <tr><th>Versão</th><th>Mudança</th></tr>
+  <tr><td>V1</td><td>Baseline do schema</td></tr>
+  <tr><td>V2</td><td>Verificação de e-mail</td></tr>
+  <tr><td>V3</td><td>Constraint UNIQUE em consultas (anti-corrida)</td></tr>
+  <tr><td>V4</td><td>Rastreamento de faltas/penalidades do paciente</td></tr>
+  <tr><td>V5</td><td>Unicidade de CPF via <code>cpf_hash</code></td></tr>
+  <tr><td>V6</td><td>Flag de paciente ativo</td></tr>
+  <tr><td>V7 / V8</td><td>Aceite dos termos e rastreamento de consentimento</td></tr>
+  <tr><td>V9</td><td>Correção da disponibilidade do profissional</td></tr>
+  <tr><td>V10</td><td>Colunas de MFA (<code>mfa_enabled</code>, <code>totp_secret</code>)</td></tr>
+  <tr><td>V11</td><td>Refresh tokens e denylist de revogação</td></tr>
+  <tr><td>V12</td><td>Modalidade de atendimento do profissional</td></tr>
+</table>
+
+<h2 class="pb">4. Perfis de Acesso e Controle de Permissões</h2>
+<p>
+  O controle de acesso baseado em papéis (RBAC) é aplicado via
+  <code>@EnableMethodSecurity</code> e do papel codificado no JWT. São três perfis:
+</p>
+<table>
+  <tr><th>Perfil</th><th>Permissões</th></tr>
+  <tr><td><code>ADMIN</code></td><td>Gestão completa de usuários e profissionais; leitura da trilha de auditoria; exportações administrativas</td></tr>
+  <tr><td><code>PROFESSIONAL</code></td><td>Gestão da própria agenda e disponibilidade; prontuários e documentos dos próprios atendimentos</td></tr>
+  <tr><td><code>PATIENT</code></td><td>Visualização e confirmação das próprias consultas; acesso aos próprios documentos liberados</td></tr>
+</table>
+<div class="box">
+  <strong>Princípio do menor privilégio:</strong> cada endpoint exige o papel mínimo
+  necessário, validado por anotações <code>@PreAuthorize</code>. Toda ação sensível
+  é registrada na trilha de auditoria.
+</div>
+
+<h2>5. Módulos Funcionais</h2>
+
+<h3>5.1 Autenticação e gestão de conta</h3>
+<ul>
+  <li><strong>Cadastro</strong> com aceite versionado dos Termos de Uso e Política de Privacidade;</li>
+  <li><strong>Verificação de e-mail</strong> — contas iniciam como não verificadas; token de validade de 24h enviado por SMTP;</li>
+  <li><strong>Login</strong> com emissão de JWT; <strong>refresh token rotativo</strong> de uso único;</li>
+  <li><strong>Recuperação de senha</strong> via token de uso único e curta validade;</li>
+  <li><strong>Logout efetivo</strong> com revogação do token via <em>denylist</em>;</li>
+  <li><strong>Encerramento de sessão por inatividade</strong> no frontend.</li>
+</ul>
+
+<h3>5.2 Agendamento de consultas</h3>
+<ul>
+  <li>Consulta de profissionais disponíveis, com filtro por <strong>modalidade de atendimento</strong> (presencial, online ou híbrido);</li>
+  <li>Consulta de horários livres (<em>slots</em>) e dias de trabalho do profissional;</li>
+  <li>Agendamento com proteção contra concorrência via constraint UNIQUE <code>(professional_id, date_time)</code>;</li>
+  <li>Confirmação em duas etapas (profissional e, depois, paciente);</li>
+  <li>Reagendamento e cancelamento com justificativa;</li>
+  <li>Controle de faltas (<em>no-show</em>) com penalidades e bloqueio temporário.</li>
+</ul>
+
+<h3>5.3 Prontuários e documentos clínicos</h3>
+<ul>
+  <li>Registro de notas clínicas pelo profissional responsável pelo atendimento;</li>
+  <li>Upload e gestão de documentos clínicos (laudos, receitas, exames);</li>
+  <li>Conteúdo de prontuários e documentos <strong>criptografado em repouso</strong>;</li>
+  <li>Todo acesso a dados sensíveis é registrado na trilha de auditoria.</li>
+</ul>
+
+<h3>5.4 Gestão de agenda do profissional</h3>
+<ul>
+  <li>Cadastro das janelas de disponibilidade por data;</li>
+  <li>Visão da agenda diária e das próximas consultas;</li>
+  <li>Notificação de prazo para submissão da agenda do mês seguinte.</li>
+</ul>
+
+<h3>5.5 Painel administrativo e dashboard</h3>
+<ul>
+  <li>Dashboard com indicadores por perfil (consultas do dia, pendências de confirmação);</li>
+  <li>Gestão de usuários, pacientes e profissionais;</li>
+  <li>Aprovação, recusa e desbloqueio de contas.</li>
+</ul>
+
+<h3>5.6 Exportação e portabilidade de dados</h3>
+<ul>
+  <li>Exportação dos dados do titular em formato estruturado, atendendo ao direito de
+  portabilidade (Art. 18, V da LGPD).</li>
+</ul>
+
+<h2 class="pb">6. Máquina de Estados de Consultas</h2>
+<p>O ciclo de vida de uma consulta é governado por uma máquina de estados explícita:</p>
+<p style="text-align:center; font-weight:bold; color:#1e3a8a; font-size:10pt;">
+  AGENDADA &rarr; CONFIRMADA_PROFISSIONAL &rarr; CONFIRMADA &rarr;
+  CONCLUIDA / CANCELADA / FALTA
+</p>
+<ul>
+  <li><strong>AGENDADA</strong> — consulta criada, aguardando o profissional;</li>
+  <li><strong>CONFIRMADA_PROFISSIONAL</strong> — o profissional confirmou; aguarda o paciente;</li>
+  <li><strong>CONFIRMADA</strong> — ambas as partes confirmaram;</li>
+  <li><strong>CONCLUIDA</strong> — atendimento realizado;</li>
+  <li><strong>CANCELADA</strong> — cancelada por qualquer das partes, com justificativa;</li>
+  <li><strong>FALTA</strong> — paciente não compareceu; impacta o controle de penalidades.</li>
+</ul>
+<div class="box">
+  A constraint UNIQUE em <code>(professional_id, date_time)</code> impede,
+  no nível do banco, que duas consultas ocupem o mesmo horário — eliminando
+  condições de corrida sob requisições concorrentes.
+</div>
+
+<h2>7. Rotinas Automatizadas</h2>
+<p>
+  Tarefas agendadas (<code>@Scheduled</code>, fuso <code>America/Sao_Paulo</code>)
+  executam processos recorrentes:
+</p>
+<table>
+  <tr><th>Rotina</th><th>Periodicidade</th><th>Função</th></tr>
+  <tr><td>Lembretes de consulta</td><td>Diária — 10h</td><td>Envia e-mail de lembrete das consultas do dia seguinte</td></tr>
+  <tr><td>Prazo de agenda</td><td>Diária — 8h</td><td>Alerta o profissional sobre o prazo de submissão da agenda do mês seguinte</td></tr>
+  <tr><td>Consultas atrasadas</td><td>Diária — 8h05</td><td>Alerta o profissional sobre consultas com data passada e status pendente</td></tr>
+  <tr><td>Pendências semanais</td><td>Segunda — 9h</td><td>Notifica profissionais e pacientes sobre confirmações pendentes</td></tr>
+  <tr><td>Limpeza de dados</td><td>Periódica</td><td>Expurgo de tokens expirados, atendendo ao princípio do prazo determinado</td></tr>
+</table>
+
+<h2>8. Segurança da Informação</h2>
+
+<h3>8.1 Controles implementados</h3>
+<table>
+  <tr><th>Controle</th><th>Implementação</th></tr>
+  <tr><td>Autenticação</td><td>JWT (HMAC-SHA256), validado pelo <code>SecurityFilter</code> em cada requisição</td></tr>
+  <tr><td>Armazenamento do token</td><td>Cookie <code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code> — mitiga roubo via XSS</td></tr>
+  <tr><td>Renovação de sessão</td><td>Refresh token rotativo de uso único; <em>denylist</em> de revogação para logout efetivo</td></tr>
+  <tr><td>Senhas</td><td>Hash <strong>Argon2id</strong> (recomendado pelo OWASP)</td></tr>
+  <tr><td>Dados em repouso</td><td><strong>AES-256-GCM</strong> via <code>EncryptionConverter</code> aplicado por <code>@Convert</code></td></tr>
+  <tr><td>Identificação por CPF</td><td><code>cpf_hash</code> via <strong>HMAC-SHA256</strong> com <em>pepper</em> dedicado, fora do banco</td></tr>
+  <tr><td>Rate limiting</td><td>Bucket4j — proteção contra força bruta nos endpoints de autenticação</td></tr>
+  <tr><td>Trilha de auditoria</td><td><code>AuditLogService</code> registra todo acesso a dados sensíveis</td></tr>
+  <tr><td>Verificação de e-mail</td><td>Token de uso único com validade de 24h</td></tr>
+  <tr><td>Timeout de sessão</td><td>Encerramento automático por inatividade no frontend</td></tr>
+  <tr><td>CORS</td><td>Restrito a origens explicitamente autorizadas (<code>ALLOWED_ORIGINS</code>)</td></tr>
+  <tr><td>Gestão de segredos</td><td><strong>Docker Secrets</strong> — segredos fora do <code>.env</code> e fora do versionamento</td></tr>
+</table>
+
+<h3>8.2 Gestão de chaves criptográficas</h3>
+<p>
+  O <code>EncryptionConverter</code> opera com suporte multi-chave: uma
+  <strong>chave primária AES-256</strong> usada para cifrar e uma lista de
+  <strong>chaves legadas</strong> usada apenas para decifrar dados anteriores a uma
+  rotação. Isso permite a <strong>rotação de chave sem indisponibilidade</strong>:
+  o <code>EncryptionMigrationRunner</code> recifra a base para a chave forte em lote,
+  sob controle explícito da flag <code>app.migration.crypto.enabled</code>.
+</p>
+<div class="box ok">
+  <strong>Boa prática:</strong> os runners de migração criptográfica são
+  desabilitados por padrão e só executam quando a flag é explicitamente ativada,
+  evitando reprocessamento custoso a cada inicialização.
+</div>
+
+<h2 class="pb">9. Conformidade LGPD — Implementação Técnica</h2>
+<p>
+  O sistema passou por auditoria de conformidade LGPD sob a ótica de Encarregado de
+  Proteção de Dados. Todas as não conformidades identificadas foram tratadas. Os
+  controles técnicos abaixo materializam a conformidade.
+</p>
+
+<table>
+  <tr><th>Requisito LGPD</th><th>Implementação técnica</th><th>Status</th></tr>
+  <tr><td>Segurança de dados (Art. 46)</td><td>Criptografia AES-256-GCM em repouso para todos os dados sensíveis</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Integridade da cifra</td><td><code>EncryptionConverter</code> trata falha de decifragem como erro auditável — sem <em>fallback</em> de texto plano</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Identificação inequívoca</td><td><code>cpf_hash</code> via HMAC-SHA256 com <em>pepper</em> — resistente a força bruta</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Gestão de segredos</td><td>Segredos migrados para Docker Secrets; <code>.env</code> contém apenas configuração não sensível</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Base legal do prontuário</td><td>Dados de saúde fundamentados na tutela da saúde (Art. 11, II, "a"), dissociados do consentimento</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Portabilidade (Art. 18, V)</td><td>Exportação completa dos dados do titular em formato estruturado</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Prazo determinado (Art. 15)</td><td><code>DataCleanupTask</code> — expurgo automático de tokens e dados expirados</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Transferência internacional (Art. 33)</td><td>Envio de e-mails via Google LLC (EUA) declarado na Política de Privacidade</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Canal do titular (Art. 41)</td><td>Canal de contato de proteção de dados publicado na Política de Privacidade</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Trilha de auditoria (Art. 11, II, "g")</td><td><code>AuditLogService</code> registra todo acesso a dados de saúde</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Resposta a incidentes (Art. 48)</td><td>Plano documentado de resposta a incidentes e comunicação à ANPD</td><td><span class="tag ok">OK</span></td></tr>
+  <tr><td>Direito ao esquecimento (Art. 18, VI)</td><td>Exclusão física ou anonimização irreversível, preservando o prontuário de guarda obrigatória</td><td><span class="tag ok">OK</span></td></tr>
+</table>
+
+<h3>9.1 Anonimização versus retenção legal</h3>
+<p>
+  O prontuário clínico tem guarda obrigatória de <strong>20 anos</strong> (Lei nº
+  13.787/2018 e Resolução CFM nº 1.821/2007). O sistema concilia esse dever com o
+  direito ao esquecimento por meio de um modelo híbrido: ao solicitar o encerramento
+  da conta, os <strong>dados de identificação são anonimizados de forma
+  irreversível</strong>, enquanto o registro clínico — desvinculado da identidade —
+  é preservado pelo prazo legal.
+</p>
+
+<h3>9.2 Registro de consentimento</h3>
+<p>
+  O aceite dos Termos é registrado de forma demonstrável (Art. 8º, §1º): data, hora
+  e <strong>versão</strong> do documento aceito são persistidos. O consentimento
+  cobre a criação da conta e as comunicações operacionais; o tratamento dos dados
+  de saúde independe dele.
+</p>
+
+<h3>9.3 Designação de Encarregado (DPO)</h3>
+<p>
+  Por se tratar de instituição sem fins lucrativos de pequeno porte, a indicação
+  formal de Encarregado é facultativa nos termos da <strong>Resolução CD/ANPD nº
+  2/2022</strong>. O canal oficial de contato para o exercício de direitos é
+  publicado na Política de Privacidade e é suficiente para o atendimento aos titulares.
+</p>
+
+<h2 class="pb">10. Infraestrutura, Deploy e Continuidade</h2>
+
+<h3>10.1 Orquestração</h3>
+<p>
+  Três contêineres compõem o sistema, orquestrados por Docker Compose: o banco
+  PostgreSQL (com volume nomeado persistente), o backend Spring Boot e o frontend
+  Angular servido por nginx. Segredos são montados via Docker Secrets em
+  <code>/run/secrets/</code>.
+</p>
+
+<h3>10.2 Ambientes</h3>
+<table>
+  <tr><th>Ambiente</th><th>Perfil Spring</th><th>Característica</th></tr>
+  <tr><td>Desenvolvimento</td><td><code>dev</code></td><td>Popula dados fictícios via <code>DataInitializer</code></td></tr>
+  <tr><td>Produção</td><td><code>prod</code></td><td>Banco limpo; configuração endurecida</td></tr>
+</table>
+
+<h3>10.3 Processo de deploy</h3>
+<ul>
+  <li><code>deploy-dev.sh</code> — sobe o ambiente local com dados de teste;</li>
+  <li><code>deploy-prod.sh</code> — sobe o ambiente de produção;</li>
+  <li><code>push-and-deploy.sh</code> — sincroniza (rsync) e implanta no servidor remoto via SSH.</li>
+</ul>
+<div class="box">
+  Os volumes nomeados do Docker preservam todos os dados entre <em>deploys</em>.
+  As migrações Flyway são incrementais e não destrutivas
+  (<code>ADD COLUMN IF NOT EXISTS</code>), garantindo atualizações seguras.
+</div>
+
+<h3>10.4 Backup</h3>
+<p>
+  O script <code>backup.sh</code> realiza a cópia de segurança do banco de dados.
+  Recomenda-se a verificação periódica da integridade das cópias e o armazenamento
+  redundante fora do servidor de produção.
+</p>
+
+<div class="footer-note">
+  Documento técnico do Sistema Lucas — versão 1.0, emitido em 21 de maio de 2026.
+  Reflete o estado do sistema após a conclusão da auditoria de conformidade LGPD.
+  As informações de segurança aqui descritas são de uso interno e não devem ser
+  divulgadas externamente.
+</div>
+
+</body>
+</html>

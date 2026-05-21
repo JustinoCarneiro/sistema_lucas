@@ -2,6 +2,7 @@
 package com.sistema.lucas.model;
 
 import com.sistema.lucas.config.jpa.EncryptionConverter;
+import com.sistema.lucas.model.enums.ModalidadeAtendimento;
 import com.sistema.lucas.model.enums.TipoRegistro;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -28,6 +29,10 @@ public class Professional extends User {
     @Column(columnDefinition = "TEXT")
     @Convert(converter = EncryptionConverter.class)
     private String address;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "modalidade_atendimento")
+    private ModalidadeAtendimento modalidadeAtendimento = ModalidadeAtendimento.PRESENCIAL;
 
     @PrePersist
     @PreUpdate

@@ -69,7 +69,9 @@ public class AvailabilityController {
         var result = profs.stream().map(p -> Map.<String, Object>of(
             "id", p.getId(),
             "name", p.getName(),
-            "specialty", p.getSpecialty() != null ? p.getSpecialty() : ""
+            "specialty", p.getSpecialty() != null ? p.getSpecialty() : "",
+            "modalidadeAtendimento", p.getModalidadeAtendimento() != null
+                ? p.getModalidadeAtendimento().name() : "PRESENCIAL"
         )).toList();
         return ResponseEntity.ok(result);
     }

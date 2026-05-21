@@ -1,15 +1,22 @@
 // backend/src/main/java/com/sistema/lucas/service/LembreteScheduler.java
 package com.sistema.lucas.service;
 
+import com.sistema.lucas.model.Appointment;
 import com.sistema.lucas.repository.AppointmentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Component
 public class LembreteScheduler {
+
+    private static final Logger logger = LoggerFactory.getLogger(LembreteScheduler.class);
 
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private EmailTemplateService emailTemplateService;
@@ -64,6 +71,30 @@ public class LembreteScheduler {
                 }
             }
         }
+    }
+
+    // Executa todo dia às 8h05 — alerta profissionais sobre consultas com data passada e status pendente
+    @Scheduled(cron = "0 5 8 * * *", zone = "America/Sao_Paulo")
+    @Transactional(readOnly = true)
+    public void alertarConsultasAtrasadas() {
+        var atrasadas = appointmentRepository.findAllAtrasadas(
+            LocalDateTime.now(), AppointmentService.STATUSES_PENDENTES);
+
+        if (atrasadas.isEmpty()) return;
+
+        atrasadas.stream()
+            .collect(Collectors.groupingBy(Appointment::getProfessional))
+            .forEach((prof, lista) -> {
+                try {
+                    emailTemplateService.enviarAlertaConsultasAtrasadas(prof, lista);
+                } catch (Exception e) {
+                    logger.error("[LEMBRETE] Falha ao enviar alerta de atrasadas para {}: {}", prof.getEmail(), e.getMessage());
+                }
+            });
+
+        logger.info("[LEMBRETE] {} consulta(s) atrasada(s) notificadas a {} profissional(is).",
+            atrasadas.size(),
+            atrasadas.stream().map(a -> a.getProfessional().getId()).distinct().count());
     }
 
     // Executa toda segunda-feira às 9h da manhã para alertar sobre pendências

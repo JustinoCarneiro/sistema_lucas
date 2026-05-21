@@ -1,6 +1,6 @@
-// backend/src/main/java/com/sistema/lucas/model/dto/ProfessionalUpdateDTO.java
 package com.sistema.lucas.model.dto;
 
+import com.sistema.lucas.model.enums.ModalidadeAtendimento;
 import com.sistema.lucas.model.enums.TipoRegistro;
 
 public record ProfessionalUpdateDTO(
@@ -14,5 +14,6 @@ public record ProfessionalUpdateDTO(
     java.time.LocalDate birthDate,
     String gender,
     String address,
-    String newPassword
+    String newPassword,
+    ModalidadeAtendimento modalidadeAtendimento
 ) {}

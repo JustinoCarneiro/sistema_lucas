@@ -415,7 +415,7 @@ O *status* financeiro **nunca** deve ser confiado a partir do redirecionamento d
 | ID | Severidade | Achado | Recomendação |
 |---|---|---|---|
 | **SEC-01** | 🟠 **ALTA** | JWT armazenado em `localStorage` — exposto a roubo de sessão via XSS. | Migrar para cookie `HttpOnly`+`Secure`+`SameSite=Strict`; aplicar CSP rígida. |
-| **SEC-02** | 🟠 **ALTA** | Ausência de MFA no painel administrativo, que dá acesso a todos os dados sensíveis de saúde. | Implementar MFA (TOTP) obrigatório para `ADMIN`. |
+| **SEC-02** | ~~🟠 **ALTA**~~ | ~~Ausência de MFA no painel administrativo.~~ | **Dispensado** — decisão da instituição (2026-05-21). Colunas `mfa_enabled`/`totp_secret` existem no banco para implementação futura se necessário. |
 | **SEC-03** | 🟡 **MÉDIA** | JWT de 2h sem *refresh token* nem revogação; *logout* não invalida o token no servidor. | *Access token* curto (15 min) + *refresh* rotativo + *denylist* de revogação. |
 | **SEC-04** | 🟡 **MÉDIA** | *Rate limiting* só em `/auth/*`, em memória e por instância. | Estender a *endpoints* sensíveis; externalizar o contador (Redis) em multi-instância. |
 | **SEC-05** | 🟡 **MÉDIA** (condicional) | Blueprint de pagamento (Zero Storage, 3DS, webhooks assinados) ainda não implementado. | Pré-requisito obrigatório **antes** de qualquer integração de cobrança (Seções 13 e 15). |

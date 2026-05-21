@@ -24,10 +24,22 @@ public class AppointmentService {
     @Autowired private ProfessionalAvailabilityRepository availabilityRepository;
     @Autowired private AuditLogService auditLogService;
 
+    public static final List<StatusConsulta> STATUSES_PENDENTES = List.of(
+        StatusConsulta.AGUARDANDO_CONFIRMACAO,
+        StatusConsulta.AGENDADA,
+        StatusConsulta.CONFIRMADA_PROFISSIONAL,
+        StatusConsulta.CONFIRMADA);
+
     // ─── Leitura ─────────────────────────────────────────────────────────────
 
     public List<AppointmentResponseDTO> findAll() {
         return appointmentRepository.findAll().stream().map(AppointmentResponseDTO::new).toList();
+    }
+
+    public List<AppointmentResponseDTO> findAtrasadasPorProfissional(String email) {
+        return appointmentRepository
+            .findAtrasadasByProfessionalEmail(email, LocalDateTime.now(), STATUSES_PENDENTES)
+            .stream().map(AppointmentResponseDTO::new).toList();
     }
 
     public List<AppointmentResponseDTO> buscarPorPaciente(String email) {

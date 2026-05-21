@@ -129,8 +129,9 @@ export class MyProfileComponent implements OnInit {
         phone:            p.phone,
         birthDate:        p.birthDate || null,
         gender:           p.gender || null,
-        address:          p.address || null,
-        newPassword:      this.newPassword || null
+        address:                p.address || null,
+        modalidadeAtendimento:  p.modalidadeAtendimento || 'PRESENCIAL',
+        newPassword:            this.newPassword || null
       };
       this.http.put(`${environment.apiUrl}/professionals/me`, payload, { responseType: 'text' }).subscribe({
         next: () => { 

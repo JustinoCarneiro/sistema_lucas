@@ -79,4 +79,26 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("fim") LocalDateTime fim,
         @Param("statusExcluido") StatusConsulta status
     );
+
+    // ✅ Consultas atrasadas (data já passou) com status ainda pendente — por profissional
+    @Query("SELECT a FROM Appointment a WHERE a.professional.email = :email " +
+           "AND a.dateTime < :agora AND a.status IN :statuses ORDER BY a.dateTime DESC")
+    List<Appointment> findAtrasadasByProfessionalEmail(
+        @Param("email") String email,
+        @Param("agora") LocalDateTime agora,
+        @Param("statuses") List<StatusConsulta> statuses);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.professional.email = :email " +
+           "AND a.dateTime < :agora AND a.status IN :statuses")
+    long countAtrasadasByProfessionalEmail(
+        @Param("email") String email,
+        @Param("agora") LocalDateTime agora,
+        @Param("statuses") List<StatusConsulta> statuses);
+
+    // Para o scheduler — todas as atrasadas agrupáveis por profissional
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.professional JOIN FETCH a.patient " +
+           "WHERE a.dateTime < :agora AND a.status IN :statuses ORDER BY a.professional.id, a.dateTime")
+    List<Appointment> findAllAtrasadas(
+        @Param("agora") LocalDateTime agora,
+        @Param("statuses") List<StatusConsulta> statuses);
 }

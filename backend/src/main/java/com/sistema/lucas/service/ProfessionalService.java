@@ -97,6 +97,8 @@ public class ProfessionalService {
         if (dto.gender() != null)           professional.setGender(dto.gender());
         if (dto.address() != null)          professional.setAddress(dto.address());
 
+        if (dto.modalidadeAtendimento() != null) professional.setModalidadeAtendimento(dto.modalidadeAtendimento());
+
         if (dto.newPassword() != null && !dto.newPassword().trim().isEmpty()) {
             professional.setPassword(passwordEncoder.encode(dto.newPassword()));
         }

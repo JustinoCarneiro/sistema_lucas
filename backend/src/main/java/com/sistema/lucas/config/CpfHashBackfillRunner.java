@@ -4,6 +4,7 @@ import com.sistema.lucas.config.jpa.EncryptionConverter;
 import com.sistema.lucas.service.CpfHashService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,9 @@ public class CpfHashBackfillRunner implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(CpfHashBackfillRunner.class);
 
+    @Value("${app.migration.crypto.enabled:false}")
+    private boolean enabled;
+
     private final JdbcTemplate jdbcTemplate;
     private final EncryptionConverter encryptionConverter;
     private final CpfHashService cpfHashService;
@@ -39,6 +43,10 @@ public class CpfHashBackfillRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (!enabled) {
+            log.info("[AUD-03] CpfHashBackfillRunner desabilitado (app.migration.crypto.enabled=false). Skipping.");
+            return;
+        }
         log.info("[AUD-03] Verificando backfill de cpf_hash (SHA-256 -> HMAC-SHA256)...");
 
         // Apenas pacientes ativos com CPF: anonimizados têm cpf nulo e
@@ -47,6 +55,7 @@ public class CpfHashBackfillRunner implements CommandLineRunner {
             "SELECT id, cpf, cpf_hash FROM patient WHERE cpf IS NOT NULL AND is_active = true",
             rs -> {
                 int count = 0;
+                java.util.List<Object[]> batch = new java.util.ArrayList<>();
                 while (rs.next()) {
                     long id = rs.getLong("id");
                     String storedHash = rs.getString("cpf_hash");
@@ -63,14 +72,12 @@ public class CpfHashBackfillRunner implements CommandLineRunner {
 
                     String correctHash = cpfHashService.hash(decryptedCpf);
                     if (correctHash != null && !correctHash.equals(storedHash)) {
-                        try {
-                            jdbcTemplate.update("UPDATE patient SET cpf_hash = ? WHERE id = ?", correctHash, id);
-                            count++;
-                        } catch (Exception e) {
-                            log.error("[AUD-03] Falha ao atualizar cpf_hash do paciente id={} " +
-                                      "(possível CPF duplicado na base) — verificar manualmente.", id, e);
-                        }
+                        batch.add(new Object[]{correctHash, id});
+                        count++;
                     }
+                }
+                if (!batch.isEmpty()) {
+                    jdbcTemplate.batchUpdate("UPDATE patient SET cpf_hash = ? WHERE id = ?", batch);
                 }
                 return count;
             });

@@ -30,6 +30,17 @@
         {{ proximasConsultas().length }}
       </span>
     </button>
+    <button (click)="abaAtiva.set('atrasadas')"
+      class="px-4 py-2 text-sm font-medium transition border-b-2 -mb-px"
+      [ngClass]="abaAtiva() === 'atrasadas'
+        ? 'border-red-600 text-red-600'
+        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+      Atrasadas
+      <span *ngIf="consultasAtrasadas().length > 0"
+        class="ml-2 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+        {{ consultasAtrasadas().length }}
+      </span>
+    </button>
   </div>
 
   <!-- ABA: HOJE -->
@@ -64,7 +75,6 @@
         </div>
 
         <div class="flex gap-2 shrink-0 flex-wrap">
-          <!-- Aprovar / Recusar — solicitação pendente de confirmação -->
           <ng-container *ngIf="app.status === 'AGUARDANDO_CONFIRMACAO'">
             <button (click)="aprovar(app)"
               class="bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-500 hover:text-white text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 hover:border-emerald-500 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-[1.02] shadow-sm flex items-center gap-1">
@@ -75,7 +85,6 @@
               <span>✕</span> Recusar
             </button>
           </ng-container>
-          <!-- Confirmar — profissional confirma quando status é AGENDADA -->
           <button *ngIf="app.status === 'AGENDADA'"
             (click)="confirmarConsulta(app)"
             class="bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-800/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 px-4 py-2 rounded-lg font-medium text-sm transition">
@@ -131,7 +140,6 @@
         </div>
 
         <div class="flex gap-2 shrink-0 flex-wrap">
-          <!-- Aprovar / Recusar — solicitação pendente de confirmação -->
           <ng-container *ngIf="app.status === 'AGUARDANDO_CONFIRMACAO'">
             <button (click)="aprovar(app)"
               class="bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 border border-emerald-200 hover:border-emerald-500 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 transform hover:scale-[1.02] shadow-sm flex items-center gap-1">
@@ -142,12 +150,83 @@
               <span>✕</span> Recusar
             </button>
           </ng-container>
-          <!-- Confirmar — profissional confirma quando status é AGENDADA -->
           <button *ngIf="app.status === 'AGENDADA'"
             (click)="confirmarConsulta(app)"
             class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-2 rounded-lg font-medium text-sm transition">
             Confirmar
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA: ATRASADAS -->
+  <div *ngIf="abaAtiva() === 'atrasadas'">
+
+    <div *ngIf="isLoadingAtrasadas()" class="text-center text-gray-400 py-20 animate-pulse">
+      Carregando consultas atrasadas...
+    </div>
+
+    <!-- Banner de aviso -->
+    <div *ngIf="!isLoadingAtrasadas() && consultasAtrasadas().length > 0"
+      class="mb-5 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-300 flex items-start gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+      <p class="text-sm font-medium">
+        Estas {{ consultasAtrasadas().length }} consulta(s) têm data passada e ainda precisam de atualização de status.
+        Por favor, registre o que ocorreu em cada uma.
+      </p>
+    </div>
+
+    <div *ngIf="!isLoadingAtrasadas() && consultasAtrasadas().length === 0"
+      class="bg-green-50 dark:bg-green-900/20 border-2 border-dashed border-green-200 dark:border-green-700 p-16 rounded-2xl text-center">
+      <div class="text-5xl mb-4">✅</div>
+      <p class="text-green-700 dark:text-green-300 text-lg font-medium">Nenhuma consulta atrasada. Tudo em dia!</p>
+    </div>
+
+    <div *ngIf="!isLoadingAtrasadas() && consultasAtrasadas().length > 0" class="space-y-4">
+      <div *ngFor="let app of consultasAtrasadas()"
+        class="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-5 border-l-4 border-red-400
+               flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition">
+
+        <div class="flex items-center gap-4 flex-1">
+          <div class="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl font-bold text-sm shrink-0 text-center">
+            <div>{{ app.startTime | date:'dd/MM' }}</div>
+            <div class="text-xs font-normal">{{ app.startTime | date:'HH:mm' }}</div>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">{{ app.patientName }}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ app.reason || 'Consulta de rotina' }}</p>
+            <span class="text-xs font-medium px-2 py-1 rounded-full mt-1 inline-block"
+              [ngClass]="statusClass[app.status]">
+              {{ statusLabel[app.status] }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex gap-2 shrink-0 flex-wrap">
+          <!-- AGUARDANDO_CONFIRMACAO: só cancelar (data passou, aprovação não faz mais sentido) -->
+          <button *ngIf="app.status === 'AGUARDANDO_CONFIRMACAO'"
+            (click)="cancelarAtrasada(app)"
+            class="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 px-4 py-2 rounded-lg font-medium text-sm transition">
+            Cancelar
+          </button>
+          <!-- Demais status: iniciar atendimento, falta ou cancelar -->
+          <ng-container *ngIf="app.status !== 'AGUARDANDO_CONFIRMACAO'">
+            <button (click)="iniciarAtendimento(app)"
+              class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium text-sm transition">
+              Registrar atendimento
+            </button>
+            <button (click)="marcarFalta(app)"
+              class="bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700 px-4 py-2 rounded-lg font-medium text-sm transition">
+              Paciente faltou
+            </button>
+            <button (click)="cancelarAtrasada(app)"
+              class="bg-gray-100 dark:bg-gray-700 hover:bg-red-50 hover:text-red-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium text-sm transition">
+              Cancelar
+            </button>
+          </ng-container>
         </div>
       </div>
     </div>

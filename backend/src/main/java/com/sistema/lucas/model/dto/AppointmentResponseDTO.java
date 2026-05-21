@@ -2,6 +2,7 @@
 package com.sistema.lucas.model.dto;
 
 import com.sistema.lucas.model.Appointment;
+import com.sistema.lucas.model.enums.ModalidadeAtendimento;
 import com.sistema.lucas.model.enums.StatusConsulta;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
@@ -16,7 +17,8 @@ public record AppointmentResponseDTO(
     @JsonProperty("cancelReason") String cancelReason,
     @JsonProperty("status") StatusConsulta status,
     @JsonProperty("podeCancelar") boolean podeCancelar,
-    @JsonProperty("atrasada") boolean atrasada
+    @JsonProperty("atrasada") boolean atrasada,
+    @JsonProperty("modalidadeAtendimento") String modalidadeAtendimento
 ) {
     public AppointmentResponseDTO(Appointment app) {
         this(
@@ -28,13 +30,14 @@ public record AppointmentResponseDTO(
             app.getReason(),
             app.getCancelReason(),
             app.getStatus(),
-            // ✅ Pode cancelar se o status permitir (mesmo se < 24h)
             (app.getStatus() == StatusConsulta.AGUARDANDO_CONFIRMACAO
                     || app.getStatus() == StatusConsulta.AGENDADA
                     || app.getStatus() == StatusConsulta.CONFIRMADA_PROFISSIONAL
                     || app.getStatus() == StatusConsulta.CONFIRMADA),
-            // ✅ Indica se é uma ação tardia (penalidade será aplicada)
-            java.time.LocalDateTime.now().isAfter(app.getDateTime().minusHours(24))
+            java.time.LocalDateTime.now().isAfter(app.getDateTime().minusHours(24)),
+            app.getProfessional().getModalidadeAtendimento() != null
+                ? app.getProfessional().getModalidadeAtendimento().name()
+                : ModalidadeAtendimento.PRESENCIAL.name()
         );
     }
 }

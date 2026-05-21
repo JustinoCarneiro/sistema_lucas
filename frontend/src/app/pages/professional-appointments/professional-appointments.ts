@@ -17,11 +17,13 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   private router = inject(Router);
   private appointmentService = inject(AppointmentService);
 
-  abaAtiva = signal<'hoje' | 'proximas'>('hoje');
+  abaAtiva = signal<'hoje' | 'proximas' | 'atrasadas'>('hoje');
   consultasHoje = signal<any[]>([]);
   proximasConsultas = signal<any[]>([]);
+  consultasAtrasadas = signal<any[]>([]);
   isLoadingHoje = signal(true);
   isLoadingProximas = signal(true);
+  isLoadingAtrasadas = signal(false);
   today = new Date();
 
   statusLabel: Record<string, string> = {
@@ -47,6 +49,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   ngOnInit() {
     this.carregarHoje();
     this.carregarProximas();
+    this.carregarAtrasadas();
   }
 
   carregarHoje() {
@@ -61,7 +64,6 @@ export class ProfessionalAppointmentsComponent implements OnInit {
     this.isLoadingProximas.set(true);
     this.http.get<any[]>(`${environment.apiUrl}/consultas/profissional/todas`).subscribe({
       next: (data) => {
-        // Filtra apenas futuras ativas (incluindo as confirmadas e canceladas)
         const futuras = data.filter((c: any) =>
           new Date(c.startTime) > new Date() &&
           (c.status === 'AGUARDANDO_CONFIRMACAO' || c.status === 'AGENDADA' ||
@@ -75,8 +77,17 @@ export class ProfessionalAppointmentsComponent implements OnInit {
     });
   }
 
+  carregarAtrasadas() {
+    this.isLoadingAtrasadas.set(true);
+    this.http.get<any[]>(`${environment.apiUrl}/consultas/profissional/atrasadas`).subscribe({
+      next: (data) => { this.consultasAtrasadas.set(data); this.isLoadingAtrasadas.set(false); },
+      error: () => this.isLoadingAtrasadas.set(false)
+    });
+  }
+
   iniciarAtendimento(app: any) {
     this.router.navigate(['/panel/medical-record', app.id]);
+    this.carregarAtrasadas();
   }
 
   confirmarConsulta(app: any) {
@@ -115,15 +126,12 @@ export class ProfessionalAppointmentsComponent implements OnInit {
       this.appointmentService.recusarAgendamento(app.id, justificativa).subscribe({
         next: () => {
           alert('Agendamento recusado com sucesso.');
-          // Optimistic update: mark as CANCELADA immediately in both lists
           this.proximasConsultas.update(list =>
             list.map(c => c.id === app.id ? { ...c, status: 'CANCELADA' } : c)
           );
           this.consultasHoje.update(list =>
             list.map(c => c.id === app.id ? { ...c, status: 'CANCELADA' } : c)
           );
-          // Reload only today's list — reloading proximasConsultas would overwrite
-          // the optimistic update if the server filter excludes CANCELADA status
           this.carregarHoje();
         },
         error: (msg: string) => alert('Erro ao recusar: ' + msg)
@@ -141,8 +149,27 @@ export class ProfessionalAppointmentsComponent implements OnInit {
           alert('Paciente marcado como faltante.');
           this.carregarHoje();
           this.carregarProximas();
+          this.carregarAtrasadas();
         },
         error: () => alert('Erro ao registrar falta.')
+      });
+    }
+  }
+
+  cancelarAtrasada(app: any) {
+    const motivo = prompt(`Justificativa para cancelar a consulta de ${app.patientName}:`);
+    if (motivo !== null) {
+      const justificativa = motivo.trim() || 'Consulta não realizada — cancelamento retroativo.';
+      this.http.post(
+        `${environment.apiUrl}/consultas/${app.id}/cancelar`,
+        { justification: justificativa },
+        { responseType: 'text' }
+      ).subscribe({
+        next: () => {
+          alert('Consulta cancelada.');
+          this.carregarAtrasadas();
+        },
+        error: () => alert('Erro ao cancelar a consulta.')
       });
     }
   }

@@ -39,7 +39,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasRole('PATIENT')")
+    @PreAuthorize("hasRole('PATIENT') or hasRole('PROFESSIONAL')")
     public ResponseEntity<Void> cancelar(@PathVariable Long id, @RequestBody @Valid AppointmentCancelDTO dto, Principal principal) {
         service.cancelar(java.util.Objects.requireNonNull(id), principal.getName(), dto.justification());
         return ResponseEntity.noContent().build();
@@ -71,6 +71,13 @@ public class AppointmentController {
     @PreAuthorize("hasRole('PROFESSIONAL')")
     public ResponseEntity<List<AppointmentResponseDTO>> todasDoProf(Principal principal) {
         return ResponseEntity.ok(service.buscarPorProfissional(principal.getName()));
+    }
+
+    // Profissional — consultas com data passada e status ainda pendente
+    @GetMapping("/profissional/atrasadas")
+    @PreAuthorize("hasRole('PROFESSIONAL')")
+    public ResponseEntity<List<AppointmentResponseDTO>> getAtrasadas(Principal principal) {
+        return ResponseEntity.ok(service.findAtrasadasPorProfissional(principal.getName()));
     }
 
     // Prontuário — buscar consulta por ID

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sistema Lucas — Guia do Usuário</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 22mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #1f2937; font-size: 11pt; line-height: 1.6; margin: 0;
+  }
+  h1, h2, h3 { color: #1e3a8a; line-height: 1.3; }
+  h1 { font-size: 22pt; margin: 0 0 4px; }
+  h2 {
+    font-size: 15pt; margin: 28px 0 10px; padding-bottom: 5px;
+    border-bottom: 2px solid #1e3a8a; page-break-after: avoid;
+  }
+  h3 { font-size: 12pt; margin: 18px 0 6px; color: #2563eb; page-break-after: avoid; }
+  p { margin: 6px 0; text-align: justify; }
+  ul { margin: 6px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  th { background: #1e3a8a; color: #fff; text-align: left; padding: 6px 8px; }
+  td { border: 1px solid #d1d5db; padding: 6px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .cover {
+    height: 247mm; display: flex; flex-direction: column;
+    justify-content: center; page-break-after: always; text-align: center;
+  }
+  .cover .badge {
+    display: inline-block; background: #2563eb; color: #fff;
+    padding: 6px 18px; border-radius: 20px; font-size: 9.5pt;
+    letter-spacing: 1.5px; margin-bottom: 24px;
+  }
+  .cover h1 { font-size: 36pt; color: #1e3a8a; }
+  .cover .sub { font-size: 15pt; color: #475569; margin-top: 8px; }
+  .cover .meta {
+    margin-top: 64px; font-size: 10pt; color: #64748b;
+    border-top: 1px solid #cbd5e1; padding-top: 20px;
+    display: inline-block; text-align: left;
+  }
+  .cover .meta td { border: none; padding: 3px 16px 3px 0; background: none; }
+  .box {
+    background: #eff6ff; border-left: 4px solid #2563eb;
+    padding: 10px 14px; margin: 12px 0; border-radius: 4px;
+    page-break-inside: avoid;
+  }
+  .box.green { background: #f0fdf4; border-left-color: #16a34a; }
+  .box.amber { background: #fffbeb; border-left-color: #d97706; }
+  .step {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+    padding: 8px 12px; margin: 8px 0; page-break-inside: avoid;
+  }
+  .step .n {
+    display: inline-block; background: #2563eb; color: #fff;
+    width: 20px; height: 20px; border-radius: 50%; text-align: center;
+    font-weight: bold; font-size: 9.5pt; line-height: 20px; margin-right: 8px;
+  }
+  .footer-note {
+    margin-top: 30px; padding-top: 12px; border-top: 1px solid #cbd5e1;
+    font-size: 9pt; color: #64748b; font-style: italic;
+  }
+  .pb { page-break-before: always; }
+  .lead { font-size: 11.5pt; color: #334155; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div><span class="badge">GUIA DO USUÁRIO</span></div>
+  <h1>Sistema Lucas</h1>
+  <div class="sub">Plataforma de Agendamento e Atendimento Clínico</div>
+  <div class="sub" style="font-size:12pt; margin-top:20px;">
+    Conheça as funcionalidades e a proteção dos seus dados
+  </div>
+  <table class="meta">
+    <tr><td><strong>Para</strong></td><td>Pacientes, profissionais e equipe da clínica</td></tr>
+    <tr><td><strong>Versão</strong></td><td>1.0</td></tr>
+    <tr><td><strong>Data</strong></td><td>21 de maio de 2026</td></tr>
+    <tr><td><strong>Conformidade</strong></td><td>LGPD — Lei nº 13.709/2018</td></tr>
+  </table>
+</div>
+
+<h2>O que é o Sistema Lucas?</h2>
+<p class="lead">
+  O <strong>Sistema Lucas</strong> é a plataforma digital do instituto para o
+  agendamento de consultas e o acompanhamento do atendimento de saúde. Por meio
+  dela, pacientes marcam e confirmam suas consultas, profissionais organizam suas
+  agendas e prontuários, e a administração gerencia o funcionamento da clínica —
+  tudo de forma segura, organizada e em conformidade com a Lei Geral de Proteção
+  de Dados (LGPD).
+</p>
+<div class="box">
+  Este guia apresenta, em linguagem acessível, <strong>todas as funcionalidades</strong>
+  do sistema e explica <strong>como os seus dados pessoais e de saúde são
+  protegidos</strong>.
+</div>
+
+<h3>Quem usa o sistema</h3>
+<table>
+  <tr><th>Perfil</th><th>O que faz no sistema</th></tr>
+  <tr><td><strong>Paciente</strong></td><td>Marca, confirma, reagenda e acompanha suas consultas; consulta seus documentos</td></tr>
+  <tr><td><strong>Profissional de saúde</strong></td><td>Gerencia sua agenda, atende pacientes e registra prontuários e documentos</td></tr>
+  <tr><td><strong>Administrador</strong></td><td>Gerencia usuários, profissionais e o funcionamento geral da clínica</td></tr>
+</table>
+
+<h2 class="pb">Funcionalidades para o Paciente</h2>
+
+<h3>Criação de conta</h3>
+<p>
+  O paciente cria sua conta informando seus dados de cadastro e aceitando os Termos
+  de Uso e a Política de Privacidade. Por segurança, a conta precisa ser
+  <strong>confirmada por e-mail</strong>: um link de verificação é enviado e tem
+  validade de 24 horas.
+</p>
+
+<h3>Agendamento de consultas</h3>
+<ul>
+  <li>Escolha do profissional de saúde, com indicação clara da
+    <strong>modalidade de atendimento</strong> — presencial, online ou híbrido;</li>
+  <li>Visualização dos horários disponíveis na agenda do profissional;</li>
+  <li>Marcação da consulta em poucos cliques.</li>
+</ul>
+
+<h3>Confirmação e acompanhamento</h3>
+<p>
+  Cada consulta passa por uma confirmação em duas etapas: primeiro o profissional
+  confirma, depois o paciente. O paciente acompanha o <strong>status de cada
+  consulta</strong> e recebe <strong>lembretes por e-mail</strong>, inclusive na
+  véspera do atendimento.
+</p>
+
+<h3>Reagendamento e cancelamento</h3>
+<p>
+  O paciente pode reagendar ou cancelar consultas pelo próprio sistema. Faltas sem
+  aviso (no-show) são registradas e podem gerar restrições temporárias de
+  agendamento — uma medida para garantir o bom uso da agenda para todos.
+</p>
+
+<h3>Documentos e perfil</h3>
+<ul>
+  <li>Acesso aos documentos clínicos liberados pelo profissional (laudos, receitas, exames);</li>
+  <li>Atualização dos próprios dados de cadastro a qualquer momento, na tela "Meu Perfil";</li>
+  <li>Solicitação de exportação dos próprios dados em formato estruturado.</li>
+</ul>
+
+<div class="box green">
+  <strong>Recuperação de senha:</strong> caso esqueça a senha, o paciente solicita
+  a redefinição e recebe por e-mail um link seguro, de uso único e curta validade.
+</div>
+
+<h2>Funcionalidades para o Profissional de Saúde</h2>
+
+<h3>Gestão da agenda</h3>
+<ul>
+  <li>Cadastro dos horários de disponibilidade para atendimento;</li>
+  <li>Visão das consultas do dia e das próximas consultas;</li>
+  <li>Indicação da modalidade de atendimento (presencial, online ou híbrido), que o
+    paciente vê ao agendar;</li>
+  <li>Lembretes sobre o prazo de envio da agenda do mês seguinte;</li>
+  <li>Alertas sobre consultas com data passada que ainda precisam de atualização.</li>
+</ul>
+
+<h3>Atendimento e prontuários</h3>
+<ul>
+  <li>Confirmação das consultas agendadas pelos pacientes;</li>
+  <li>Registro de notas clínicas no prontuário eletrônico do paciente;</li>
+  <li>Emissão e gestão de documentos clínicos;</li>
+  <li>Registro de comparecimento, falta ou conclusão do atendimento.</li>
+</ul>
+
+<div class="box">
+  Os prontuários e documentos só podem ser acessados pelo profissional responsável
+  pelo atendimento. Todo acesso a dados de saúde fica registrado.
+</div>
+
+<h2 class="pb">Funcionalidades para o Administrador</h2>
+<ul>
+  <li>Cadastro e gestão de usuários, pacientes e profissionais;</li>
+  <li>Aprovação, recusa e desbloqueio de contas;</li>
+  <li>Painel com indicadores de funcionamento da clínica;</li>
+  <li>Acesso à trilha de auditoria de operações sobre dados sensíveis;</li>
+  <li>Exportações administrativas.</li>
+</ul>
+
+<h2>Como marcar uma consulta — passo a passo</h2>
+<div class="step"><span class="n">1</span><strong>Acesse sua conta</strong> com e-mail e senha (após confirmar o e-mail no primeiro acesso).</div>
+<div class="step"><span class="n">2</span><strong>Escolha o profissional</strong> — o sistema mostra a modalidade de atendimento de cada um.</div>
+<div class="step"><span class="n">3</span><strong>Selecione o horário</strong> entre os disponíveis na agenda do profissional.</div>
+<div class="step"><span class="n">4</span><strong>Confirme o agendamento</strong> — a consulta é criada e enviada ao profissional.</div>
+<div class="step"><span class="n">5</span><strong>Aguarde a confirmação do profissional</strong> e, em seguida, confirme a sua presença.</div>
+<div class="step"><span class="n">6</span><strong>Receba o lembrete por e-mail</strong> e compareça à consulta.</div>
+
+<h2>Segurança e Proteção dos seus Dados</h2>
+<p>
+  O Sistema Lucas trata <strong>dados pessoais sensíveis de saúde</strong> e, por
+  isso, adota um conjunto rigoroso de medidas de segurança:
+</p>
+<table>
+  <tr><th>Medida</th><th>O que protege</th></tr>
+  <tr><td>Criptografia dos dados</td><td>Prontuários, documentos, CPF, telefone e endereço ficam <strong>cifrados</strong> — ilegíveis para quem não tem autorização</td></tr>
+  <tr><td>Senhas protegidas</td><td>As senhas são guardadas com um algoritmo forte de proteção; nem a equipe técnica consegue lê-las</td></tr>
+  <tr><td>Acesso por perfil</td><td>Cada usuário só enxerga o que lhe compete — paciente, profissional ou administrador</td></tr>
+  <tr><td>Confirmação de e-mail</td><td>Garante que a conta pertence de fato ao titular do e-mail</td></tr>
+  <tr><td>Trilha de auditoria</td><td>Todo acesso a dados de saúde é registrado, permitindo rastrear quem acessou o quê</td></tr>
+  <tr><td>Proteção contra invasões</td><td>O sistema bloqueia tentativas repetidas de acesso indevido</td></tr>
+  <tr><td>Sessão segura</td><td>O acesso é encerrado automaticamente após período de inatividade</td></tr>
+</table>
+
+<h2 class="pb">Conformidade com a LGPD</h2>
+<p class="lead">
+  O Sistema Lucas foi auditado e está em conformidade com a <strong>Lei Geral de
+  Proteção de Dados (Lei nº 13.709/2018)</strong>. Abaixo, o que isso significa
+  na prática para você.
+</p>
+
+<h3>Como tratamos os seus dados</h3>
+<ul>
+  <li>Coletamos apenas os dados <strong>necessários</strong> para o agendamento e o
+    atendimento de saúde;</li>
+  <li>Os dados de saúde são tratados por profissionais habilitados, com a finalidade
+    de <strong>tutela da sua saúde</strong> (Art. 11, II, "a" da LGPD);</li>
+  <li><strong>Não comercializamos nem cedemos</strong> seus dados a terceiros para
+    fins de publicidade;</li>
+  <li>Os dados de saúde <strong>nunca</strong> são compartilhados para finalidades
+    comerciais.</li>
+</ul>
+
+<h3>Os seus direitos como titular</h3>
+<p>Nos termos do Art. 18 da LGPD, você pode, a qualquer momento:</p>
+<ul>
+  <li>Confirmar a existência e <strong>acessar</strong> os seus dados;</li>
+  <li><strong>Corrigir</strong> dados incompletos ou desatualizados (tela "Meu Perfil");</li>
+  <li>Solicitar a <strong>portabilidade</strong> dos seus dados em formato estruturado;</li>
+  <li>Solicitar a <strong>eliminação</strong> dos dados desnecessários;</li>
+  <li><strong>Revogar o consentimento</strong> para a manutenção da conta;</li>
+  <li>Obter informações sobre o compartilhamento dos seus dados.</li>
+</ul>
+<div class="box">
+  As solicitações são respondidas em até <strong>15 dias</strong>, conforme o
+  Art. 19, II da LGPD.
+</div>
+
+<h3>Retenção do prontuário</h3>
+<div class="box amber">
+  Por exigência legal (Lei nº 13.787/2018 e Resolução CFM nº 1.821/2007), o
+  prontuário clínico é mantido por, no mínimo, <strong>20 anos</strong>. Caso você
+  solicite o encerramento da sua conta, os seus <strong>dados de identificação são
+  anonimizados de forma irreversível</strong> — ou seja, deixam de poder ser
+  associados a você —, enquanto o registro clínico, já sem identificação, é
+  preservado pelo prazo legal.
+</div>
+
+<h3>Transferência internacional</h3>
+<p>
+  O envio de e-mails do sistema (verificação de conta, redefinição de senha e
+  lembretes) utiliza o serviço da Google LLC, com servidores nos Estados Unidos.
+  Apenas dados de contato (nome e e-mail) são transmitidos nesse processo. Seus
+  <strong>dados sensíveis de saúde jamais</strong> são incluídos nessa transferência.
+</p>
+
+<h3>Incidentes de segurança</h3>
+<p>
+  Em caso de incidente que possa gerar risco aos titulares, o instituto se
+  compromete a comunicar o fato à <strong>Autoridade Nacional de Proteção de Dados
+  (ANPD)</strong> e aos titulares afetados, conforme o Art. 48 da LGPD.
+</p>
+
+<h2>Canal de Atendimento — Proteção de Dados</h2>
+<p>
+  Para exercer os seus direitos, esclarecer dúvidas sobre o tratamento dos seus
+  dados ou registrar qualquer solicitação relacionada à sua privacidade, utilize
+  o canal oficial:
+</p>
+<div class="box">
+  <strong>E-mail:</strong> institutolucas9@gmail.com<br>
+  As solicitações são respondidas em até 15 dias úteis.
+</div>
+<p style="font-size:9.5pt; color:#64748b;">
+  Por ser uma instituição sem fins lucrativos de pequeno porte, a indicação formal
+  de Encarregado (DPO) é facultativa nos termos da Resolução CD/ANPD nº 2/2022,
+  sendo este canal suficiente para o atendimento aos titulares. A Política de
+  Privacidade completa está disponível dentro do próprio sistema.
+</p>
+
+<div class="footer-note">
+  Guia do Usuário do Sistema Lucas — versão 1.0, emitido em 21 de maio de 2026.
+  Este documento tem caráter informativo. Em caso de divergência, prevalece a
+  Política de Privacidade vigente publicada no sistema.
+</div>
+
+</body>
+</html>
