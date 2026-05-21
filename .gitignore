@@ -42,3 +42,6 @@ backup_*
 
 # Flyway migrations must be tracked despite the *.sql rule above
 !backend/src/main/resources/db/migration/*.sql
+
+# Backup dos workflows bloqueados pelo GitHub
+.github-workflows-backup/
