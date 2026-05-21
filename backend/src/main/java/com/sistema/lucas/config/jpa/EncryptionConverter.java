@@ -67,38 +67,60 @@ public class EncryptionConverter implements AttributeConverter<String, String> {
     public String convertToEntityAttribute(String dbData) {
         if (dbData == null) return null;
         try {
-            // Formato novo: AES/GCM com IV embutido
-            if (dbData.startsWith(GCM_PREFIX)) {
-                byte[] combined = Base64.getDecoder().decode(dbData.substring(GCM_PREFIX.length()));
-                byte[] iv = new byte[IV_LENGTH];
-                System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
-                byte[] ciphertext = new byte[combined.length - IV_LENGTH];
-                System.arraycopy(combined, IV_LENGTH, ciphertext, 0, ciphertext.length);
-                try {
-                    // Tenta AES-256 primeiro
-                    Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
-                    cipher.init(Cipher.DECRYPT_MODE, newKey, new GCMParameterSpec(TAG_LENGTH, iv));
-                    return new String(cipher.doFinal(ciphertext));
-                } catch (javax.crypto.AEADBadTagException e) {
-                    // AUD-01: Fallback para AES-128 se a tag de autenticação falhar
-                    Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
-                    cipher.init(Cipher.DECRYPT_MODE, oldKey, new GCMParameterSpec(TAG_LENGTH, iv));
-                    return new String(cipher.doFinal(ciphertext));
-                }
-            }
-            // Formato legado: AES/ECB (migração automática na próxima gravação)
-            Cipher cipher = Cipher.getInstance(ECB_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, oldKey);
-            return new String(cipher.doFinal(Base64.getDecoder().decode(dbData)));
-        } catch (IllegalArgumentException e) {
-            // É texto plano legado (não é Base64). Retornamos como está para que o Runner consiga ler e recifrar.
-            return dbData;
+            return decryptInternal(dbData);
         } catch (Exception e) {
-            // AUD-02: NÃO retornar dado bruto se for falha criptográfica real — registrar e lançar erro explícito
-            log.error("Falha ao descriptografar dado no banco (possível corrupção ou chave incorreta). " +
-                      "Tamanho do dado: {} caracteres", dbData.length(), e);
+            // AUD-02: nunca devolver o dado bruto silenciosamente — falha de
+            // descriptografia é tratada como erro explícito e auditável.
+            log.error("Falha ao descriptografar dado sensível no banco " +
+                      "(corrupção, chave incorreta ou dado não cifrado). Tamanho: {} caracteres",
+                      dbData.length(), e);
             throw new RuntimeException("Erro ao descriptografar dado sensível — verifique a chave de criptografia", e);
         }
+    }
+
+    /**
+     * AUD-02: variante tolerante usada EXCLUSIVAMENTE pelos runners de migração,
+     * que precisam ler dados legados em texto plano (pré-criptografia) para
+     * recifrá-los. Falhas criptográficas reais (chave incorreta) continuam
+     * lançando erro — apenas o caso "não é Base64 = texto plano" é tolerado.
+     */
+    public String decryptLenient(String dbData) {
+        if (dbData == null) return null;
+        try {
+            return decryptInternal(dbData);
+        } catch (IllegalArgumentException e) {
+            // Não é Base64 → texto plano legado. Devolve como está para recifragem.
+            return dbData;
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao descriptografar dado durante a migração", e);
+        }
+    }
+
+    // Núcleo de descriptografia: GCM (AES-256 → AES-128) ou ECB legado.
+    private String decryptInternal(String dbData) throws Exception {
+        // Formato novo: AES/GCM com IV embutido
+        if (dbData.startsWith(GCM_PREFIX)) {
+            byte[] combined = Base64.getDecoder().decode(dbData.substring(GCM_PREFIX.length()));
+            byte[] iv = new byte[IV_LENGTH];
+            System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
+            byte[] ciphertext = new byte[combined.length - IV_LENGTH];
+            System.arraycopy(combined, IV_LENGTH, ciphertext, 0, ciphertext.length);
+            try {
+                // Tenta AES-256 primeiro
+                Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
+                cipher.init(Cipher.DECRYPT_MODE, newKey, new GCMParameterSpec(TAG_LENGTH, iv));
+                return new String(cipher.doFinal(ciphertext));
+            } catch (javax.crypto.AEADBadTagException e) {
+                // AUD-01: Fallback para AES-128 se a tag de autenticação falhar
+                Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
+                cipher.init(Cipher.DECRYPT_MODE, oldKey, new GCMParameterSpec(TAG_LENGTH, iv));
+                return new String(cipher.doFinal(ciphertext));
+            }
+        }
+        // Formato legado: AES/ECB
+        Cipher cipher = Cipher.getInstance(ECB_ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, oldKey);
+        return new String(cipher.doFinal(Base64.getDecoder().decode(dbData)));
     }
 
     // Utilitário para o Batch Migration Runner saber se precisa forçar UPDATE

@@ -33,6 +33,12 @@ public class AuthController {
     @Autowired private com.sistema.lucas.security.service.EmailVerificationService emailVerificationService;
     @Autowired private com.sistema.lucas.security.service.RefreshTokenService refreshTokenService;
     @Autowired private com.sistema.lucas.security.service.TokenDenylistService tokenDenylistService;
+    @Autowired private com.sistema.lucas.service.CpfHashService cpfHashService;
+
+    // SEC-01: cookie Secure ativo só em produção (HTTPS). Em dev (HTTP) é desativado
+    // via application-dev.properties — senão o navegador descarta o cookie de sessão.
+    @org.springframework.beans.factory.annotation.Value("${app.security.cookie.secure:true}")
+    private boolean cookieSecure;
 
     // LGPD — versão vigente dos termos, registrada junto ao consentimento.
     @org.springframework.beans.factory.annotation.Value("${app.lgpd.terms-version}")
@@ -48,7 +54,7 @@ public class AuthController {
         // SEC-01: Token é enviado exclusivamente via cookie HttpOnly
         ResponseCookie cookie = ResponseCookie.from("token", java.util.Objects.requireNonNull(token))
             .httpOnly(true)
-            .secure(true) // Nota: em dev local sem HTTPS o secure(true) pode precisar ser mockado ou false dependendo da flag
+            .secure(cookieSecure) // SEC-01: true em produção (HTTPS); false em dev (HTTP)
             .path("/")
             .maxAge(15 * 60) // SEC-03: 15 minutos de validade
             .sameSite("Strict")
@@ -58,7 +64,7 @@ public class AuthController {
         String refreshTokenStr = refreshTokenService.createRefreshToken(user);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", java.util.Objects.requireNonNull(refreshTokenStr))
             .httpOnly(true)
-            .secure(true)
+            .secure(cookieSecure)
             .path("/")
             .maxAge(7 * 24 * 60 * 60) // 7 dias
             .sameSite("Strict")
@@ -85,10 +91,10 @@ public class AuthController {
 
         // SEC-01: Limpar os cookies marcando a validade para 0
         ResponseCookie cookie = ResponseCookie.from("token", "")
-            .httpOnly(true).secure(true).path("/").maxAge(0).sameSite("Strict").build();
+            .httpOnly(true).secure(cookieSecure).path("/").maxAge(0).sameSite("Strict").build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
-            .httpOnly(true).secure(true).path("/").maxAge(0).sameSite("Strict").build();
+            .httpOnly(true).secure(cookieSecure).path("/").maxAge(0).sameSite("Strict").build();
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -115,10 +121,10 @@ public class AuthController {
         String newRefreshTokenStr = refreshTokenService.createRefreshToken(user);
 
         ResponseCookie cookie = ResponseCookie.from("token", java.util.Objects.requireNonNull(newToken))
-            .httpOnly(true).secure(true).path("/").maxAge(15 * 60).sameSite("Strict").build();
+            .httpOnly(true).secure(cookieSecure).path("/").maxAge(15 * 60).sameSite("Strict").build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", java.util.Objects.requireNonNull(newRefreshTokenStr))
-            .httpOnly(true).secure(true).path("/").maxAge(7 * 24 * 60 * 60).sameSite("Strict").build();
+            .httpOnly(true).secure(cookieSecure).path("/").maxAge(7 * 24 * 60 * 60).sameSite("Strict").build();
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -146,6 +152,9 @@ public class AuthController {
         newPatient.setPassword(encryptedPassword);
         newPatient.setRole(Role.PATIENT);
         newPatient.setCpf(data.cpf());     // ✅ novo
+        // AUD-03: cpf_hash é NOT NULL e o hashing saiu da entidade (foi para o CpfHashService).
+        // Precisa ser gerado aqui explicitamente, senão o cadastro público quebra.
+        newPatient.setCpfHash(cpfHashService.hash(data.cpf()));
         newPatient.setPhone(data.phone()); // ✅ novo
         newPatient.setVerified(false);
         // LGPD — consentimento registrado com prova demonstrável (Art. 8º §1)

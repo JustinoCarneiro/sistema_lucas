@@ -1,8 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../security/auth.service';
+import { InactivityService } from '../../security/inactivity.service';
 import { PatientService } from '../patients/patients.service';
 import { ThemeService } from '../../theme.service';
 import { environment } from '../../../environments/environment';
@@ -14,10 +15,11 @@ import { environment } from '../../../environments/environment';
   templateUrl: './panel.html',
   styleUrl: './panel.css'
 })
-export class PanelComponent implements OnInit {
-  
+export class PanelComponent implements OnInit, OnDestroy {
+
   private router = inject(Router);
   private authService = inject(AuthService);
+  private inactivityService = inject(InactivityService);
   private http = inject(HttpClient);
   private patientService = inject(PatientService);
   readonly theme = inject(ThemeService);
@@ -38,6 +40,9 @@ export class PanelComponent implements OnInit {
   }
 
   ngOnInit() {
+    // SEC-06: inicia o timeout de inatividade ao entrar na área autenticada.
+    this.inactivityService.start();
+
     this.userRole = this.authService.getUserRole();
 
     if (this.userRole === 'PROFESSIONAL') {
@@ -62,9 +67,14 @@ export class PanelComponent implements OnInit {
     }
   }
 
+  ngOnDestroy() {
+    // SEC-06: encerra o monitoramento ao sair da área autenticada.
+    this.inactivityService.stop();
+  }
+
   logout() {
-    this.authService.logout(); // Use o método do serviço se existir, ou limpe aqui
-    localStorage.removeItem('token');
-    this.router.navigate(['/login']);
+    // SEC-01/SEC-06: o AuthService revoga a sessão no backend e redireciona.
+    this.inactivityService.stop();
+    this.authService.logout();
   }
 }

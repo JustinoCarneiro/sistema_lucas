@@ -28,6 +28,7 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private DocumentoRepository documentoRepository;
     @Autowired private ProfessionalAvailabilityRepository availabilityRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private com.sistema.lucas.service.CpfHashService cpfHashService;
 
     @org.springframework.beans.factory.annotation.Value("${app.admin.email}")
     private String adminEmail;
@@ -120,6 +121,7 @@ public class DataInitializer implements CommandLineRunner {
             lucas.setTermsAcceptedAt(agora);
             lucas.setTermsVersion(termsVersion);
             lucas.setCpf("111.222.333-44");
+            lucas.setCpfHash(cpfHashService.hash("111.222.333-44"));
             lucas.setPhone("11888889999");
             // Pré-seta advertência recebida para que o teste E2E de penalidades
             // possa provocar um bloqueio com um único cancelamento tardio
@@ -137,6 +139,7 @@ public class DataInitializer implements CommandLineRunner {
             maria.setTermsAcceptedAt(agora);
             maria.setTermsVersion(termsVersion);
             maria.setCpf("222.333.444-55");
+            maria.setCpfHash(cpfHashService.hash("222.333.444-55"));
             maria.setPhone("11999998888");
             patientRepository.save(maria);
 
@@ -150,6 +153,7 @@ public class DataInitializer implements CommandLineRunner {
             joao.setTermsAcceptedAt(agora);
             joao.setTermsVersion(termsVersion);
             joao.setCpf("333.444.555-66");
+            joao.setCpfHash(cpfHashService.hash("333.444.555-66"));
             joao.setPhone("11999990003");
             patientRepository.save(joao);
 
