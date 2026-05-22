@@ -3,6 +3,7 @@ package com.sistema.lucas.service;
 import com.sistema.lucas.model.Appointment;
 import com.sistema.lucas.model.Patient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -12,6 +13,9 @@ public class EmailTemplateService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
 
@@ -312,7 +316,7 @@ public class EmailTemplateService {
         String nomeMes = mesAlvo.getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("pt-BR"));
         nomeMes = nomeMes.substring(0, 1).toUpperCase() + nomeMes.substring(1);
         
-        String urlSistema = "http://localhost:8082"; // Idealmente viria de um config
+        String urlSistema = frontendUrl;
         
         String prefixo = urgente ? "🚨 URGENTE: " : "⚠️ Lembrete: ";
         String mensagem = urgente 
@@ -338,7 +342,7 @@ public class EmailTemplateService {
     // ─── Lembretes Semanais de Pendências ───────────────────────────────────
 
     public void enviarLembreteSemanalPendenciasProfissional(com.sistema.lucas.model.Professional prof, long qtdePendentes) {
-        String urlSistema = "http://localhost:8082/panel/professional-appointments";
+        String urlSistema = frontendUrl + "/panel/professional-appointments";
         emailService.enviar(
             prof.getEmail(),
             "Lembrete: Você tem agendamentos pendentes de confirmação",
@@ -355,7 +359,7 @@ public class EmailTemplateService {
     }
 
     public void enviarLembreteSemanalPendenciasPaciente(Patient paciente, long qtdePendentes) {
-        String urlSistema = "http://localhost:8082/panel/my-appointments";
+        String urlSistema = frontendUrl + "/panel/my-appointments";
         emailService.enviar(
             paciente.getEmail(),
             "Lembrete: Confirme sua presença na consulta",
@@ -375,7 +379,7 @@ public class EmailTemplateService {
 
     public void enviarAlertaConsultasAtrasadas(com.sistema.lucas.model.Professional profissional,
                                                java.util.List<Appointment> atrasadas) {
-        String urlAgenda = "http://localhost:8082/panel/professional-appointments";
+        String urlAgenda = frontendUrl + "/panel/professional-appointments";
         int total = atrasadas.size();
 
         StringBuilder lista = new StringBuilder();
@@ -455,7 +459,7 @@ public class EmailTemplateService {
                                     
                                     <table width="100%%" cellpadding="0" cellspacing="0" style="margin-top:30px;">
                                         <tr><td align="center">
-                                            <a href="http://localhost:8082" style="background-color:#2563eb;color:#ffffff;padding:16px 32px;text-decoration:none;font-weight:700;border-radius:10px;font-size:16px;display:inline-block;">
+                                            <a href="%s" style="background-color:#2563eb;color:#ffffff;padding:16px 32px;text-decoration:none;font-weight:700;border-radius:10px;font-size:16px;display:inline-block;">""".formatted(frontendUrl) + """
                                                 Acessar o Sistema
                                             </a>
                                         </td></tr>

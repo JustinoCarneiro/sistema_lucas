@@ -1,9 +1,12 @@
 // frontend/src/app/pages/register/register.ts
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../security/auth.service';
+
+const DRAFT_KEY = 'registerFormDraft';
 
 @Component({
   selector: 'app-register',
@@ -12,7 +15,7 @@ import { AuthService } from '../../security/auth.service';
   templateUrl: './register.html',
   styleUrl: './register.css'
 })
-export class Register {
+export class Register implements OnInit, OnDestroy {
   registerForm: FormGroup;
   errorMessage = signal('');
   successMessage = signal('');
@@ -21,6 +24,7 @@ export class Register {
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private formSub?: Subscription;
 
   constructor() {
     this.registerForm = this.fb.group({
@@ -33,6 +37,24 @@ export class Register {
       // mantém o formulário inválido enquanto o checkbox não for marcado).
       termsAccepted: [false, Validators.requiredTrue]
     });
+  }
+
+  ngOnInit() {
+    const draft = sessionStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try {
+        this.registerForm.patchValue(JSON.parse(draft));
+      } catch {
+        sessionStorage.removeItem(DRAFT_KEY);
+      }
+    }
+    this.formSub = this.registerForm.valueChanges.subscribe(value => {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+    });
+  }
+
+  ngOnDestroy() {
+    this.formSub?.unsubscribe();
   }
 
   applyCpfMask(event: any) {
@@ -79,6 +101,7 @@ export class Register {
     this.authService.registerPatient(payload).subscribe({
       next: (res: any) => {
         this.isLoading.set(false);
+        sessionStorage.removeItem(DRAFT_KEY);
         this.successMessage.set(res || 'Paciente registrado com sucesso! Verifique seu e-mail para confirmar a conta.');
         
         // Pequeno atraso para o usuário ler a mensagem antes do redirecionamento

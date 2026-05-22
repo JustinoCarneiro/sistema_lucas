@@ -44,6 +44,13 @@ export class AvailabilityService {
     );
   }
 
+  // Paciente — datas reais com disponibilidade cadastrada
+  getAvailableDates(professionalId: number) {
+    return this.http.get<string[]>(
+      `${environment.apiUrl}/disponibilidade/${professionalId}/available-dates`
+    );
+  }
+
   private parseError(err: HttpErrorResponse): string {
     console.error('AvailabilityService parseError input:', err);
     try {

@@ -47,7 +47,7 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
 
         // Envia o e-mail
-        String link = frontendUrl + "/redefinir-senha?token=" + token;
+        String link = frontendUrl + "/reset-password?token=" + token;
         enviarEmailRecuperacao(email, user.getName(), link);
     }
 

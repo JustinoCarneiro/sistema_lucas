@@ -62,18 +62,9 @@
       <div *ngIf="selectedProfessional()" class="mb-4">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">2. Escolha a data</label>
         
-        <!-- Informativo de dias de atendimento -->
-        <div *ngIf="workingDays().length > 0" class="mb-2 flex flex-wrap gap-1">
-          <span class="text-[10px] uppercase tracking-wider text-gray-400 font-bold block w-full mb-1">Dias de atendimento:</span>
-          <span *ngFor="let day of workingDays()" 
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs font-medium border border-gray-200 dark:border-gray-700">
-            {{ dayNames[day] }}
-          </span>
-        </div>
-
-            <select id="date" formControlName="date" (change)="onDateChange()"
+<select id="date" formControlName="date" (change)="onDateChange()"
               class="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition appearance-none text-sm cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed">
-              <option value="">Selecione uma data (Próximos 7 dias)</option>
+              <option value="">Selecione uma data</option>
               <option *ngFor="let date of availableDates()" [value]="date.value">
                 {{ date.label }}
               </option>
@@ -81,7 +72,7 @@
 
         @if (selectedProfessional() && availableDates().length === 0) {
           <p class="text-amber-600 text-xs mt-1">
-            Este profissional não possui horários configurados para os próximos 30 dias.
+            Este profissional não possui horários disponíveis no momento.
           </p>
         }
       </div>

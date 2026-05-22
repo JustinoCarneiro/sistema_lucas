@@ -82,6 +82,12 @@ public class AvailabilityController {
         return ResponseEntity.ok(service.getWorkingDays(professionalId));
     }
 
+    // Paciente — buscar datas reais com disponibilidade cadastrada
+    @GetMapping("/{professionalId}/available-dates")
+    public ResponseEntity<List<LocalDate>> getAvailableDates(@PathVariable Long professionalId) {
+        return ResponseEntity.ok(service.getAvailableDates(professionalId));
+    }
+
     // Paciente — buscar slots disponíveis para um profissional em uma data
     @GetMapping("/{professionalId}/slots")
     public ResponseEntity<List<SlotDTO>> slotsDisponiveis(

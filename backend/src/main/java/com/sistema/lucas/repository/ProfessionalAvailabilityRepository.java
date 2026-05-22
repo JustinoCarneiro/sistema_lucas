@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -24,6 +25,9 @@ public interface ProfessionalAvailabilityRepository extends JpaRepository<Profes
     void deleteByProfessionalEmailAndDateBetween(String email, LocalDate startDate, LocalDate endDate);
 
     boolean existsByProfessionalIdAndDateBetween(Long professionalId, LocalDate startDate, LocalDate endDate);
+
+    @Query("SELECT DISTINCT a.date FROM ProfessionalAvailability a WHERE a.professional.id = :professionalId AND a.date > :from ORDER BY a.date")
+    List<LocalDate> findDistinctFutureDatesByProfessionalId(@Param("professionalId") Long professionalId, @Param("from") LocalDate from);
 
     // Profissionais que possuem pelo menos uma entrada de disponibilidade
     @Query("SELECT DISTINCT a.professional.id FROM ProfessionalAvailability a")

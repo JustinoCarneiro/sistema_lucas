@@ -122,49 +122,24 @@ export class MyAppointmentsComponent implements OnInit {
     this.scheduleForm.patchValue({ date: '', slot: '' });
 
     if (profId) {
-      this.availabilityService.getWorkingDays(Number(profId)).subscribe({
-        next: (days) => {
-          this.workingDays.set(days);
-          this.generateAvailableDates(days);
-        }
-      });
+      this.loadAvailableDates(Number(profId));
     }
   }
 
-  generateAvailableDates(days: string[]) {
-    console.log('Gerando datas únicas por dia da semana...', days);
-    const dates: {value: string, label: string}[] = [];
-    const today = new Date();
-    
-    // Gerar apenas o próximo dia disponível para cada dia da semana configurado
-    // (ou o dia atual, ou o da próxima semana se já passou)
-    days.forEach(dayName => {
-      const today = new Date();
-      // Encontrar o enum index correspondente (0-6)
-      const targetJsDay = Object.keys(this.jsToEnum).find(k => this.jsToEnum[Number(k)] === dayName);
-      if (targetJsDay === undefined) return;
-      
-      const targetDay = Number(targetJsDay);
-      const currentDay = today.getDay();
-      
-      // Calcula quantos dias faltam para o próximo 'targetDay' (nunca hoje)
-      let daysDiff = (targetDay - currentDay + 7) % 7;
-      if (daysDiff === 0) daysDiff = 7;
-
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysDiff);
-      
-      const value = d.toISOString().split('T')[0];
-      const label = d.toLocaleDateString('pt-BR', { 
-        weekday: 'long', 
-        day: '2-digit', 
-        month: '2-digit' 
-      });
-      dates.push({ value, label });
+  private loadAvailableDates(profId: number) {
+    this.availabilityService.getAvailableDates(profId).subscribe({
+      next: (dates) => {
+        const formatted = dates.map(d => {
+          const [year, month, day] = d.split('-').map(Number);
+          const date = new Date(year, month - 1, day);
+          return {
+            value: d,
+            label: date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+          };
+        });
+        this.availableDates.set(formatted);
+      }
     });
-
-    // Ordenar as datas cronologicamente
-    dates.sort((a, b) => a.value.localeCompare(b.value));
-    this.availableDates.set(dates);
   }
 
   onDateChange() {
@@ -235,11 +210,7 @@ export class MyAppointmentsComponent implements OnInit {
   onRescheduleProfessionalChange() {
     const profId = this.rescheduleForm.value.professionalId;
     if (profId) {
-      this.availabilityService.getWorkingDays(Number(profId)).subscribe({
-        next: (days) => {
-          this.generateAvailableDates(days);
-        }
-      });
+      this.loadAvailableDates(Number(profId));
     }
   }
 

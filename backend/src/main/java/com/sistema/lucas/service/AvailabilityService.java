@@ -55,6 +55,11 @@ public class AvailabilityService {
             .toList();
     }
 
+    public List<LocalDate> getAvailableDates(Long professionalId) {
+        LocalDate today = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        return availabilityRepository.findDistinctFutureDatesByProfessionalId(professionalId, today);
+    }
+
     // ─── CRUD ────────────────────────────────────────────────────────────────
 
     @Transactional
