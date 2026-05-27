@@ -22,7 +22,9 @@ services:
       - lucas-db-data:/var/lib/postgresql/data
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      network: host
     container_name: lucas-api
     restart: on-failure
     depends_on:
