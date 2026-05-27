@@ -4,6 +4,7 @@ import com.sistema.lucas.model.Appointment;
 import com.sistema.lucas.model.Patient;
 import com.sistema.lucas.model.Professional;
 import com.sistema.lucas.model.enums.StatusConsulta;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,9 +13,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -24,6 +27,111 @@ class EmailTemplateServiceTest {
 
     @InjectMocks private EmailTemplateService emailTemplateService;
     @Mock private EmailService emailService;
+
+    @BeforeEach
+    void configurarFrontendUrl() {
+        // @Value não é injetado pelo Mockito; preenchemos manualmente para refletir produção.
+        ReflectionTestUtils.setField(Objects.requireNonNull(emailTemplateService), "frontendUrl", "https://lucas.example.org");
+    }
+
+    // ──────────────── buildTemplate — placeholders vs argumentos ────────────────
+    //
+    // Regressão para o bug em produção (2026-05-27): buildTemplate quebrou com
+    // `MissingFormatArgumentException: Format specifier '%s'` porque um text block
+    // tinha 7 placeholders e .formatted() recebia 6 argumentos. Os testes abaixo
+    // exercitam os fluxos públicos que passam por buildTemplate. Se a quantidade
+    // de %s e argumentos voltar a divergir, qualquer um destes testes falha com
+    // MissingFormatArgumentException antes mesmo do verify().
+
+    @Nested @DisplayName("buildTemplate — fluxos que dispararam o erro em produção")
+    class BuildTemplateTests {
+
+        private Appointment consultaCompleta() {
+            var pac = new Patient();
+            pac.setEmail("paciente@email.com");
+            pac.setName("João Paciente");
+
+            var prof = new Professional();
+            prof.setEmail("dra.ana@clinica.com");
+            prof.setName("Dra. Ana Cláudia");
+
+            var consulta = new Appointment();
+            consulta.setPatient(pac);
+            consulta.setProfessional(prof);
+            consulta.setDateTime(LocalDateTime.of(2026, 6, 3, 16, 0));
+            consulta.setReason("Consulta inicial");
+            return consulta;
+        }
+
+        @Test @DisplayName("notificarPacienteAgendamentoPendente: não lança MissingFormatArgumentException (regressão produção)")
+        void notificarPacienteAgendamentoPendente_naoLancaErroDeFormat() {
+            assertDoesNotThrow(() ->
+                emailTemplateService.notificarPacienteAgendamentoPendente(consultaCompleta())
+            );
+
+            var corpo = ArgumentCaptor.forClass(String.class);
+            verify(emailService).enviar(eq("paciente@email.com"), anyString(), corpo.capture());
+
+            String html = corpo.getValue();
+            assertTrue(html.contains("Dra. Ana Cláudia"), "deveria conter o nome do profissional");
+            assertTrue(html.contains("João Paciente"), "deveria conter o nome do paciente");
+            assertTrue(html.contains("Acessar o Sistema"), "deveria conter o botão CTA");
+            assertTrue(html.contains("https://lucas.example.org"), "href do CTA deveria apontar para frontendUrl");
+            assertFalse(html.contains("%s"), "nenhum placeholder %s pode ter ficado para trás");
+        }
+
+        @Test @DisplayName("notificarConsultaAgendada: envia para paciente e profissional sem erro de format")
+        void notificarConsultaAgendada_enviaParaAmbos() {
+            assertDoesNotThrow(() ->
+                emailTemplateService.notificarConsultaAgendada(consultaCompleta())
+            );
+
+            verify(emailService).enviar(eq("paciente@email.com"), anyString(), anyString());
+            verify(emailService).enviar(eq("dra.ana@clinica.com"), anyString(), anyString());
+        }
+
+        @Test @DisplayName("notificarConsultaCancelada: render do template não estoura")
+        void notificarConsultaCancelada_renderizaSemErro() {
+            var consulta = consultaCompleta();
+            consulta.setCancelReason("Imprevisto do paciente");
+
+            assertDoesNotThrow(() -> emailTemplateService.notificarConsultaCancelada(consulta));
+
+            verify(emailService, atLeastOnce()).enviar(anyString(), anyString(), anyString());
+        }
+
+        @Test @DisplayName("notificarPacienteAgendamentoAceito: render OK")
+        void notificarPacienteAgendamentoAceito_renderizaSemErro() {
+            assertDoesNotThrow(() ->
+                emailTemplateService.notificarPacienteAgendamentoAceito(consultaCompleta())
+            );
+            verify(emailService).enviar(eq("paciente@email.com"), anyString(), anyString());
+        }
+
+        @Test @DisplayName("notificarPacienteAgendamentoRecusado: render OK mesmo com motivo nulo")
+        void notificarPacienteAgendamentoRecusado_motivoNulo() {
+            assertDoesNotThrow(() ->
+                emailTemplateService.notificarPacienteAgendamentoRecusado(consultaCompleta(), null)
+            );
+            verify(emailService).enviar(eq("paciente@email.com"), anyString(), anyString());
+        }
+
+        @Test @DisplayName("notificarSolicitacaoAgendamentoParaMedico: render OK (chamado na mesma agendar() de produção)")
+        void notificarSolicitacaoAgendamentoParaMedico_renderizaSemErro() {
+            assertDoesNotThrow(() ->
+                emailTemplateService.notificarSolicitacaoAgendamentoParaMedico(consultaCompleta())
+            );
+            verify(emailService).enviar(eq("dra.ana@clinica.com"), anyString(), anyString());
+        }
+
+        @Test @DisplayName("notificarConsultaConfirmada: render OK (paciente confirma presença)")
+        void notificarConsultaConfirmada_renderizaSemErro() {
+            assertDoesNotThrow(() ->
+                emailTemplateService.notificarConsultaConfirmada(consultaCompleta())
+            );
+            verify(emailService, atLeastOnce()).enviar(anyString(), anyString(), anyString());
+        }
+    }
 
     // ──────────────────────── Alerta de Atrasadas ────────────────────────
 

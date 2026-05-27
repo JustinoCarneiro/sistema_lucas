@@ -459,7 +459,7 @@ public class EmailTemplateService {
                                     
                                     <table width="100%%" cellpadding="0" cellspacing="0" style="margin-top:30px;">
                                         <tr><td align="center">
-                                            <a href="%s" style="background-color:#2563eb;color:#ffffff;padding:16px 32px;text-decoration:none;font-weight:700;border-radius:10px;font-size:16px;display:inline-block;">""".formatted(frontendUrl) + """
+                                            <a href="%s" style="background-color:#2563eb;color:#ffffff;padding:16px 32px;text-decoration:none;font-weight:700;border-radius:10px;font-size:16px;display:inline-block;">
                                                 Acessar o Sistema
                                             </a>
                                         </td></tr>
@@ -477,7 +477,7 @@ public class EmailTemplateService {
                 </table>
             </body>
             </html>
-            """.formatted(corDestaque, titulo, saudacao, mensagem, linhas, rodapeHtml);
+            """.formatted(corDestaque, titulo, saudacao, mensagem, linhas, rodapeHtml, frontendUrl);
     }
 
     private String buildPremiumTemplate(
