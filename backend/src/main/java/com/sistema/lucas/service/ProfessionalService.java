@@ -40,8 +40,9 @@ public class ProfessionalService {
             throw new RuntimeException("Erro: E-mail já cadastrado no sistema.");
         }
 
-        // ✅ era existsByCrm, agora verifica registroConselho
-        if (repository.existsByRegistroConselho(dto.registroConselho())) {
+        // ✅ era existsByCrm, agora verifica registroConselho (normalizado, igual ao @PrePersist)
+        var registro = dto.registroConselho().trim().toUpperCase();
+        if (repository.existsByRegistroConselho(registro)) {
             throw new RuntimeException("Erro: Este registro já está cadastrado no sistema.");
         }
 
@@ -51,7 +52,7 @@ public class ProfessionalService {
         professional.setPassword(passwordEncoder.encode(dto.password()));
         professional.setRole(Role.PROFESSIONAL);
         professional.setTipoRegistro(dto.tipoRegistro()); // ✅ novo
-        professional.setRegistroConselho(dto.registroConselho()); // ✅ era crm
+        professional.setRegistroConselho(registro); // ✅ era crm
         professional.setSpecialty(dto.specialty());
 
         try {
@@ -72,15 +73,16 @@ public class ProfessionalService {
             throw new RuntimeException("Erro: E-mail já cadastrado no sistema.");
         }
 
-        if (!professional.getRegistroConselho().equals(dto.registroConselho())
-                && repository.existsByRegistroConselho(dto.registroConselho())) {
+        var registro = dto.registroConselho().trim().toUpperCase();
+        if (!professional.getRegistroConselho().equals(registro)
+                && repository.existsByRegistroConselho(registro)) {
             throw new RuntimeException("Erro: Este registro já está cadastrado no sistema.");
         }
 
         professional.setName(dto.name());
         professional.setEmail(email);
         professional.setTipoRegistro(dto.tipoRegistro());
-        professional.setRegistroConselho(dto.registroConselho());
+        professional.setRegistroConselho(registro);
         professional.setSpecialty(dto.specialty());
 
         if (dto.password() != null && !dto.password().trim().isEmpty()) {

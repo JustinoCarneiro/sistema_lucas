@@ -112,6 +112,22 @@ class ProfessionalServiceTest {
         verify(professionalRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Deve detectar registro duplicado mesmo com diferença de maiúsculas")
+    void cadastrarRegistroDuplicadoCaseInsensitive() {
+        var dto = new ProfessionalCreateDTO(
+            "Dr. House", "house@med.com", "senha123",
+            TipoRegistro.CRM, "crm-ce 123", "Infectologia"
+        );
+
+        // stub no valor JÁ normalizado (uppercase) — só casa se o service normalizar antes
+        when(professionalRepository.existsByRegistroConselho("CRM-CE 123")).thenReturn(true);
+
+        var ex = assertThrows(RuntimeException.class, () -> professionalService.create(dto));
+        assertTrue(ex.getMessage().contains("registro já está cadastrado"));
+        verify(professionalRepository, never()).save(any());
+    }
+
     // ──────────────────────── Atualização (admin) ────────────────────────
 
     @Nested

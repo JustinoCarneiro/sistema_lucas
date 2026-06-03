@@ -138,6 +138,11 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Email já cadastrado");
         }
 
+        String cpfHash = cpfHashService.hash(data.cpf());
+        if (patientRepository.existsByCpfHash(cpfHash)) {
+            return ResponseEntity.badRequest().body("CPF já cadastrado");
+        }
+
         // LGPD — o cadastro só prossegue mediante consentimento expresso.
         if (!data.termsAccepted()) {
             return ResponseEntity.badRequest()
@@ -154,14 +159,19 @@ public class AuthController {
         newPatient.setCpf(data.cpf());     // ✅ novo
         // AUD-03: cpf_hash é NOT NULL e o hashing saiu da entidade (foi para o CpfHashService).
         // Precisa ser gerado aqui explicitamente, senão o cadastro público quebra.
-        newPatient.setCpfHash(cpfHashService.hash(data.cpf()));
+        newPatient.setCpfHash(cpfHash);
         newPatient.setPhone(data.phone()); // ✅ novo
         newPatient.setVerified(false);
         // LGPD — consentimento registrado com prova demonstrável (Art. 8º §1)
         newPatient.setTermsAccepted(true);
         newPatient.setTermsAcceptedAt(java.time.LocalDateTime.now());
         newPatient.setTermsVersion(termsVersion);
-        patientRepository.save(newPatient);
+        try {
+            patientRepository.save(newPatient);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Rede de segurança contra corrida entre cadastros simultâneos
+            return ResponseEntity.badRequest().body("E-mail ou CPF já está em uso por outra conta.");
+        }
 
         // ✅ Envia e-mail de verificação
         emailVerificationService.createAndSendVerificationEmail(newPatient);

@@ -84,4 +84,19 @@ class AuthControllerTest {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("Email já cadastrado"));
     }
+
+    @Test
+    void registrarCpfDuplicado() throws Exception {
+        var dto = new RegisterDTO("Usuario CPF Duplicado", "novocpf@email.com", "senha123", "333.333.333-33", "11999996666", true);
+
+        org.mockito.Mockito.when(userRepository.findByEmail("novocpf@email.com")).thenReturn(null);
+        org.mockito.Mockito.when(cpfHashService.hash("333.333.333-33")).thenReturn("hash-existente");
+        org.mockito.Mockito.when(patientRepository.existsByCpfHash("hash-existente")).thenReturn(true);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/register")
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("CPF já cadastrado"));
+    }
 }
