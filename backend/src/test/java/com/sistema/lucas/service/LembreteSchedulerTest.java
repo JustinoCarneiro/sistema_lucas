@@ -144,9 +144,7 @@ class LembreteSchedulerTest {
 
         @Test @DisplayName("Não deve notificar quando profissional já tem agenda no próximo mês")
         void naoNotificaQuandoJaTemAgenda() {
-            // Não mockamos professionalRepository.findAll() → retorna lista vazia → sem notificações
-            when(professionalRepository.findAll()).thenReturn(List.of());
-
+            // professionalRepository.findAll() não é stubado → o mock retorna lista vazia por padrão → sem notificações
             lembreteScheduler.notificarPrazoAgenda();
 
             verifyNoInteractions(emailService);
