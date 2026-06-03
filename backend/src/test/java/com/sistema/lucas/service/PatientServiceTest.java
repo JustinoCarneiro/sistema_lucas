@@ -6,6 +6,7 @@ import com.sistema.lucas.model.dto.PatientUpdateDTO;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.PatientRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
+import com.sistema.lucas.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,9 @@ class PatientServiceTest {
     @Mock
     private ProntuarioRepository prontuarioRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @org.junit.jupiter.api.BeforeEach
     void setup() {
         ReflectionTestUtils.setField(patientService, "termsVersion", "1.0");
@@ -80,7 +84,6 @@ class PatientServiceTest {
             // existsByCpfHash retorna false → CPF não duplicado
             when(cpfHashService.hash(any())).thenReturn("hash-novo");
             when(patientRepository.existsByCpfHash("hash-novo")).thenReturn(false);
-            when(patientRepository.existsByEmail(dto.email())).thenReturn(false);
             when(passwordEncoder.encode(dto.password())).thenReturn("senhaCriptografada");
 
             assertDoesNotThrow(() -> patientService.create(dto));
@@ -96,7 +99,6 @@ class PatientServiceTest {
 
             when(cpfHashService.hash(any())).thenReturn("hash-concurrent");
             when(patientRepository.existsByCpfHash("hash-concurrent")).thenReturn(false);
-            when(patientRepository.existsByEmail(dto.email())).thenReturn(false);
             when(passwordEncoder.encode(dto.password())).thenReturn("hash");
             // flush lança exceção de violação de constraint (race condition)
             doThrow(new DataIntegrityViolationException("unique constraint: unique_cpf_hash"))
@@ -104,6 +106,22 @@ class PatientServiceTest {
 
             var exception = assertThrows(RuntimeException.class, () -> patientService.create(dto));
             assertTrue(exception.getMessage().contains("CPF ou E-mail já está em uso"));
+        }
+
+        @Test
+        @DisplayName("Não deve cadastrar paciente com e-mail já usado por outro usuário (ex.: profissional)")
+        void cadastrarEmailDeOutroUsuario() {
+            var dto = new PatientCreateDTO("Lucas Paciente", "prof@clinica.com", "senha123", "111.222.333-44", "5511999998888", "Plano X", true);
+
+            when(cpfHashService.hash(any())).thenReturn("hash-cpf");
+            when(patientRepository.existsByCpfHash("hash-cpf")).thenReturn(false);
+            var prof = new com.sistema.lucas.model.User();
+            prof.setEmail("prof@clinica.com");
+            when(userRepository.findByEmail("prof@clinica.com")).thenReturn(prof);
+
+            var ex = assertThrows(RuntimeException.class, () -> patientService.create(dto));
+            assertTrue(ex.getMessage().contains("Email já cadastrado"));
+            verify(patientRepository, never()).save(any());
         }
     }
 

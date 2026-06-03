@@ -1,14 +1,17 @@
 package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.Professional;
+import com.sistema.lucas.model.User;
 import com.sistema.lucas.model.dto.ProfessionalCreateDTO;
 import com.sistema.lucas.model.dto.ProfessionalUpdateDTO;
 import com.sistema.lucas.model.enums.TipoRegistro;
+import com.sistema.lucas.model.enums.Role;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.DocumentoRepository;
 import com.sistema.lucas.repository.ProfessionalAvailabilityRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
+import com.sistema.lucas.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +41,7 @@ class ProfessionalServiceTest {
     @Mock private ProfessionalAvailabilityRepository availabilityRepository;
     @Mock private ProntuarioRepository prontuarioRepository;
     @Mock private DocumentoRepository documentoRepository;
+    @Mock private UserRepository userRepository;
 
     // ──────────────────────── Cadastro ────────────────────────
 
@@ -69,6 +73,43 @@ class ProfessionalServiceTest {
 
         assertDoesNotThrow(() -> professionalService.create(dto));
         verify(professionalRepository, times(1)).save(any(Professional.class));
+    }
+
+    @Test
+    @DisplayName("Não deve cadastrar profissional com e-mail que já pertence a um paciente")
+    void cadastrarEmailDePaciente() {
+        var dto = new ProfessionalCreateDTO(
+            "Dra. Lívia", "livia@gmail.com", "senha123",
+            TipoRegistro.CRP, "1234-CE", "Psicologia"
+        );
+
+        var paciente = new User();
+        paciente.setEmail("livia@gmail.com");
+        paciente.setRole(Role.PATIENT);
+        when(userRepository.findByEmail("livia@gmail.com")).thenReturn(paciente);
+
+        var ex = assertThrows(RuntimeException.class, () -> professionalService.create(dto));
+        assertTrue(ex.getMessage().contains("paciente"));
+        verify(professionalRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve normalizar o e-mail (trim/minúsculas) antes de checar duplicidade")
+    void cadastrarNormalizaEmailAntesDeChecar() {
+        var dto = new ProfessionalCreateDTO(
+            "Dra. Lívia", "  Livia@Gmail.com ", "senha123",
+            TipoRegistro.CRP, "1234-CE", "Psicologia"
+        );
+
+        var paciente = new User();
+        paciente.setEmail("livia@gmail.com");
+        paciente.setRole(Role.PATIENT);
+        // stub keyed no e-mail JÁ normalizado — só casa se o service normalizar antes
+        when(userRepository.findByEmail("livia@gmail.com")).thenReturn(paciente);
+
+        var ex = assertThrows(RuntimeException.class, () -> professionalService.create(dto));
+        assertTrue(ex.getMessage().contains("paciente"));
+        verify(professionalRepository, never()).save(any());
     }
 
     // ──────────────────────── Atualização (admin) ────────────────────────
@@ -131,8 +172,8 @@ class ProfessionalServiceTest {
                 .thenReturn(Optional.of(profissionalPadrao()));
 
             var outro = new Professional(); outro.setEmail("outro@test.com");
-            when(professionalRepository.findByEmail("outro@test.com"))
-                .thenReturn(Optional.of(outro));
+            when(userRepository.findByEmail("outro@test.com"))
+                .thenReturn(outro);
 
             // null=name, "outro@test.com"=email, restante null
             var dto = new ProfessionalUpdateDTO(null, "outro@test.com", null, null, null,
@@ -148,8 +189,8 @@ class ProfessionalServiceTest {
         void updateMyProfile_novoEmail_salvaComSucesso() {
             when(professionalRepository.findByEmail("prof@test.com"))
                 .thenReturn(Optional.of(profissionalPadrao()));
-            when(professionalRepository.findByEmail("livre@test.com"))
-                .thenReturn(Optional.empty());
+            when(userRepository.findByEmail("livre@test.com"))
+                .thenReturn(null);
 
             var dto = new ProfessionalUpdateDTO(null, "livre@test.com", null, null, null,
                 null, null, null, null, null, null, null);

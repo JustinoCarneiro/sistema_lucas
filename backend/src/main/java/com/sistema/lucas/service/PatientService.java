@@ -5,6 +5,7 @@ import com.sistema.lucas.model.dto.PatientCreateDTO;
 import com.sistema.lucas.model.enums.Role;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.PatientRepository;
+import com.sistema.lucas.repository.UserRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +32,9 @@ public class PatientService {
 
     @Autowired
     private CpfHashService cpfHashService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // LGPD — versão vigente dos termos, registrada junto ao consentimento.
     @org.springframework.beans.factory.annotation.Value("${app.lgpd.terms-version}")
@@ -62,14 +66,15 @@ public class PatientService {
         if (cpfExiste(dto.cpf())) {
             throw new RuntimeException("Erro: CPF já cadastrado.");
         }
-        if (repository.existsByEmail(dto.email())) {
+        var email = dto.email().trim().toLowerCase();
+        if (userRepository.findByEmail(email) != null) { // checa em TODOS os usuários, não só na tabela patient
             throw new RuntimeException("Erro: Email já cadastrado.");
         }
 
         // MAPEAMENTO MANUAL: Sem usar o construtor customizado
         Patient patient = new Patient();
         patient.setName(dto.name());
-        patient.setEmail(dto.email());
+        patient.setEmail(email);
         patient.setPassword(passwordEncoder.encode(dto.password()));
         patient.setRole(Role.PATIENT);
         patient.setCpf(dto.cpf());
@@ -188,11 +193,14 @@ public class PatientService {
             patient.setName(dto.name());
         }
 
-        if (dto.email() != null && !dto.email().trim().isEmpty() && !dto.email().equals(patient.getEmail())) {
-            if (repository.existsByEmail(dto.email())) {
-                throw new RuntimeException("Erro: E-mail já cadastrado por outro usuário.");
+        if (dto.email() != null && !dto.email().trim().isEmpty()) {
+            var novoEmail = dto.email().trim().toLowerCase();
+            if (!novoEmail.equals(patient.getEmail())) {
+                if (userRepository.findByEmail(novoEmail) != null) {
+                    throw new RuntimeException("Erro: E-mail já cadastrado por outro usuário.");
+                }
+                patient.setEmail(novoEmail);
             }
-            patient.setEmail(dto.email());
         }
 
         if (dto.cpf() != null && !dto.cpf().trim().isEmpty() && !dto.cpf().equals(patient.getCpf())) {

@@ -21,6 +21,7 @@ public class ProfessionalService {
     @Autowired private com.sistema.lucas.repository.ProfessionalAvailabilityRepository availabilityRepository;
     @Autowired private com.sistema.lucas.repository.ProntuarioRepository prontuarioRepository;
     @Autowired private com.sistema.lucas.repository.DocumentoRepository documentoRepository;
+    @Autowired private com.sistema.lucas.repository.UserRepository userRepository;
 
     public List<Professional> findAll() {
         return repository.findAll();
@@ -28,6 +29,17 @@ public class ProfessionalService {
 
     @Transactional
     public void create(ProfessionalCreateDTO dto) {
+        var email = dto.email().trim().toLowerCase();
+
+        var existing = userRepository.findByEmail(email);
+        if (existing != null) {
+            if (existing.getRole() == Role.PATIENT) {
+                throw new RuntimeException("Erro: Este e-mail já pertence a um paciente cadastrado. "
+                    + "Use outro e-mail para o perfil profissional.");
+            }
+            throw new RuntimeException("Erro: E-mail já cadastrado no sistema.");
+        }
+
         // ✅ era existsByCrm, agora verifica registroConselho
         if (repository.existsByRegistroConselho(dto.registroConselho())) {
             throw new RuntimeException("Erro: Este registro já está cadastrado no sistema.");
@@ -35,14 +47,19 @@ public class ProfessionalService {
 
         Professional professional = new Professional();
         professional.setName(dto.name());
-        professional.setEmail(dto.email());
+        professional.setEmail(email);
         professional.setPassword(passwordEncoder.encode(dto.password()));
         professional.setRole(Role.PROFESSIONAL);
         professional.setTipoRegistro(dto.tipoRegistro()); // ✅ novo
         professional.setRegistroConselho(dto.registroConselho()); // ✅ era crm
         professional.setSpecialty(dto.specialty());
 
-        repository.save(professional);
+        try {
+            repository.save(professional);
+            repository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("Erro: Este e-mail ou registro já está em uso por outra conta.");
+        }
     }
 
     @Transactional
@@ -50,13 +67,18 @@ public class ProfessionalService {
         Professional professional = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
+        var email = dto.email().trim().toLowerCase();
+        if (!professional.getEmail().equals(email) && userRepository.findByEmail(email) != null) {
+            throw new RuntimeException("Erro: E-mail já cadastrado no sistema.");
+        }
+
         if (!professional.getRegistroConselho().equals(dto.registroConselho())
                 && repository.existsByRegistroConselho(dto.registroConselho())) {
             throw new RuntimeException("Erro: Este registro já está cadastrado no sistema.");
         }
 
         professional.setName(dto.name());
-        professional.setEmail(dto.email());
+        professional.setEmail(email);
         professional.setTipoRegistro(dto.tipoRegistro());
         professional.setRegistroConselho(dto.registroConselho());
         professional.setSpecialty(dto.specialty());
@@ -77,14 +99,14 @@ public class ProfessionalService {
             professional.setName(dto.name());
         }
 
-        if (dto.email() != null && !dto.email().trim().isEmpty() && !dto.email().equals(professional.getEmail())) {
-            // Wait, ProfessionalRepository extends JpaRepository<Professional, Long>
-            // We can check if email exists. Professional shares the `users` table via JOIN, but the method existsByEmail?
-            // Wait! Does ProfessionalRepository have existsByEmail? Let's assume it does since we use extends UserRepository or similar, or we can use findByEmail.
-            if (repository.findByEmail(dto.email()).isPresent()) {
-                throw new RuntimeException("Erro: E-mail já cadastrado por outro usuário.");
+        if (dto.email() != null && !dto.email().trim().isEmpty()) {
+            var novoEmail = dto.email().trim().toLowerCase();
+            if (!novoEmail.equals(professional.getEmail())) {
+                if (userRepository.findByEmail(novoEmail) != null) {
+                    throw new RuntimeException("Erro: E-mail já cadastrado por outro usuário.");
+                }
+                professional.setEmail(novoEmail);
             }
-            professional.setEmail(dto.email());
         }
 
         if (dto.tipoRegistro() != null)    professional.setTipoRegistro(dto.tipoRegistro());
