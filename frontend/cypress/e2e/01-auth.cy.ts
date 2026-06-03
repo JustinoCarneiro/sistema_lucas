@@ -53,7 +53,7 @@ describe('01 — Autenticação', () => {
       cy.get('div[class*="bg-red"]').should('be.visible')
         .and('contain', 'E-mail ou senha inválidos.');
       cy.url().should('include', '/login');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('be.null');
+      cy.window().its('localStorage').invoke('getItem', 'role').should('be.null');
     });
 
     it('rejeita e-mail inexistente (400) com mensagem do backend', () => {
@@ -132,11 +132,9 @@ describe('01 — Autenticação', () => {
     });
 
     it('PACIENTE (Lucas) é redirecionado para /panel/dashboard', () => {
-      const token = tokenPara('PATIENT', 'lucas@email.com');
-
       cy.intercept('POST', '**/auth/login', {
         statusCode: 200,
-        body: { token }
+        body: { role: 'PATIENT', verified: true }
       }).as('loginPaciente');
       cy.intercept('GET', '**/dashboard/paciente', {
         statusCode: 200,
@@ -158,15 +156,13 @@ describe('01 — Autenticação', () => {
       });
       cy.url({ timeout: 10000 }).should('include', '/panel/dashboard');
       cy.wait('@getDash');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('eq', token);
+      cy.window().its('localStorage').invoke('getItem', 'role').should('eq', 'PATIENT');
     });
 
     it('PROFISSIONAL (Dra. Ana) é redirecionada para /panel/dashboard', () => {
-      const token = tokenPara('PROFESSIONAL', 'ana@clinica.com');
-
       cy.intercept('POST', '**/auth/login', {
         statusCode: 200,
-        body: { token }
+        body: { role: 'PROFESSIONAL', verified: true }
       }).as('loginProf');
       cy.intercept('GET', '**/dashboard/profissional', {
         statusCode: 200,
@@ -185,15 +181,13 @@ describe('01 — Autenticação', () => {
       cy.wait('@loginProf');
       cy.url({ timeout: 10000 }).should('include', '/panel/dashboard');
       cy.wait('@getDash');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('eq', token);
+      cy.window().its('localStorage').invoke('getItem', 'role').should('eq', 'PROFESSIONAL');
     });
 
     it('ADMIN é redirecionado para /panel/dashboard', () => {
-      const token = tokenPara('ADMIN', 'admin@clinica.com');
-
       cy.intercept('POST', '**/auth/login', {
         statusCode: 200,
-        body: { token }
+        body: { role: 'ADMIN', verified: true }
       }).as('loginAdmin');
       cy.intercept('GET', '**/dashboard/admin', {
         statusCode: 200,
@@ -208,7 +202,7 @@ describe('01 — Autenticação', () => {
       cy.wait('@loginAdmin');
       cy.url({ timeout: 10000 }).should('include', '/panel/dashboard');
       cy.wait('@getDash');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('eq', token);
+      cy.window().its('localStorage').invoke('getItem', 'role').should('eq', 'ADMIN');
     });
   });
 
@@ -236,14 +230,7 @@ describe('01 — Autenticação', () => {
       cy.url().should('include', '/login');
     });
 
-    it('token expirado no localStorage → authGuard redireciona para /login', () => {
-      const expiredToken = (() => {
-        const h = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-        const p = btoa(JSON.stringify({ sub: 'lucas@email.com', role: 'PATIENT', verified: true, exp: 1 }));
-        return `${h}.${p}.fake`;
-      })();
-
-      cy.window().then(win => win.localStorage.setItem('token', expiredToken));
+    it('role inexistente no localStorage → authGuard redireciona para /login', () => {
       cy.visit('/panel/dashboard');
       cy.url({ timeout: 8000 }).should('include', '/login');
     });
@@ -268,9 +255,7 @@ describe('01 — Autenticação', () => {
   // LOGOUT — limpa token e redireciona para /login
   // ────────────────────────────────────────────────────────────────────────
   context('Logout', () => {
-    it('botão "Sair do sistema" limpa o token e redireciona para /login', () => {
-      const token = tokenPara('PATIENT', 'lucas@email.com');
-
+    it('botão "Sair do sistema" limpa a sessão local e redireciona para /login', () => {
       cy.intercept('GET', '**/dashboard/paciente', {
         statusCode: 200,
         body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
@@ -279,19 +264,22 @@ describe('01 — Autenticação', () => {
         statusCode: 200,
         body: { id: 3, name: 'Lucas Silva', email: 'lucas@email.com' }
       }).as('getMe');
+      cy.intercept('POST', '**/auth/logout', { statusCode: 200 }).as('logout');
 
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', token);
+          win.localStorage.setItem('role', 'PATIENT');
+          win.localStorage.setItem('verified', 'true');
         }
       });
       cy.visit('/panel/dashboard');
       cy.wait('@getDash');
 
       cy.contains('button', 'Sair do sistema').scrollIntoView().click();
+      cy.wait('@logout');
 
       cy.url({ timeout: 10000 }).should('include', '/login');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('be.null');
+      cy.window().its('localStorage').invoke('getItem', 'role').should('be.null');
     });
   });
 

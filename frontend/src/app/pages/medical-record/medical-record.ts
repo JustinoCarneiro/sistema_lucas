@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-medical-record',
@@ -16,6 +17,7 @@ export class MedicalRecordComponent implements OnInit {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private notify = inject(NotificationService);
 
   appointmentId: string | null = '';
   nomePaciente = signal('Carregando...');
@@ -48,16 +50,16 @@ export class MedicalRecordComponent implements OnInit {
 
   salvarProntuario() {
     if (!this.novasNotas.trim()) {
-      alert('Por favor, preencha as anotações antes de salvar.');
+      this.notify.error('Por favor, preencha as anotações antes de salvar.');
       return;
     }
     const payload = { appointmentId: this.appointmentId, notas: this.novasNotas };
     this.http.post(`${environment.apiUrl}/prontuarios`, payload).subscribe({
       next: () => {
-        alert('Prontuário salvo com sucesso! Atendimento finalizado.');
+        this.notify.success('Prontuário salvo com sucesso! Atendimento finalizado.');
         this.router.navigate(['/panel/professional-appointments']);
       },
-      error: (err: any) => alert('Erro ao salvar prontuário: ' + (err.error?.message || 'Tente novamente.'))
+      error: (err: any) => this.notify.error('Erro ao salvar prontuário: ' + (err.error?.message || 'Tente novamente.'))
     });
   }
 }

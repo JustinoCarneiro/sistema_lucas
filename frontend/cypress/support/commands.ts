@@ -9,17 +9,20 @@ Cypress.Commands.add('login', (email: string, password: string) => {
   cy.url().should('include', '/panel', { timeout: 10000 });
 });
 
-// Login programático — injeta JWT sintético no localStorage sem hit de backend.
-// Usar em testes que validam UI/lógica frontend, não o fluxo de autenticação.
+// Login programático — injeta as credenciais sintéticas no localStorage sem hit de backend.
+// Usar em testes que validam UI/lógica frontend com requisições interceptadas, não o fluxo de autenticação real.
 Cypress.Commands.add('loginProgrammatic', (role: 'ADMIN' | 'PROFESSIONAL' | 'PATIENT', email: string) => {
-  const header  = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({
-    sub: email,
-    role,
-    verified: true,
-    exp: Math.floor(Date.now() / 1000) + 3600,
-  }));
-  cy.window().then(win => win.localStorage.setItem('token', `${header}.${payload}.fake-sig`));
+  cy.visit('/login', {
+    onBeforeLoad(win) {
+      win.localStorage.setItem('role', role);
+      win.localStorage.setItem('verified', 'true');
+    }
+  });
+  if (role === 'PATIENT') {
+    cy.visit('/panel/dashboard');
+  } else {
+    cy.visit('/panel');
+  }
 });
 
 // Stub padrão do dashboard por role — evita repetição em beforeEach.

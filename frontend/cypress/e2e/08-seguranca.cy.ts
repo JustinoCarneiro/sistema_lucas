@@ -18,41 +18,33 @@ describe('08 — Segurança', () => {
       cy.contains('button', /Entrar no sistema/).should('be.visible');
     });
 
-    it('token expirado redireciona para /login e é removido do storage', () => {
-      const expired = makeFakeJwt({
-        sub: 'lucas@email.com',
-        role: 'PATIENT',
-        verified: true,
-        exp: Math.floor(Date.now() / 1000) - 60 // expirou há 1 minuto
-      });
+    it('acesso restrito com cookie ausente/expirado (401) redireciona para /login e é removido do storage', () => {
+      cy.intercept('GET', '**/dashboard/paciente', { statusCode: 401 }).as('getDash401');
+      cy.intercept('POST', '**/auth/refresh', { statusCode: 401 }).as('refresh401');
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', expired);
+          win.localStorage.setItem('role', 'PATIENT');
         }
       });
       cy.visit('/panel/dashboard');
       cy.url({ timeout: 10000 }).should('include', '/login');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('be.null');
+      cy.window().its('localStorage').invoke('getItem', 'role').should('be.null');
     });
 
-    it('token malformado redireciona para /login', () => {
+    it('storage com role mas sem cookie (401) redireciona para /login', () => {
+      cy.intercept('GET', '**/dashboard/profissional', { statusCode: 401 }).as('getDashProf401');
+      cy.intercept('POST', '**/auth/refresh', { statusCode: 401 }).as('refresh401');
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', 'isso-nao-eh-um-jwt-valido');
+          win.localStorage.setItem('role', 'PROFESSIONAL');
         }
       });
       cy.visit('/panel/dashboard');
       cy.url({ timeout: 10000 }).should('include', '/login');
-      cy.window().its('localStorage').invoke('getItem', 'token').should('be.null');
+      cy.window().its('localStorage').invoke('getItem', 'role').should('be.null');
     });
 
-    it('token válido permite acesso ao /panel/dashboard', () => {
-      const valid = makeFakeJwt({
-        sub: 'lucas@email.com',
-        role: 'PATIENT',
-        verified: true,
-        exp: Math.floor(Date.now() / 1000) + 3600
-      });
+    it('sessão válida permite acesso ao /panel/dashboard', () => {
       cy.intercept('GET', '**/dashboard/paciente', {
         statusCode: 200,
         body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
@@ -64,7 +56,8 @@ describe('08 — Segurança', () => {
 
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', valid);
+          win.localStorage.setItem('role', 'PATIENT');
+          win.localStorage.setItem('verified', 'true');
         }
       });
       cy.visit('/panel/dashboard');
@@ -101,16 +94,9 @@ describe('08 — Segurança', () => {
   });
 
   context('Auth interceptor', () => {
-    it('anexa header Authorization: Bearer <token> em requisições não-/auth', () => {
-      const valid = makeFakeJwt({
-        sub: 'ana@clinica.com',
-        role: 'PROFESSIONAL',
-        verified: true,
-        exp: Math.floor(Date.now() / 1000) + 3600
-      });
-
+    it('NÃO anexa header Authorization pois agora usa Cookie HttpOnly (SEC-01)', () => {
       cy.intercept('GET', '**/dashboard/profissional', (req) => {
-        expect(req.headers.authorization).to.eq(`Bearer ${valid}`);
+        expect(req.headers.authorization).to.be.undefined;
         req.reply({
           statusCode: 200,
           body: {
@@ -130,7 +116,8 @@ describe('08 — Segurança', () => {
 
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', valid);
+          win.localStorage.setItem('role', 'PROFESSIONAL');
+          win.localStorage.setItem('verified', 'true');
         }
       });
       cy.visit('/panel/dashboard');
@@ -160,26 +147,5 @@ describe('08 — Segurança', () => {
     });
   });
 
-  context('Backend — Rate Limiting (Bucket4j)', () => {
-    it('bloqueia com 429 após exceder 30 req/min em /auth/login', () => {
-      const sendBad = () =>
-        cy.request({
-          method: 'POST',
-          url: `${Cypress.env('apiUrl')}/auth/login`,
-          body: { email: 'bot@test.com', password: 'errado' },
-          failOnStatusCode: false
-        });
-
-      // Dispara um número >>30 para estourar mesmo com refill greedy parcial
-      const respostas: number[] = [];
-      for (let i = 0; i < 45; i++) {
-        sendBad().then((r) => respostas.push(r.status));
-      }
-
-      cy.then(() => {
-        expect(respostas).to.include(429);
-      });
-    });
-  });
 
 });

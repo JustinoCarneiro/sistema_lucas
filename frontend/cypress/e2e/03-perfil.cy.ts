@@ -46,15 +46,11 @@ describe('03 — Perfil e Senha', () => {
         statusCode: 200,
         body: 'OK'
       }).as('putMe');
-
-      const alertStub = cy.stub().as('windowAlert');
-      cy.on('window:alert', alertStub);
-
       cy.get('input[type="text"]').eq(0).clear().type('Lucas Silva Editado');
       cy.contains('button', 'Salvar alterações').click();
 
       cy.wait('@putMe').its('request.body.name').should('eq', 'Lucas Silva Editado');
-      cy.get('@windowAlert').should('have.been.calledWithMatch', /Perfil atualizado/);
+      cy.contains('[role="alert"]', /Perfil atualizado/).should('be.visible');
     });
 
     it('modal de alteração de senha abre e fecha', () => {
@@ -151,17 +147,13 @@ describe('03 — Perfil e Senha', () => {
         statusCode: 200,
         body: 'OK'
       }).as('putMe');
-
-      const alertStub = cy.stub().as('windowAlert');
-      cy.on('window:alert', alertStub);
-
       cy.contains('label', 'Especialidade').siblings('input')
         .clear().type('Psicologia Clínica e Avaliação');
       cy.contains('button', 'Salvar alterações').click();
 
       cy.wait('@putMe').its('request.body.specialty')
         .should('eq', 'Psicologia Clínica e Avaliação');
-      cy.get('@windowAlert').should('have.been.calledWithMatch', /Perfil atualizado/);
+      cy.contains('[role="alert"]', /Perfil atualizado/).should('be.visible');
     });
   });
 

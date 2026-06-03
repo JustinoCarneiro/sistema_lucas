@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProfessionalService } from './professionals.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-professionals',
@@ -13,6 +14,7 @@ import { ProfessionalService } from './professionals.service';
 export class ProfessionalsComponent implements OnInit {
   private professionalService = inject(ProfessionalService);
   private fb = inject(FormBuilder);
+  private notify = inject(NotificationService);
 
   professionals = signal<any[]>([]);
   isEditing = signal(false);
@@ -78,8 +80,8 @@ export class ProfessionalsComponent implements OnInit {
   deleteProfessional(id: number) {
     if (confirm('ATENÇÃO: Exclusão Forçada!\n\nTem certeza que deseja remover este profissional?\n\nIsso apagará DE FORMA PERMANENTE todas as consultas, prontuários, horários e documentos vinculados a ele. Essa ação não pode ser desfeita.')) {
       this.professionalService.deleteProfessional(id).subscribe({
-        next: () => { alert('Profissional removido com sucesso!'); this.loadProfessionals(); },
-        error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service
+        next: () => { this.notify.success('Profissional removido com sucesso!'); this.loadProfessionals(); },
+        error: (msg: string) => this.notify.error(msg) // string direta do service
       });
     }
   }
@@ -92,21 +94,21 @@ export class ProfessionalsComponent implements OnInit {
       if (this.isEditing() && id) {
         this.professionalService.updateProfessional(id, dados).subscribe({
           next: () => {
-            alert('Profissional atualizado com sucesso!');
+            this.notify.success('Profissional atualizado com sucesso!');
             this.cancelEdit();
             this.loadProfessionals();
           },
-          error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service
+          error: (msg: string) => this.notify.error(msg) // string direta do service
         });
       } else {
         this.professionalService.createProfessional(dados).subscribe({
           next: () => {
-            alert('Profissional cadastrado com sucesso!');
+            this.notify.success('Profissional cadastrado com sucesso!');
             this.professionalForm.reset({ tipoRegistro: 'CRP' });
             this.mostrarFormulario.set(false);
             this.loadProfessionals();
           },
-          error: (msg: string) => alert('Erro: ' + msg) // ✅ string direta do service
+          error: (msg: string) => this.notify.error(msg) // string direta do service
         });
       }
     }

@@ -2,6 +2,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientService } from './patients.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-patients',
@@ -12,6 +13,7 @@ import { PatientService } from './patients.service';
 })
 export class Patients implements OnInit {
   private patientService = inject(PatientService);
+  private notify = inject(NotificationService);
 
   patientsList = signal<any[]>([]);
   selectedItem: any = null;
@@ -50,8 +52,8 @@ export class Patients implements OnInit {
   deletePaciente(id: number, nome: string) {
     if (confirm(`Tem certeza que deseja remover o paciente ${nome}? Esta ação não pode ser desfeita.`)) {
       this.patientService.deletePatient(id).subscribe({
-        next: () => { alert('Paciente removido com sucesso!'); this.loadPatients(); },
-        error: (msg: string) => alert('Erro: ' + msg)
+        next: () => { this.notify.success('Paciente removido com sucesso!'); this.loadPatients(); },
+        error: (msg: string) => this.notify.error(msg)
       });
     }
   }
@@ -60,11 +62,11 @@ export class Patients implements OnInit {
     if (confirm('Deseja liberar este paciente para novos agendamentos agora?')) {
       this.patientService.desbloquear(id).subscribe({
         next: () => { 
-          alert('Paciente desbloqueado com sucesso!'); 
+          this.notify.success('Paciente desbloqueado com sucesso!');
           this.loadPatients(); 
           if (this.selectedItem) this.selectedItem = null;
         },
-        error: (msg: string) => alert('Erro: ' + msg)
+        error: (msg: string) => this.notify.error(msg)
       });
     }
   }

@@ -6,6 +6,7 @@ import { DashboardService } from './dashboard.service';
 import { AuthService } from '../../security/auth.service';
 import { AppointmentService } from '../appointments/appointment.service';
 import { ExportService } from '../export/export.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,6 +19,7 @@ export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private appointmentService = inject(AppointmentService);
   private exportService = inject(ExportService);
+  private notify = inject(NotificationService);
 
   exportar(tipo?: string) {
     const role = this.userRole();
@@ -107,8 +109,8 @@ export class DashboardComponent implements OnInit {
 
   confirmarNoDashboard(id: number) {
     this.appointmentService.confirmarPaciente(id).subscribe({
-      next: () => { alert('Presença confirmada!'); this.carregarDados(); },
-      error: (msg: string) => alert('Erro: ' + msg)
+      next: () => { this.notify.success('Presença confirmada!'); this.carregarDados(); },
+      error: (msg: string) => this.notify.error(msg)
     });
   }
 }

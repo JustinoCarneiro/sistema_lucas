@@ -178,7 +178,7 @@ describe('04 — Consultas (Agendamento, Confirmação, Cancelamento)', () => {
         id: 9,
         patientName: 'Lucas Silva',
         professionalName: 'Dra. Ana Souza',
-        startTime: '2026-05-26T10:00:00',
+        startTime: '2030-05-26T10:00:00',
         reason: 'Acompanhamento',
         status: 'AGENDADA',
         podeCancelar: true,

@@ -7,6 +7,7 @@ import { Router } from '@angular/router'; // ✅ importado mas NÃO vai no impor
 import { PatientService } from '../patients/patients.service';
 import { AuthService } from '../../security/auth.service';
 import { environment } from '../../../environments/environment';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-my-profile',
@@ -18,6 +19,7 @@ export class MyProfileComponent implements OnInit {
   private patientService = inject(PatientService);
   private authService = inject(AuthService);
   private http = inject(HttpClient);
+  private notify = inject(NotificationService);
   private router = inject(Router); // ✅ injetado corretamente via inject()
 
   profile = signal<any>({});
@@ -136,15 +138,15 @@ export class MyProfileComponent implements OnInit {
       this.http.put(`${environment.apiUrl}/professionals/me`, payload, { responseType: 'text' }).subscribe({
         next: () => { 
           if (p.email !== this.initialEmail) {
-            alert('E-mail atualizado com sucesso! Por favor, faça login novamente com seu novo e-mail.');
+            this.notify.success('E-mail atualizado com sucesso! Por favor, faça login novamente com seu novo e-mail.');
             this.authService.logout();
             return;
           }
-          alert('Perfil atualizado com sucesso!'); 
+          this.notify.success('Perfil atualizado com sucesso!');
           this.newPassword = ''; 
           this.isSaving.set(false); 
         },
-        error: (err: any) => { alert('Erro: ' + (err.error?.message || 'Tente novamente.')); this.isSaving.set(false); }
+        error: (err: any) => { this.notify.error(err.error?.message || 'Tente novamente.'); this.isSaving.set(false); }
       });
     } else {
       const p = this.profile();
@@ -164,15 +166,15 @@ export class MyProfileComponent implements OnInit {
       this.patientService.updateMyProfile(payload).subscribe({
         next: () => { 
           if (p.email !== this.initialEmail) {
-            alert('E-mail atualizado com sucesso! Por favor, faça login novamente com seu novo e-mail.');
+            this.notify.success('E-mail atualizado com sucesso! Por favor, faça login novamente com seu novo e-mail.');
             this.authService.logout();
             return;
           }
-          alert('Perfil atualizado com sucesso!'); 
+          this.notify.success('Perfil atualizado com sucesso!');
           this.newPassword = ''; 
           this.isSaving.set(false); 
         },
-        error: (err: any) => { alert('Erro: ' + (err.error?.message || 'Tente novamente.')); this.isSaving.set(false); }
+        error: (err: any) => { this.notify.error(err.error?.message || 'Tente novamente.'); this.isSaving.set(false); }
       });
     }
   }
@@ -181,10 +183,10 @@ export class MyProfileComponent implements OnInit {
     if (confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita e todos os seus dados serão removidos permanentemente.')) {
       this.patientService.deleteMyConta().subscribe({
         next: () => {
-          alert('Conta excluída com sucesso.');
+          this.notify.success('Conta excluída com sucesso.');
           this.authService.logout();
         },
-        error: (err: any) => alert('Erro ao excluir conta: ' + (err.error?.message || 'Tente novamente.'))
+        error: (err: any) => this.notify.error('Erro ao excluir conta: ' + (err.error?.message || 'Tente novamente.'))
       });
     }
   }

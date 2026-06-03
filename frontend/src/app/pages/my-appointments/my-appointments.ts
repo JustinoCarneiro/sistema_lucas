@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppointmentService } from '../appointments/appointment.service';
 import { AvailabilityService } from '../my-availability/availability.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-my-appointments',
@@ -16,6 +17,7 @@ export class MyAppointmentsComponent implements OnInit {
   private appointmentService = inject(AppointmentService);
   private availabilityService = inject(AvailabilityService);
   private fb = inject(FormBuilder);
+  private notify = inject(NotificationService);
 
   myAppointments = signal<any[]>([]);
   professionals = signal<any[]>([]);
@@ -175,8 +177,8 @@ export class MyAppointmentsComponent implements OnInit {
 
   confirmar(id: number) {
     this.appointmentService.confirmarPaciente(id).subscribe({
-      next: () => { alert('Presença confirmada!'); this.loadAppointments(); },
-      error: (msg: string) => alert('Erro: ' + msg)
+      next: () => { this.notify.success('Presença confirmada!'); this.loadAppointments(); },
+      error: (msg: string) => this.notify.error(msg)
     });
   }
 
@@ -242,7 +244,7 @@ export class MyAppointmentsComponent implements OnInit {
           this.isCancelling.set(false);
           this.loadAppointments();
         },
-        error: (msg: string) => alert('Erro ao cancelar: ' + msg)
+        error: (msg: string) => this.notify.error('Erro ao cancelar: ' + msg)
       });
     }
   }
@@ -261,7 +263,7 @@ export class MyAppointmentsComponent implements OnInit {
           this.isRescheduling.set(false);
           this.loadAppointments();
         },
-        error: (msg: string) => alert('Erro ao reagendar: ' + msg)
+        error: (msg: string) => this.notify.error('Erro ao reagendar: ' + msg)
       });
     }
   }
@@ -279,7 +281,7 @@ export class MyAppointmentsComponent implements OnInit {
 
       this.appointmentService.agendarConsulta(payload).subscribe({
         next: () => {
-          alert('Consulta agendada com sucesso!');
+          this.notify.success('Consulta agendada com sucesso!');
           this.isScheduling.set(false);
           this.scheduleForm.reset();
           this.selectedProfessional.set(null);
@@ -288,7 +290,7 @@ export class MyAppointmentsComponent implements OnInit {
           this.availableSlots.set([]);
           this.loadAppointments();
         },
-        error: (msg: string) => alert('Erro: ' + msg)
+        error: (msg: string) => this.notify.error(msg)
       });
     }
   }

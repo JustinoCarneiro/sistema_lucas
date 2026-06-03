@@ -80,7 +80,7 @@ describe('14 — Recuperação de Senha', () => {
       cy.get('button[type="submit"]').click();
       cy.wait('@postReset');
 
-      cy.contains('sucesso').should('be.visible');
+      cy.contains('Senha redefinida!').should('be.visible');
     });
 
     it('POST 400 (token inválido) → exibe mensagem de erro', () => {

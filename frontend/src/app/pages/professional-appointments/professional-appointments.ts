@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AppointmentService } from '../appointments/appointment.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-professional-appointments',
@@ -16,6 +17,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
   private appointmentService = inject(AppointmentService);
+  private notify = inject(NotificationService);
 
   abaAtiva = signal<'hoje' | 'proximas' | 'atrasadas'>('hoje');
   consultasHoje = signal<any[]>([]);
@@ -97,11 +99,11 @@ export class ProfessionalAppointmentsComponent implements OnInit {
         { responseType: 'text' }
       ).subscribe({
         next: () => {
-          alert('Consulta confirmada!');
+          this.notify.success('Consulta confirmada!');
           this.carregarHoje();
           this.carregarProximas();
         },
-        error: (msg: string) => alert('Erro: ' + msg)
+        error: (msg: string) => this.notify.error(msg)
       });
     }
   }
@@ -110,11 +112,11 @@ export class ProfessionalAppointmentsComponent implements OnInit {
     if (confirm(`Aprovar a consulta solicitada por ${app.patientName}?`)) {
       this.appointmentService.aprovarAgendamento(app.id).subscribe({
         next: () => {
-          alert('Agendamento confirmado!');
+          this.notify.success('Agendamento confirmado!');
           this.carregarHoje();
           this.carregarProximas();
         },
-        error: (msg: string) => alert('Erro ao aprovar: ' + msg)
+        error: (msg: string) => this.notify.error('Erro ao aprovar: ' + msg)
       });
     }
   }
@@ -125,7 +127,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
       const justificativa = motivo.trim() || 'Indisponibilidade de agenda do profissional.';
       this.appointmentService.recusarAgendamento(app.id, justificativa).subscribe({
         next: () => {
-          alert('Agendamento recusado com sucesso.');
+          this.notify.success('Agendamento recusado com sucesso.');
           this.proximasConsultas.update(list =>
             list.map(c => c.id === app.id ? { ...c, status: 'CANCELADA' } : c)
           );
@@ -134,7 +136,7 @@ export class ProfessionalAppointmentsComponent implements OnInit {
           );
           this.carregarHoje();
         },
-        error: (msg: string) => alert('Erro ao recusar: ' + msg)
+        error: (msg: string) => this.notify.error('Erro ao recusar: ' + msg)
       });
     }
   }
@@ -146,12 +148,12 @@ export class ProfessionalAppointmentsComponent implements OnInit {
         { responseType: 'text' }
       ).subscribe({
         next: () => {
-          alert('Paciente marcado como faltante.');
+          this.notify.success('Paciente marcado como faltante.');
           this.carregarHoje();
           this.carregarProximas();
           this.carregarAtrasadas();
         },
-        error: () => alert('Erro ao registrar falta.')
+        error: () => this.notify.error('Erro ao registrar falta.')
       });
     }
   }
@@ -166,10 +168,10 @@ export class ProfessionalAppointmentsComponent implements OnInit {
         { responseType: 'text' }
       ).subscribe({
         next: () => {
-          alert('Consulta cancelada.');
+          this.notify.success('Consulta cancelada.');
           this.carregarAtrasadas();
         },
-        error: () => alert('Erro ao cancelar a consulta.')
+        error: () => this.notify.error('Erro ao cancelar a consulta.')
       });
     }
   }

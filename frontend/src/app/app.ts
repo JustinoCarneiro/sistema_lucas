@@ -1,10 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { VerificationBanner } from './components/verification-banner/verification-banner';
+import { ToastComponent } from './components/toast/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, VerificationBanner],
+  imports: [RouterOutlet, VerificationBanner, ToastComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

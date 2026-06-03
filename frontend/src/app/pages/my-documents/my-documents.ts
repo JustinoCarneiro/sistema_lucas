@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentoService } from '../documents/document.service';
 import { ExportService } from '../export/export.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-my-documents',
@@ -13,6 +14,7 @@ import { ExportService } from '../export/export.service';
 export class MyDocumentsComponent implements OnInit {
   private documentoService = inject(DocumentoService);
   private exportService = inject(ExportService);
+  private notify = inject(NotificationService);
 
   exportarDados() {
     this.exportService.exportPatient();
@@ -52,7 +54,7 @@ export class MyDocumentsComponent implements OnInit {
       link.click();
       URL.revokeObjectURL(fileURL);
     } catch (e) {
-      alert('Erro ao tentar baixar arquivo PDF.');
+      this.notify.error('Erro ao tentar baixar arquivo PDF.');
     }
   }
 }

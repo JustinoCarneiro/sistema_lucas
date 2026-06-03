@@ -59,6 +59,7 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
       cy.get('input[formControlName="password"]').type('senha123');
       cy.get('input[formControlName="cpf"]').type('11122233344');
       cy.get('input[formControlName="whatsapp"]').type('11999998877');
+      cy.get('input[type="checkbox"]#termsAccepted').check();
 
       cy.get('button[type="submit"]').should('not.be.disabled').click();
 
@@ -117,6 +118,7 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
       cy.get('input[formControlName="password"]').type('senha123');
       cy.get('input[formControlName="cpf"]').type('11122233344');
       cy.get('input[formControlName="whatsapp"]').type('11999998877');
+      cy.get('input[type="checkbox"]#termsAccepted').check();
 
       cy.get('button[type="submit"]').click();
       cy.wait('@postRegister');
@@ -160,13 +162,6 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
 
   context('Banner de Verificação Pendente', () => {
     it('exibe banner quando paciente está logado com verified=false', () => {
-      const tokenNaoVerificado = makeFakeJwt({
-        sub: 'novo@email.com',
-        role: 'PATIENT',
-        verified: false,
-        exp: Math.floor(Date.now() / 1000) + 3600
-      });
-
       cy.intercept('GET', '**/dashboard/paciente', {
         statusCode: 200,
         body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
@@ -178,7 +173,8 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
 
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', tokenNaoVerificado);
+          win.localStorage.setItem('role', 'PATIENT');
+          win.localStorage.setItem('verified', 'false');
         }
       });
       cy.visit('/panel/dashboard');
@@ -189,13 +185,6 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
     });
 
     it('NÃO exibe banner quando verified=true', () => {
-      const tokenVerificado = makeFakeJwt({
-        sub: 'lucas@email.com',
-        role: 'PATIENT',
-        verified: true,
-        exp: Math.floor(Date.now() / 1000) + 3600
-      });
-
       cy.intercept('GET', '**/dashboard/paciente', {
         statusCode: 200,
         body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
@@ -207,7 +196,8 @@ describe('10 — Registro, Verificação e Recuperação de Senha', () => {
 
       cy.visit('/login', {
         onBeforeLoad(win) {
-          win.localStorage.setItem('token', tokenVerificado);
+          win.localStorage.setItem('role', 'PATIENT');
+          win.localStorage.setItem('verified', 'true');
         }
       });
       cy.visit('/panel/dashboard');

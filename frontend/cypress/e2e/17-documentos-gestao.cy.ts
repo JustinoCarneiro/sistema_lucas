@@ -6,8 +6,9 @@ describe('17 — Gestão de Documentos', () => {
     {
       id: 1,
       tipo: 'ATESTADO',
-      pacienteName: 'João Silva',
-      profissionalName: 'Dra. Ana',
+      titulo: 'Documento Teste',
+      nomePaciente: 'João Silva',
+      nomeProfissional: 'Dra. Ana',
       disponivel: true,
       criadoEm: '2026-05-15T10:00:00',
       arquivoBase64: null
@@ -33,7 +34,7 @@ describe('17 — Gestão de Documentos', () => {
         body: pacientesMock
       }).as('getPatients');
 
-      cy.login('profissional@clinica.com', '123456');
+      cy.login('ana@clinica.com', '123456');
       cy.visit('/panel/document-management');
       cy.wait('@getDocs');
     });
@@ -44,8 +45,8 @@ describe('17 — Gestão de Documentos', () => {
 
     it('upload de documento → POST 201 → documento aparece na lista', () => {
       const novoDoc = {
-        id: 2, tipo: 'LAUDO_PSICOLOGICO', pacienteName: 'João Silva',
-        profissionalName: 'Dra. Ana', disponivel: false, criadoEm: '2026-05-20T10:00:00'
+        id: 2, tipo: 'LAUDO_PSICOLOGICO', titulo: 'Novo Laudo', nomePaciente: 'João Silva',
+        nomeProfissional: 'Dra. Ana', disponivel: false, criadoEm: '2026-05-20T10:00:00'
       };
 
       cy.intercept('POST', '**/documentos', {
@@ -58,9 +59,10 @@ describe('17 — Gestão de Documentos', () => {
       }).as('reloadDocs');
 
       cy.contains('button', /criar|novo|adicionar/i).click();
-      cy.get('select[name="tipo"], select[formControlName="tipo"]').first().select('LAUDO_PSICOLOGICO');
-      cy.get('select[name="pacienteId"], select[formControlName="pacienteId"]').first().select('3');
-      cy.get('textarea[name="conteudo"], textarea[formControlName="conteudo"]').first().type('Conteúdo do laudo.');
+      cy.contains('label', 'Tipo de documento').parent().find('select').select('LAUDO_PSICOLOGICO');
+      cy.contains('label', 'Paciente').parent().find('select').select('3');
+      cy.contains('label', 'Título').parent().find('input').type('Novo Laudo');
+      cy.contains('label', 'Conteúdo em texto').parent().find('textarea').type('Conteúdo do laudo.');
       cy.contains('button', /salvar|enviar|criar/i).click();
 
       cy.wait('@postDoc');
@@ -79,8 +81,8 @@ describe('17 — Gestão de Documentos', () => {
       const confirmStub = cy.stub().returns(true);
       cy.on('window:confirm', confirmStub);
 
-      cy.contains('João Silva').parents('[class*="border"], tr').first()
-        .contains('button', /excluir|remover|deletar/i).click();
+      cy.contains('João Silva').parents('tr').first()
+        .find('button[title="Excluir Documento"]').click();
       cy.wait('@deleteDoc');
     });
   });
@@ -102,7 +104,8 @@ describe('17 — Gestão de Documentos', () => {
     });
 
     it('paciente vê seus documentos disponíveis', () => {
-      cy.contains('João Silva').should('be.visible');
+      cy.contains('Documento Teste').should('be.visible');
+      cy.contains('Dra. Ana').should('be.visible');
     });
   });
 

@@ -96,11 +96,8 @@ describe('06 — Prontuários (Médical Record)', () => {
     });
 
     it('avisa quando tentar salvar sem anotações', () => {
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', 'Salvar e finalizar atendimento').click();
-      cy.get('@alertStub').should('have.been.calledWithMatch', /preencha as anotações/);
+      cy.contains('[role="alert"]', /preencha as anotações/).should('be.visible');
     });
 
     it('envia POST /prontuarios e navega para agenda do profissional', () => {
@@ -116,10 +113,6 @@ describe('06 — Prontuários (Médical Record)', () => {
         statusCode: 200,
         body: []
       }).as('getTodas');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       const notas = 'Paciente apresentou melhora significativa. Manter conduta atual.';
       cy.get('textarea').type(notas);
       cy.contains('button', 'Salvar e finalizar atendimento').click();
@@ -128,7 +121,7 @@ describe('06 — Prontuários (Médical Record)', () => {
         expect(request.body.notas).to.eq(notas);
         expect(String(request.body.appointmentId)).to.eq('6');
       });
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Prontuário salvo/);
+      cy.contains('[role="alert"]', /Prontuário salvo/).should('be.visible');
       cy.url().should('include', '/panel/professional-appointments');
     });
 
@@ -137,15 +130,11 @@ describe('06 — Prontuários (Médical Record)', () => {
         statusCode: 400,
         body: { message: 'Notas inválidas' }
       }).as('postProntuarioErro');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.get('textarea').type('Tentativa de anotação.');
       cy.contains('button', 'Salvar e finalizar atendimento').click();
 
       cy.wait('@postProntuarioErro');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Erro ao salvar prontuário/);
+      cy.contains('[role="alert"]', /Erro ao salvar prontuário/).should('be.visible');
     });
   });
 

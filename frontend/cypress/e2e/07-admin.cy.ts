@@ -65,10 +65,6 @@ describe('07 — Painel Administrativo', () => {
         statusCode: 201,
         body: 'OK'
       }).as('postProf');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', '+ Novo profissional').click();
       cy.get('input[formControlName="name"]').type('Dra. Beatriz Lima');
       cy.get('input[formControlName="email"]').type('beatriz@clinica.com');
@@ -85,7 +81,7 @@ describe('07 — Painel Administrativo', () => {
         expect(request.body.tipoRegistro).to.eq('CRP');
         expect(request.body.registroConselho).to.eq('CRP-06 999999');
       });
-      cy.get('@alertStub').should('have.been.calledWithMatch', /cadastrado com sucesso/);
+      cy.contains('[role="alert"]', /cadastrado com sucesso/).should('be.visible');
     });
 
     it('clique em "Editar" pré-preenche o formulário com dados do profissional', () => {
@@ -101,17 +97,13 @@ describe('07 — Painel Administrativo', () => {
         statusCode: 200,
         body: 'OK'
       }).as('putProf');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('tr', 'Dra. Ana Souza').contains('button', 'Editar').click();
       cy.get('input[formControlName="specialty"]').clear().type('Psicologia Clínica e Avaliação');
       cy.contains('button', 'Salvar alterações').click();
 
       cy.wait('@putProf').its('request.body.specialty')
         .should('eq', 'Psicologia Clínica e Avaliação');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /atualizado com sucesso/);
+      cy.contains('[role="alert"]', /atualizado com sucesso/).should('be.visible');
     });
 
     it('tenta excluir profissional com consultas ativas → DELETE force retorna 409 → exibe erro', () => {
@@ -119,15 +111,12 @@ describe('07 — Painel Administrativo', () => {
         statusCode: 409,
         body: { message: 'Não é possível excluir: profissional possui consultas ativas.' }
       }).as('delConflict');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.on('window:confirm', () => true);
 
       cy.contains('tr', 'Dra. Ana Souza').contains('button', 'Excluir').click();
 
       cy.wait('@delConflict');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Não é possível excluir|consultas ativas/);
+      cy.contains('[role="alert"]', /Não é possível excluir|consultas ativas/).should('be.visible');
     });
 
     it('exclui profissional via DELETE /professionals/force/{id} (com confirm)', () => {
@@ -138,16 +127,13 @@ describe('07 — Painel Administrativo', () => {
         statusCode: 200,
         body: professionals.filter(p => p.id !== 2)
       }).as('reload');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.on('window:confirm', () => true);
 
       cy.contains('tr', 'Dr. Carlos Menezes').contains('button', 'Excluir').click();
 
       cy.wait('@delProf');
       cy.wait('@reload');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /removido com sucesso/);
+      cy.contains('[role="alert"]', /removido com sucesso/).should('be.visible');
       cy.contains('td', 'Dr. Carlos Menezes').should('not.exist');
     });
   });
@@ -231,16 +217,13 @@ describe('07 — Painel Administrativo', () => {
         statusCode: 200,
         body: patients.map(p => p.id === 4 ? { ...p, blockedUntil: null } : p)
       }).as('reload');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.on('window:confirm', () => true);
 
       cy.contains('tr', 'Maria Oliveira').contains('button', 'Desbloquear').click();
 
       cy.wait('@desbloq');
       cy.wait('@reload');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /desbloqueado com sucesso/);
+      cy.contains('[role="alert"]', /desbloqueado com sucesso/).should('be.visible');
     });
 
     it('remove paciente via DELETE /patients/{id} (com confirm)', () => {
@@ -251,16 +234,13 @@ describe('07 — Painel Administrativo', () => {
         statusCode: 200,
         body: patients.filter(p => p.id !== 5)
       }).as('reload');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.on('window:confirm', () => true);
 
       cy.contains('tr', 'João Pereira').contains('button', 'Remover').click();
 
       cy.wait('@delPat');
       cy.wait('@reload');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /removido com sucesso/);
+      cy.contains('[role="alert"]', /removido com sucesso/).should('be.visible');
       cy.contains('td', 'João Pereira').should('not.exist');
     });
 

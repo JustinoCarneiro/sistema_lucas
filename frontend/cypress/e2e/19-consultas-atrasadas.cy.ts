@@ -44,7 +44,7 @@ describe('19 — Consultas Atrasadas (Dashboard + Aba Atrasadas)', () => {
         body: dashboardComAtrasadas,
       }).as('getDashProf');
 
-      cy.login('profissional@clinica.com', '123456');
+      cy.login('ana@clinica.com', '123456');
       cy.visit('/panel/dashboard');
       cy.wait('@getDashProf');
     });
@@ -74,7 +74,7 @@ describe('19 — Consultas Atrasadas (Dashboard + Aba Atrasadas)', () => {
         body: dashboardSemAtrasadas,
       }).as('getDashProf');
 
-      cy.login('profissional@clinica.com', '123456');
+      cy.login('ana@clinica.com', '123456');
       cy.visit('/panel/dashboard');
       cy.wait('@getDashProf');
     });
@@ -93,7 +93,7 @@ describe('19 — Consultas Atrasadas (Dashboard + Aba Atrasadas)', () => {
         body: atrasadas,
       }).as('getAtrasadas');
 
-      cy.login('profissional@clinica.com', '123456');
+      cy.login('ana@clinica.com', '123456');
       cy.visit('/panel/professional-appointments');
       cy.wait('@getAtrasadas');
     });
@@ -115,7 +115,7 @@ describe('19 — Consultas Atrasadas (Dashboard + Aba Atrasadas)', () => {
 
     it('"Registrar atendimento" presente para consulta AGENDADA', () => {
       cy.contains('button', 'Atrasadas').click();
-      cy.contains('João Silva').parents('[class*="border"]').first().within(() => {
+      cy.contains('João Silva').parents('tr, div.p-5').first().within(() => {
         cy.contains('button', 'Registrar').should('exist');
       });
     });
@@ -128,13 +128,10 @@ describe('19 — Consultas Atrasadas (Dashboard + Aba Atrasadas)', () => {
         statusCode: 200,
         body: atrasadas.filter(c => c.id !== 101),
       }).as('reloadAtrasadas');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.on('window:confirm', () => true);
 
       cy.contains('button', 'Atrasadas').click();
-      cy.contains('João Silva').parents('[class*="border"]').first().within(() => {
+      cy.contains('João Silva').parents('tr, div.p-5').first().within(() => {
         cy.contains('button', 'faltou').click();
       });
 

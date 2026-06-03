@@ -127,10 +127,6 @@ describe('05 — Documentos (Gestão e Visualização)', () => {
         statusCode: 200,
         body: profDocs
       }).as('reload');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', '+ Novo documento').click();
       cy.contains('label', 'Paciente').siblings('select').select('Lucas Silva');
       cy.contains('label', 'Tipo de documento').siblings('select').select('Laudo Psicológico');
@@ -143,7 +139,7 @@ describe('05 — Documentos (Gestão e Visualização)', () => {
         expect(request.body.titulo).to.eq('Laudo de teste');
         expect(request.body.tipo).to.eq('LAUDO_PSICOLOGICO');
       });
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Documento criado/);
+      cy.contains('[role="alert"]', /Documento criado/).should('be.visible');
     });
 
     it('chama DELETE ao excluir um documento (com confirm aceito)', () => {

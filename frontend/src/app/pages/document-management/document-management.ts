@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentoService } from '../documents/document.service';
 import { PatientService } from '../patients/patients.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-document-management',
@@ -14,6 +15,7 @@ import { PatientService } from '../patients/patients.service';
 export class DocumentManagementComponent implements OnInit {
   private documentoService = inject(DocumentoService);
   private patientService = inject(PatientService);
+  private notify = inject(NotificationService);
 
   documentos = signal<any[]>([]);
   pacientes = signal<any[]>([]);
@@ -43,7 +45,7 @@ export class DocumentManagementComponent implements OnInit {
       const fileURL = URL.createObjectURL(blob);
       window.open(fileURL, '_blank');
     } catch (e) {
-      alert('Não foi possível abrir o PDF. Arquivo possivelmente corrompido.');
+      this.notify.error('Não foi possível abrir o PDF. Arquivo possivelmente corrompido.');
       console.error(e);
     }
   }
@@ -88,7 +90,7 @@ export class DocumentManagementComponent implements OnInit {
   onArquivoSelecionado(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); return; }
+    if (file.type !== 'application/pdf') { this.notify.error('Apenas arquivos PDF são aceitos.'); return; }
     this.form.nomeArquivo = file.name;
     const reader = new FileReader();
     reader.onload = () => { this.form.arquivoBase64 = (reader.result as string).split(',')[1]; };
@@ -97,26 +99,26 @@ export class DocumentManagementComponent implements OnInit {
 
   salvar() {
     if (!this.form.pacienteId || !this.form.tipo || !this.form.titulo) {
-      alert('Preencha paciente, tipo e título.'); return;
+      this.notify.error('Preencha paciente, tipo e título.'); return;
     }
     if (!this.form.conteudoTexto && !this.form.arquivoBase64) {
-      alert('Adicione um texto ou faça upload de um PDF.'); return;
+      this.notify.error('Adicione um texto ou faça upload de um PDF.'); return;
     }
     this.documentoService.criar(this.form).subscribe({
       next: () => {
-        alert('Documento criado com sucesso!');
+        this.notify.success('Documento criado com sucesso!');
         this.mostrarFormulario.set(false);
         this.resetForm();
         this.carregarDocumentos();
       },
-      error: (err: any) => alert('Erro: ' + (err.error?.message || 'Tente novamente.'))
+      error: (err: any) => this.notify.error(err.error?.message || 'Tente novamente.')
     });
   }
 
   alterarDisponibilidade(doc: any) {
     this.documentoService.alterarDisponibilidade(doc.id, !doc.disponivel).subscribe({
       next: () => this.carregarDocumentos(),
-      error: () => alert('Erro ao alterar disponibilidade.')
+      error: () => this.notify.error('Erro ao alterar disponibilidade.')
     });
   }
 
@@ -124,7 +126,7 @@ export class DocumentManagementComponent implements OnInit {
     if (confirm('Excluir este documento? Esta ação não pode ser desfeita.')) {
       this.documentoService.excluir(id).subscribe({
         next: () => this.carregarDocumentos(),
-        error: () => alert('Erro ao excluir.')
+        error: () => this.notify.error('Erro ao excluir.')
       });
     }
   }

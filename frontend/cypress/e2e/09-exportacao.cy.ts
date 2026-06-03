@@ -30,9 +30,8 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
       }).as('exportPatients');
 
       cy.contains('button', 'Exportar Pacientes').click();
-      cy.wait('@exportPatients').then(({ response, request }) => {
+      cy.wait('@exportPatients').then(({ response }) => {
         expect(response!.statusCode).to.eq(200);
-        expect(request.headers.authorization).to.match(/^Bearer /);
       });
     });
 
@@ -67,13 +66,9 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
         statusCode: 500,
         body: 'erro'
       }).as('exportFail');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', 'Exportar Relatório Geral').click();
       cy.wait('@exportFail');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Não foi possível gerar a exportação/);
+      cy.contains('[role="alert"]', /Não foi possível gerar a exportação/).should('be.visible');
     });
   });
 
@@ -99,9 +94,8 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
       }).as('exportMe');
 
       cy.contains('button', 'Exportar Meus Atendimentos').click();
-      cy.wait('@exportMe').then(({ response, request }) => {
+      cy.wait('@exportMe').then(({ response }) => {
         expect(response!.statusCode).to.eq(200);
-        expect(request.headers.authorization).to.match(/^Bearer /);
       });
     });
   });
@@ -133,9 +127,8 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
       }).as('exportSelf');
 
       cy.contains('button', /Portabilidade/).click();
-      cy.wait('@exportSelf').then(({ response, request }) => {
+      cy.wait('@exportSelf').then(({ response }) => {
         expect(response!.statusCode).to.eq(200);
-        expect(request.headers.authorization).to.match(/^Bearer /);
       });
     });
   });
@@ -146,12 +139,10 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
         method: 'POST',
         url: `${Cypress.env('apiUrl')}/auth/login`,
         body: { email: 'lucas@email.com', password: '123456' }
-      }).then(({ body }) => {
-        const token = body.token;
+      }).then(() => {
         cy.request({
           method: 'GET',
           url: `${Cypress.env('apiUrl')}/export/patients`,
-          headers: { Authorization: `Bearer ${token}` },
           failOnStatusCode: false
         }).then((response) => {
           expect(response.status).to.eq(403);
@@ -164,12 +155,10 @@ describe('09 — Exportação e Portabilidade (LGPD)', () => {
         method: 'POST',
         url: `${Cypress.env('apiUrl')}/auth/login`,
         body: { email: 'ana@clinica.com', password: '123456' }
-      }).then(({ body }) => {
-        const token = body.token;
+      }).then(() => {
         cy.request({
           method: 'GET',
           url: `${Cypress.env('apiUrl')}/export/admin`,
-          headers: { Authorization: `Bearer ${token}` },
           failOnStatusCode: false
         }).then((response) => {
           expect(response.status).to.eq(403);

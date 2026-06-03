@@ -59,12 +59,13 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
     });
 
     it('modal de reagendamento também exibe o aviso de penalidade', () => {
-      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+      cy.intercept('GET', '**/disponibilidade/*/available-dates*', {
         statusCode: 200,
-        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
-      }).as('getWorkingDays');
+        body: [amanha()]
+      }).as('getAvailableDates');
 
       cy.get('[data-testid="reagendar-button"]').click();
+      cy.wait('@getAvailableDates');
       cy.contains('h3', 'Reagendar Consulta').should('be.visible');
       cy.contains('⚠️ AVISO DE PENALIDADE').should('be.visible');
       cy.contains('faltam menos de 24h para a consulta original').should('be.visible');
@@ -106,10 +107,10 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
         statusCode: 200,
         body: profissionaisDisp
       }).as('getProfs');
-      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+      cy.intercept('GET', '**/disponibilidade/*/available-dates*', {
         statusCode: 200,
-        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
-      }).as('getWorkingDays');
+        body: [amanha()]
+      }).as('getAvailableDates');
       cy.intercept('GET', '**/disponibilidade/*/slots*', {
         statusCode: 200,
         body: [{ startTime: '09:00:00', endTime: '10:00:00' }]
@@ -125,13 +126,9 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
         statusCode: 403,
         body: { message: 'Você está temporariamente bloqueado para novos agendamentos até 2026-06-03.' }
       }).as('postBlocked');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', '+ Agendar consulta').click();
       cy.get('select[formControlName="professionalId"]').select('1');
-      cy.wait('@getWorkingDays');
+      cy.wait('@getAvailableDates');
       cy.get('select[formControlName="date"] option').should('have.length.at.least', 2);
       cy.get('select[formControlName="date"]').find('option').eq(1).then(opt => {
         cy.get('select[formControlName="date"]').select(String(opt.val()));
@@ -142,7 +139,7 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
       cy.contains('button', 'Confirmar agendamento').click();
 
       cy.wait('@postBlocked');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /temporariamente bloqueado/);
+      cy.contains('[role="alert"]', /temporariamente bloqueado/).should('be.visible');
     });
   });
 
@@ -202,16 +199,13 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
         statusCode: 200,
         body: [{ ...patientsBloqueado[0], blockedUntil: null }]
       }).as('reloadPatients');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.on('window:confirm', () => true);
 
       cy.contains('tr', 'Lucas Silva').contains('button', 'Desbloquear').click();
       cy.wait('@patchDes');
       cy.wait('@reloadPatients');
 
-      cy.get('@alertStub').should('have.been.calledWithMatch', /desbloqueado com sucesso/);
+      cy.contains('[role="alert"]', /desbloqueado com sucesso/).should('be.visible');
       cy.contains('tr', 'Lucas Silva').within(() => {
         cy.contains('Bloqueado').should('not.exist');
         cy.contains('button', 'Desbloquear').should('not.exist');
@@ -259,15 +253,11 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
         statusCode: 200,
         body: [{ ...consultaHoje, status: 'FALTA' }]
       }).as('reloadHoje');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('Lucas Silva').should('be.visible');
       cy.contains('button', /Paciente faltou/i).click();
 
       cy.wait('@patchFalta');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /faltante|falta/i);
+      cy.contains('[role="alert"]', /faltante|falta/i).should('be.visible');
     });
   });
 
@@ -277,11 +267,10 @@ describe('13 — Penalidades por Cancelamento/Reagendamento Tardio', () => {
         method: 'POST',
         url: `${Cypress.env('apiUrl')}/auth/login`,
         body: { email: 'lucas@email.com', password: '123456' }
-      }).then(({ body }) => {
+      }).then(() => {
         cy.request({
           method: 'PATCH',
           url: `${Cypress.env('apiUrl')}/patients/4/desbloquear`,
-          headers: { Authorization: `Bearer ${body.token}` },
           failOnStatusCode: false
         }).then((resp) => {
           expect(resp.status).to.eq(403);

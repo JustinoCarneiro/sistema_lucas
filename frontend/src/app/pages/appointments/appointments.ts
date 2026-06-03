@@ -2,6 +2,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppointmentService } from './appointment.service';
+import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-appointments',
@@ -12,6 +13,7 @@ import { AppointmentService } from './appointment.service';
 })
 export class Appointments implements OnInit {
   private appointmentService = inject(AppointmentService);
+  private notify = inject(NotificationService);
 
   consultas = signal<any[]>([]);
   isLoading = signal(true);
@@ -46,7 +48,7 @@ export class Appointments implements OnInit {
     if (confirm('Confirmar cancelamento desta consulta?')) {
       this.appointmentService.cancelarConsulta(id).subscribe({
         next: () => this.carregarConsultas(),
-        error: () => alert('Erro ao cancelar a consulta.')
+        error: () => this.notify.error('Erro ao cancelar a consulta.')
       });
     }
   }

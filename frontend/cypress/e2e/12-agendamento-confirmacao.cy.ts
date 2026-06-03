@@ -35,10 +35,10 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
         statusCode: 200,
         body: profissionaisDisp
       }).as('getProfs');
-      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+      cy.intercept('GET', '**/disponibilidade/*/available-dates*', {
         statusCode: 200,
-        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
-      }).as('getWorkingDays');
+        body: [dataAlvo]
+      }).as('getAvailableDates');
       cy.intercept('GET', '**/disponibilidade/*/slots*', {
         statusCode: 200,
         body: slotsDisponiveis
@@ -60,16 +60,15 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
     it('Etapa 2: ao escolher profissional, working-days e select de datas aparecem', () => {
       cy.contains('button', '+ Agendar consulta').click();
       cy.get('select[formControlName="professionalId"]').select('1');
-      cy.wait('@getWorkingDays');
+      cy.wait('@getAvailableDates');
       cy.contains('label', '2. Escolha a data').should('be.visible');
       cy.get('select[formControlName="date"]').should('exist');
-      cy.contains('Dias de atendimento').should('be.visible');
     });
 
     it('Etapa 3: ao escolher data, slots aparecem como botões', () => {
       cy.contains('button', '+ Agendar consulta').click();
       cy.get('select[formControlName="professionalId"]').select('1');
-      cy.wait('@getWorkingDays');
+      cy.wait('@getAvailableDates');
       cy.get('select[formControlName="date"] option').should('have.length.at.least', 2);
       cy.get('select[formControlName="date"]').find('option').eq(1).then(opt => {
         cy.get('select[formControlName="date"]').select(String(opt.val()));
@@ -83,7 +82,7 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
     it('exibe resumo quando slot é selecionado', () => {
       cy.contains('button', '+ Agendar consulta').click();
       cy.get('select[formControlName="professionalId"]').select('1');
-      cy.wait('@getWorkingDays');
+      cy.wait('@getAvailableDates');
       cy.get('select[formControlName="date"] option').should('have.length.at.least', 2);
       cy.get('select[formControlName="date"]').find('option').eq(1).then(opt => {
         cy.get('select[formControlName="date"]').select(String(opt.val()));
@@ -119,13 +118,9 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
           }
         ]
       }).as('reloadMinhas');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', '+ Agendar consulta').click();
       cy.get('select[formControlName="professionalId"]').select('1');
-      cy.wait('@getWorkingDays');
+      cy.wait('@getAvailableDates');
       cy.get('select[formControlName="date"] option').should('have.length.at.least', 2);
       cy.get('select[formControlName="date"]').find('option').eq(1).then(opt => {
         cy.get('select[formControlName="date"]').select(String(opt.val()));
@@ -142,7 +137,7 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
       });
       cy.wait('@reloadMinhas');
 
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Consulta agendada/);
+      cy.contains('[role="alert"]', /Consulta agendada/).should('be.visible');
       cy.contains('Pendente de aprovação').should('be.visible');
       cy.contains('Aguardando Confirmação').should('be.visible');
     });
@@ -170,22 +165,18 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
         statusCode: 200,
         body: 'Presença confirmada'
       }).as('patchConfirmar');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.visit('/panel/my-appointments');
       cy.wait('@getMinhasConfirmadaProf');
 
       cy.contains('button', 'Confirmar presença').click();
       cy.wait('@patchConfirmar');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Presença confirmada/);
+      cy.contains('[role="alert"]', /Presença confirmada/).should('be.visible');
     });
   });
 
   context('Paciente — Reagendamento', () => {
     beforeEach(() => {
-      const dataAlvoLocal = proximaSegunda();
+
       cy.intercept('GET', '**/dashboard/paciente', {
         statusCode: 200,
         body: { totalRealizadas: 0, totalAgendadas: 0, documentosDisponiveis: [], perfil: {} }
@@ -198,7 +189,7 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
             patientId: 3,
             professionalName: 'Dra. Ana Souza',
             patientName: 'Lucas Silva',
-            startTime: `${dataAlvoLocal}T09:00:00`,
+            startTime: `${dataAlvo}T09:00:00`,
             reason: 'Sessão',
             cancelReason: null,
             status: 'AGENDADA',
@@ -211,10 +202,10 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
         statusCode: 200,
         body: profissionaisDisp
       }).as('getProfs');
-      cy.intercept('GET', '**/disponibilidade/*/working-days*', {
+      cy.intercept('GET', '**/disponibilidade/*/available-dates*', {
         statusCode: 200,
-        body: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
-      }).as('getWorkingDays');
+        body: [dataAlvo]
+      }).as('getAvailableDates');
       cy.intercept('GET', '**/disponibilidade/*/slots*', {
         statusCode: 200,
         body: [{ startTime: '10:00:00', endTime: '11:00:00' }]
@@ -227,13 +218,18 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
 
     it('reagendamento sem justificativa → botão Confirmar Reagendamento desabilitado', () => {
       cy.get('[data-testid="reagendar-button"]').first().click();
+      cy.wait('@getAvailableDates');
+      
       cy.contains('h3', 'Reagendar Consulta').should('be.visible');
 
-      // Seleciona profissional e data/slot sem preencher justificativa
-      cy.get('select').first().select('1');
-      cy.wait('@getWorkingDays');
+      // Seleciona a data (o profissional já é auto-selecionado)
+      cy.get('select[formControlName="date"]').select(dataAlvo);
+      cy.wait('@getSlots');
 
-      cy.contains('button', /Confirmar Reagendamento/i).should('be.disabled');
+      // Seleciona o slot (neste caso, o mock tem apenas 1 slot "10:00:00")
+      cy.contains('button', '10:00').click();
+
+      cy.contains('button', /Confirmar Alteração/i).should('be.disabled');
     });
 
     it('lista mostra consulta com status CONCLUIDA com badge "Concluída"', () => {
@@ -317,15 +313,12 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
       }).as('reloadTodas');
 
       cy.on('window:confirm', () => true);
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
-
       cy.contains('button', 'Próximas').click();
       cy.wait('@getTodas');
 
       cy.contains('button', /Aprovar/).click();
       cy.wait('@aprovarReq');
-      cy.get('@alertStub').should('have.been.calledWithMatch', /Agendamento confirmado/);
+      cy.contains('[role="alert"]', /Agendamento confirmado/).should('be.visible');
     });
 
     it('recusar consulta abre prompt e envia PATCH /consultas/:id/recusar', () => {
@@ -337,9 +330,6 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
         statusCode: 200,
         body: [{ ...todasConsultasComPendente[0], status: 'CANCELADA' }]
       }).as('reloadTodasRecusa');
-
-      const alertStub = cy.stub().as('alertStub');
-      cy.on('window:alert', alertStub);
       cy.window().then((win) => {
         cy.stub(win, 'prompt').returns('Agenda lotada neste horário.');
       });
@@ -351,7 +341,7 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
       cy.wait('@recusarReq').then(({ request }) => {
         expect(request.body.justification).to.eq('Agenda lotada neste horário.');
       });
-      cy.get('@alertStub').should('have.been.calledWithMatch', /recusado com sucesso/);
+      cy.contains('[role="alert"]', /recusado com sucesso/).should('be.visible');
     });
 
     it('aba Hoje — confirma consulta com status AGENDADA via PATCH /confirmar-profissional', () => {
@@ -376,8 +366,6 @@ describe('12 — Agendamento Guiado e Fluxo de Confirmação', () => {
       }).as('confirmarProf');
 
       cy.on('window:confirm', () => true);
-      cy.on('window:alert', () => {});
-
       cy.visit('/panel/professional-appointments');
       cy.wait('@getHojeComAgendada');
 
