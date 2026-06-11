@@ -53,9 +53,12 @@ A segurança é o pilar central do Sistema Lucas, implementada em múltiplas cam
 ## 🆕 4. Funcionalidades Principais
 *   **Gestão de Disponibilidade Profissional**: Interface intuitiva para profissionais configurarem seus dias e horários de trabalho mensais (Mês Atual e Próximo Mês), com geração automática de slots.
 *   **Fluxo de Agendamento Guiado**: Pacientes visualizam apenas profissionais com disponibilidade configurada.
+*   **Tratamento de Concorrência (Anti-Overbooking)**: Trava de banco de dados (*Partial Unique Index*) que bloqueia duplo agendamento no mesmo horário, liberando a vaga automaticamente caso o primeiro agendamento seja cancelado ou recusado.
 *   **Ciclo de Confirmação Invertido**: Segurança reforçada onde o agendamento passa por: `AGENDADA` (Aguardando profissional) → `CONFIRMADA_PROFISSIONAL` (Aguardando paciente) → `CONFIRMADA`.
+*   **Governança de Cancelamentos**: Exigência sistêmica de justificativa textual sempre que um agendamento for recusado ou cancelado (aplicável tanto a profissionais quanto a pacientes).
 *   **Sistema de Penalidades (Anti-Absenteísmo)**: Cancelamentos com menos de 24h ou ausências (faltas) geram infrações automáticas. A 2ª infração resulta em um **bloqueio de 15 dias** para novos agendamentos.
 *   **Alertas de Consultas Atrasadas**: Notificações por e-mail e banners urgentes no dashboard do profissional caso existam consultas com data passada pendentes de atualização de status.
+*   **Gestão Administrativa**: A tela de 'Agenda Geral' (Admin) oferece filtros em tempo real por texto (busca), data exata e status da consulta.
 *   **Prontuário Eletrônico**: Evolução clínica cronológica com garantia de acesso exclusivo ao médico vinculado (IDOR protection).
 *   **Gestão de Documentos**: Upload e download seguros de exames e laudos, visíveis para o paciente.
 *   **Exportação de Dados**: Relatórios em CSV e PDF (Admin) com registro em Audit Log.

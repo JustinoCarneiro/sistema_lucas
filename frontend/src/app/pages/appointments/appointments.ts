@@ -1,13 +1,13 @@
-// frontend/src/app/pages/appointments/appointments.ts
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AppointmentService } from './appointment.service';
 import { NotificationService } from '../../notification.service';
 
 @Component({
   selector: 'app-appointments',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './appointments.html',
   styleUrl: './appointments.css'
 })
@@ -18,6 +18,24 @@ export class Appointments implements OnInit {
   consultas = signal<any[]>([]);
   isLoading = signal(true);
   selectedItem: any = null;
+
+  searchTerm = signal('');
+  statusFilter = signal('');
+  dateFilter = signal('');
+
+  consultasFiltradas = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    const status = this.statusFilter();
+    const date = this.dateFilter();
+    return this.consultas().filter(c => {
+      const matchTerm = !term || 
+        (c.patientName && c.patientName.toLowerCase().includes(term)) ||
+        (c.professionalName && c.professionalName.toLowerCase().includes(term));
+      const matchStatus = !status || c.status === status;
+      const matchDate = !date || (c.startTime && c.startTime.startsWith(date));
+      return matchTerm && matchStatus && matchDate;
+    });
+  });
 
   openDetails(item: any) {
     this.selectedItem = item;

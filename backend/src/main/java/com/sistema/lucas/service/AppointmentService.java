@@ -285,9 +285,12 @@ public class AppointmentService {
             throw new RuntimeException("Apenas consultas aguardando confirmação podem ser recusadas.");
         }
 
+        if (justificativa == null || justificativa.isBlank()) {
+            throw new RuntimeException("A justificativa é obrigatória para recusar a consulta.");
+        }
+
         consulta.setStatus(StatusConsulta.CANCELADA);
-        consulta.setCancelReason(justificativa != null && !justificativa.isBlank()
-            ? justificativa : "Recusada pelo profissional de saúde.");
+        consulta.setCancelReason(justificativa);
         appointmentRepository.save(consulta);
 
         auditLogService.log(emailProfissional, "RECUSA_AGENDAMENTO", "Appointment", id,

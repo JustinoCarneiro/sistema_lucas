@@ -124,7 +124,11 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   recusar(app: any) {
     const motivo = prompt(`Justificativa para recusar a consulta de ${app.patientName}:`);
     if (motivo !== null) {
-      const justificativa = motivo.trim() || 'Indisponibilidade de agenda do profissional.';
+      const justificativa = motivo.trim();
+      if (!justificativa) {
+        this.notify.error('A justificativa é obrigatória para recusar a consulta.');
+        return;
+      }
       this.appointmentService.recusarAgendamento(app.id, justificativa).subscribe({
         next: () => {
           this.notify.success('Agendamento recusado com sucesso.');
@@ -161,7 +165,11 @@ export class ProfessionalAppointmentsComponent implements OnInit {
   cancelarAtrasada(app: any) {
     const motivo = prompt(`Justificativa para cancelar a consulta de ${app.patientName}:`);
     if (motivo !== null) {
-      const justificativa = motivo.trim() || 'Consulta não realizada — cancelamento retroativo.';
+      const justificativa = motivo.trim();
+      if (!justificativa) {
+        this.notify.error('A justificativa é obrigatória para cancelar a consulta.');
+        return;
+      }
       this.http.post(
         `${environment.apiUrl}/consultas/${app.id}/cancelar`,
         { justification: justificativa },
