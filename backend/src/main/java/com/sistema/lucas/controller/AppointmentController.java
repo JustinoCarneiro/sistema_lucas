@@ -39,7 +39,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasRole('PATIENT') or hasRole('PROFESSIONAL')")
+    @PreAuthorize("hasRole('PATIENT') or hasRole('PROFESSIONAL') or hasRole('ADMIN')")
     public ResponseEntity<Void> cancelar(@PathVariable Long id, @RequestBody @Valid AppointmentCancelDTO dto, Principal principal) {
         service.cancelar(java.util.Objects.requireNonNull(id), principal.getName(), dto.justification());
         return ResponseEntity.noContent().build();

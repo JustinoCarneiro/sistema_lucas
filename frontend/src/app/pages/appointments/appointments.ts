@@ -63,8 +63,9 @@ export class Appointments implements OnInit {
   }
 
   cancelar(id: number) {
-    if (confirm('Confirmar cancelamento desta consulta?')) {
-      this.appointmentService.cancelarConsulta(id).subscribe({
+    const justification = prompt('Informe a justificativa do cancelamento:');
+    if (justification && justification.trim()) {
+      this.appointmentService.cancelarConsulta(id, justification.trim()).subscribe({
         next: () => this.carregarConsultas(),
         error: () => this.notify.error('Erro ao cancelar a consulta.')
       });
