@@ -4,6 +4,10 @@
 # este script gera um dump do banco postgres local (homologação) e da produção
 # e os mantém organizados, salvando também uma cópia da produção localmente.
 
+# Garante que os caminhos relativos (.env, ./backups) resolvem para o diretório
+# do script, independente de onde ele for chamado (ex: cron não faz cd antes)
+cd "$(dirname "$0")" || exit 1
+
 # Carrega as variáveis do .env de forma segura (sem executar eval de caracteres especiais)
 if [ -f .env ]; then
     while IFS='=' read -r key value; do
@@ -38,40 +42,48 @@ echo ""
 echo "==============================================="
 echo "🌍 Iniciando backup Remoto (Produção)"
 echo "==============================================="
-PROD_FILE="backup_prod_$TIMESTAMP.sql.gz"
-PROD_LOCAL_PATH="$BACKUP_DIR/$PROD_FILE"
 
-# Diretório base no servidor de produção (onde costuma ficar o código)
-REMOTE_PROJECT_DIR="~/sistema_lucas"
-REMOTE_BACKUP_DIR="$REMOTE_PROJECT_DIR/backups"
+# Se este script já está rodando dentro do próprio servidor de produção
+# (ex: via cron em produção), pular a etapa de SSH: ela tentaria conectar
+# na própria máquina e sempre falharia por falta de chave de loopback.
+if hostname -I 2>/dev/null | grep -qw "$DEPLOY_SERVER_IP"; then
+    echo "ℹ️  Rodando localmente no servidor de produção — pulando etapa de SSH remoto (o dump acima já é o de produção)."
+else
+    PROD_FILE="backup_prod_$TIMESTAMP.sql.gz"
+    PROD_LOCAL_PATH="$BACKUP_DIR/$PROD_FILE"
 
-echo "Conectando via SSH em $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP..."
+    # Diretório base no servidor de produção (onde costuma ficar o código)
+    REMOTE_PROJECT_DIR="~/sistema_lucas"
+    REMOTE_BACKUP_DIR="$REMOTE_PROJECT_DIR/backups"
 
-# Comando que será executado na máquina de produção via SSH
-REMOTE_CMD="mkdir -p $REMOTE_BACKUP_DIR && \
+    echo "Conectando via SSH em $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP..."
+
+    # Comando que será executado na máquina de produção via SSH
+    REMOTE_CMD="mkdir -p $REMOTE_BACKUP_DIR && \
 docker exec lucas-db pg_dump -U \"$DB_USER\" \"$DB_NAME\" | gzip > $REMOTE_BACKUP_DIR/$PROD_FILE && \
 echo $REMOTE_BACKUP_DIR/$PROD_FILE && \
 find $REMOTE_BACKUP_DIR -name 'backup_prod_*.sql.gz' -mtime +7 -delete"
 
-# Executa o comando remoto e captura o caminho do arquivo gerado
-REMOTE_PATH=$(ssh -o StrictHostKeyChecking=no $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP "$REMOTE_CMD")
+    # Executa o comando remoto e captura o caminho do arquivo gerado
+    REMOTE_PATH=$(ssh -o StrictHostKeyChecking=no $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP "$REMOTE_CMD")
 
-if [ $? -eq 0 ] && [ -n "$REMOTE_PATH" ]; then
-    # Pega apenas a última linha (o caminho do arquivo) caso o SSH retorne logs extras
-    REMOTE_FILE=$(echo "$REMOTE_PATH" | tail -n 1)
-    
-    echo "✅ Backup remoto gerado na produção em: $REMOTE_FILE"
-    echo "📥 Baixando cópia da produção para a sua máquina (homologação)..."
-    
-    scp -o StrictHostKeyChecking=no "$DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP:$REMOTE_FILE" "$PROD_LOCAL_PATH"
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Cópia do backup de produção salva com segurança em: $PROD_LOCAL_PATH"
+    if [ $? -eq 0 ] && [ -n "$REMOTE_PATH" ]; then
+        # Pega apenas a última linha (o caminho do arquivo) caso o SSH retorne logs extras
+        REMOTE_FILE=$(echo "$REMOTE_PATH" | tail -n 1)
+
+        echo "✅ Backup remoto gerado na produção em: $REMOTE_FILE"
+        echo "📥 Baixando cópia da produção para a sua máquina (homologação)..."
+
+        scp -o StrictHostKeyChecking=no "$DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP:$REMOTE_FILE" "$PROD_LOCAL_PATH"
+
+        if [ $? -eq 0 ]; then
+            echo "✅ Cópia do backup de produção salva com segurança em: $PROD_LOCAL_PATH"
+        else
+            echo "❌ Erro ao baixar o backup da produção."
+        fi
     else
-        echo "❌ Erro ao baixar o backup da produção."
+        echo "❌ Erro de comunicação com o servidor de produção."
     fi
-else
-    echo "❌ Erro de comunicação com o servidor de produção."
 fi
 
 echo ""
