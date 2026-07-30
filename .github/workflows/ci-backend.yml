@@ -1,0 +1,62 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    name: JUnit + JaCoCo
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: sistema_lucas_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run tests with JaCoCo
+        run: ./mvnw verify -P ci
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sistema_lucas_test
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+          ENCRYPTION_KEY: 1234567890123456
+          JWT_SECRET: test-secret-at-least-32-characters-long
+          ALLOWED_ORIGINS: http://localhost:4200
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          retention-days: 14

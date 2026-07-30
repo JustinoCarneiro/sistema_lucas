@@ -1,0 +1,51 @@
+/*
+  Tokens de identidade visual — Sistema Lucas.
+
+  Referência/documentação no padrão Onda-Dev. A fonte funcional real é
+  `frontend/src/styles.css` (Tailwind v4, config CSS-first via `@theme` — não
+  existe `tailwind.config.js` neste projeto, é assim que a v4 funciona). Este
+  arquivo espelha os mesmos valores para consulta rápida fora do código do
+  frontend; se os dois divergirem no futuro, `frontend/src/styles.css` é quem
+  vale.
+
+  Origem: tokens garimpados manualmente do template "Mosaic React"
+  (`frontend/template-ref/`, referência visual copiada pro repo, sem
+  dependência de build) — cor de destaque trocada de violeta (original do
+  Mosaic) para azul.
+*/
+
+:root {
+  /* Tipografia */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.88rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+
+  /* Paleta neutra (cinza — levemente mais fria que o default do Tailwind) */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #bfc4cd;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Cor de destaque/marca: azul padrão do Tailwind (blue-*), não redefinido */
+
+  /* Elevação */
+  --shadow-sm: 0 1px 1px 0 rgb(0 0 0 / 0.05), 0 1px 2px 0 rgb(0 0 0 / 0.02);
+
+  /* Breakpoint customizado (além dos padrões do Tailwind) */
+  --breakpoint-xs: 480px;
+}

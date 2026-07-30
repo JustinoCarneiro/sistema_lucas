@@ -45,3 +45,9 @@ backup_*
 
 # Backup dos workflows bloqueados pelo GitHub
 .github-workflows-backup/
+
+# Obsidian (estado de UI local, não config compartilhada)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/graph.json
+.obsidian/appearance.json

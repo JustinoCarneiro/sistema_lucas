@@ -1,99 +1,78 @@
-# CLAUDE.md
+# SISTEMA LUCAS
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Plataforma de prontuário eletrônico e agendamento de consultas, com forte foco em conformidade LGPD (dados de saúde e identificação).
 
-## Project Overview
+## DIRETIVA PRIMÁRIA
 
-Sistema Lucas is a full-stack clinical management platform (prontuário eletrônico) with strong LGPD compliance focus. It uses a containerized modular monolith architecture: Spring Boot 3.4 (Java 21) backend, Angular 21 frontend, PostgreSQL 15 database — all orchestrated via Docker Compose.
+> "Leia o `CLAUDE.md` e o `ROADMAP.md`. A partir de agora, não altere a sintaxe do código que eu enviar ou que já existe. Este é o padrão a ser seguido adiante."
 
-## Development Commands
+## Stack
+- **Frontend:** Angular 21 (standalone components, Signals), Tailwind CSS v4 (config CSS-first, sem `tailwind.config`).
+- **Backend:** Spring Boot 3.4 · **Java 17** (`pom.xml` real — ver nota de divergência abaixo).
+- **Banco:** PostgreSQL 15, migrations via Flyway.
+- **Auth:** JWT (access token 15min, cookie HttpOnly) + refresh token rotativo (7 dias) + denylist de revogação no logout.
+- **Deploy:** Docker Compose (`deploy-dev.sh` / `deploy-prod.sh` / `push-and-deploy.sh` via rsync+SSH).
 
-### Local Dev Environment
-```bash
-./deploy-dev.sh      # Start all containers using .env.dev (seeds fake data via DataInitializer)
-./deploy-prod.sh     # Start containers using .env (clean DB, production config)
-./push-and-deploy.sh # rsync + SSH deploy to remote production server
+> ⚠️ **Divergência de versão a reconciliar:** `.cursorrules`, `README.md` e o `CLAUDE.md` anterior afirmavam Java 21, mas o `pom.xml` real configura `<java.version>17</java.version>`. Escolhido documentar a versão real (17) aqui. Decisão pendente: atualizar o `pom.xml` pra 21 (alinhar ao que sempre foi a intenção declarada), ou corrigir as demais referências pra 17. Nenhuma das duas ações foi tomada — só a documentação foi corrigida pra refletir o que roda hoje.
+
+## Perfil de projeto
+Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, **PATIENT** · dado sensível de saúde, alto peso de conformidade LGPD.
+
+## Princípios (não-funcionais críticos)
+- **Toda leitura/escrita de dado sensível é auditada** (`AuditLogService` — `audit_logs`).
+- **Campo sensível nunca fica em texto plano em repouso**: CPF, telefone, endereço, contato de emergência, alergias, motivo/justificativa de consulta, conteúdo de prontuário e documento — todos `AES-256-GCM` por campo (`EncryptionConverter`), com suporte a rotação de chave (chaves legadas + fallback AES-128-ECB só para dado histórico pré-migração).
+- **CPF nunca é comparado em texto plano** — unicidade via `cpf_hash` (HMAC-SHA256 com pepper secreto), não SHA-256 puro (SHA-256 puro foi a escolha original na V5 e foi considerado fraco contra rainbow table dado o universo limitado de CPFs válidos; `CpfHashBackfillRunner` migra o histórico).
+- **Exclusão de paciente é anonimização, não DELETE, quando há vínculo clínico** — CFM exige retenção de prontuário por 20 anos; só o vínculo de identidade é apagado (nome, e-mail, CPF, contato viram irreversíveis), o registro clínico permanece.
+- **Rate limiting** em `/auth/**`, `/export/**`, `/prontuarios/**`, `/documentos/**` — 30 req/min por IP (Bucket4j), 429 ao estourar.
+- **Consentimento LGPD registrado e versionado** — `terms_accepted_at` + `terms_version` no cadastro do paciente, não só um booleano.
+- **MFA/TOTP tem fundação de schema mas não está ativo** — `users.mfa_enabled`/`totp_secret` existem (migration V10), nenhum fluxo de login usa ainda. Não assumir que MFA está ativo ao trabalhar em auth.
+
+## Épicos
+> Histórias de usuário completas e critérios de aceite BDD em `./docs/spec.md`.
+
+1. **E1 · Autenticação & Sessão** *(Grande · risco alto)* — login, registro de paciente, JWT + refresh rotativo, logout com revogação, verificação de e-mail, recuperação de senha, rate limiting.
+2. **E2 · Gestão de Perfil** *(Pequeno)* — paciente e profissional veem/editam o próprio perfil; admin cadastra/edita/exclui profissionais.
+3. **E3 · Disponibilidade & Agenda do Profissional** *(Médio)* — grade mensal por data específica (não recorrente por dia-da-semana), slots de 1h, regras de edição (só mês atual/próximo).
+4. **E4 · Agendamento de Consultas** *(Grande · risco alto)* — máquina de estados completa (ver abaixo), aprovação do profissional, dupla confirmação, cancelamento, reagendamento, falta.
+5. **E5 · Prontuário Eletrônico** *(Médio · risco alto pela sensibilidade do dado)* — criação de prontuário pelo profissional; é o único ponto do sistema que conclui a consulta.
+6. **E6 · Documentos Clínicos** *(Médio)* — upload de documento (texto ou PDF em base64, validado por magic bytes), controle de visibilidade pro paciente.
+7. **E7 · Penalidades por Falta/Cancelamento Tardio** *(Médio · risco médio)* — advertência na 1ª infração, bloqueio de 15 dias na 2ª, desbloqueio administrativo (reset completo).
+8. **E8 · Exportação de Dados & Portabilidade LGPD** *(Pequeno)* — export CSV (admin/profissional) e JSON com metadados de consentimento (paciente, Art. 18 V LGPD).
+9. **E9 · Painel Administrativo** *(Médio)* — dashboards por role (admin/profissional/paciente) com métricas e listagens operacionais.
+10. **E10 · Segurança & Conformidade LGPD** *(Transversal · risco alto)* — criptografia de campo, hash de CPF, anonimização, auditoria, consentimento. Não é uma tela, é um conjunto de garantias que atravessa todos os épicos acima.
+
+## Máquina de estados principal
+
+**Consulta (Appointment):**
 ```
-Frontend runs on `http://localhost:8082`, backend on `http://localhost:8081`.
-
-### Backend (Maven, from `backend/`)
-```bash
-./mvnw spring-boot:run          # Run backend locally (requires DB)
-./mvnw test                     # Run all JUnit tests
-./mvnw test -Dtest=ClassName    # Run a single test class
-./mvnw package -DskipTests      # Build JAR without tests
+AGUARDANDO_CONFIRMACAO ──aprovar (profissional)──→ AGENDADA ──confirmar-profissional──→ CONFIRMADA_PROFISSIONAL ──confirmar-paciente──→ CONFIRMADA ──(prontuário criado)──→ CONCLUIDA
+        │                                                                                                                                    │
+        └──recusar (profissional)──→ CANCELADA                                                    de qualquer estado: cancelar → CANCELADA · marcarFalta → FALTA · reagendar → volta pra AGENDADA
 ```
+- `CONCLUIDA` é setado **só** por `ProntuarioService.create()` — não existe em `AppointmentService`. Conceitualmente pertence ao épico E5 (Prontuário), não ao E4.
+- `reagendar` sempre volta pro estado `AGENDADA`, reiniciando o ciclo de dupla confirmação, mesmo que já estivesse `CONFIRMADA`.
+- `marcarFalta` não tem guarda de estado prévio e sempre aciona penalidade (E7), independente de janela de tempo.
+- `cancelar` pode ser feito pelo paciente, profissional dono, ou qualquer ADMIN, de qualquer estado, com justificativa obrigatória. Penalidade só se aplica se `< 24h` da consulta **e** o estado já passou de `AGUARDANDO_CONFIRMACAO`.
 
-### Frontend (from `frontend/`)
-```bash
-npm start                        # ng serve (dev server on port 4200)
-npm run build                    # ng build (production build)
-npm test                         # vitest unit tests
-npm run cypress:open             # Cypress E2E interactive mode
-npm run cypress:run              # Cypress E2E headless (requires containers running)
-```
+## Convenções
+- Erros padronizados via `GlobalExceptionHandler` (`@RestControllerAdvice`) — `ExceptionDTO(message, code)`.
+- DTOs como Java Records; controller nunca retorna `@Entity`.
+- `snake_case` no banco, `camelCase` no Java/TypeScript.
+- Diretiva Primária na Fase 4: não alterar sintaxe de código existente.
 
-## Architecture
+> ⚠️ **API REST `/api/v1` — não implementado.** Nenhuma rota usa prefixo `/api` nem `/v1` (confirmado: rotas são `/consultas`, `/auth`, `/patients` etc., direto na raiz). Nomes de rota também misturam português (`/consultas`, `/disponibilidade`, `/documentos`, `/prontuarios`) e inglês (`/patients`, `/professionals`, `/dashboard`). **Decisão pendente, não executada:** aplicar o prefixo/padronizar idioma é uma mudança de contrato que afeta backend, frontend e as ~45 suítes de teste (Cypress + JUnit) — feita só com aprovação explícita, fora do escopo desta correção de documentação.
 
-### Backend Layers
-Strict layered architecture: **Controller → Service → Repository → Entity**
+## Memória Técnica (Bugs e Decisões)
+Vault Obsidian em [`./memoria-tecnica/`](./memoria-tecnica/_index.md), dentro do próprio repo — bugs
+cabeludos resolvidos (causa raiz, não só sintoma) e decisões técnicas tomadas fora desta spec.
 
-- `controller/` — REST endpoints; never return `@Entity` classes directly
-- `service/` — business logic; all public methods are transaction boundaries
-- `repository/` — Spring Data JPA interfaces
-- `model/` — JPA entities, DTOs (Java Records), enums
-- `security/` — JWT filter, rate limiting, global exception handler
-- `config/` — initializers, JPA converters
+- **Antes de investigar um bug**, consultar `memoria-tecnica/bugs/` — pode já ter causa raiz documentada.
+- **Antes de tomar decisão de arquitetura**, consultar `memoria-tecnica/decisoes/` — pode já existir uma decisão ativa sobre o assunto.
+- **Ao resolver um bug não-trivial ou tomar uma decisão fora da spec**, registrar nota nova em `memoria-tecnica/` (templates em `memoria-tecnica/templates/`), linkando às notas relacionadas com a notação `[[nome-da-nota]]`.
 
-### Frontend Structure
-Angular 21 standalone components with Signals for reactivity.
-
-- `app/pages/` — one folder per page, each has `.ts`, `.html`, and usually a `.service.ts`
-- `app/security/` — `auth.service.ts`, `auth.guard.ts`, `auth.interceptor.ts` (adds JWT to all HTTP requests)
-- `app/app.routes.ts` — all route definitions
-- `app/app.config.ts` — `provideHttpClient` with `authInterceptor`
-
-### Roles
-- `ADMIN` — full user/professional management and audit log access
-- `PROFESSIONAL` — manages own schedule (availability), prontuários, and documents
-- `PATIENT` — views/confirms own appointments
-
-### Appointment State Machine
-`AGENDADA` → `CONFIRMADA_PROFISSIONAL` → `CONFIRMADA` → `CONCLUIDA` / `CANCELADA` / `FALTA`
-
-The professional confirms first, then the patient must confirm. A `UNIQUE CONSTRAINT` on `(professional_id, date_time)` prevents race conditions at the DB level.
-
-### Database Migrations
-Flyway manages schema. Migration files are in `backend/src/main/resources/db/migration/` and run automatically on startup. Never modify existing migration files — always create a new `V{n}__description.sql`.
-
-### Security Architecture
-- **JWT**: Stateless; validated by `SecurityFilter` on every request
-- **Passwords**: Argon2id via Spring Security's `Argon2PasswordEncoder`
-- **Data at rest**: `EncryptionConverter` (AES-128 GCM) transparently encrypts sensitive JPA fields (prontuário notes, document data) via `@Convert`
-- **Rate limiting**: Bucket4j in `RateLimitingFilter`
-- **Audit logging**: `AuditLogService` records all sensitive data access
-- **Email verification**: New accounts start unverified; 24h token sent via SMTP
-
-### Environment Configuration
-Copy `.env.dev` for local dev. Key variables:
-- `SPRING_PROFILES_ACTIVE` — `dev` seeds fake data (DataInitializer), `prod` starts clean
-- `ENCRYPTION_KEY` — exactly 16 characters for AES-128
-- `JWT_SECRET` — 32+ character random string
-- `INITIAL_ADMIN_EMAIL/PASSWORD` — credentials for first admin account (created by `AdminInitializer` if DB is empty)
-- `ALLOWED_ORIGINS` — comma-separated CORS origins
-
-## Coding Standards (from .cursorrules)
-
-- **DTOs are Java Records** — never return `@Entity` from controllers
-- **Constructor injection** — use Lombok `@RequiredArgsConstructor`; avoid `@Autowired` on fields
-- **`var` for locals** — when the type is clear from context
-- **Validation in DTOs** — Jakarta Bean Validation (`@NotNull`, `@Future`, etc.)
-- **Global exception handling** — add new exception mappings to `GlobalExceptionHandler`, not in controllers
-- **snake_case for DB** — all table/column names use snake_case
-
-## Testing Notes
-
-- Backend: JUnit integration tests in `backend/src/test/java/com/sistema/lucas/`
-- Frontend unit tests: vitest (`*.spec.ts`)
-- E2E tests: Cypress in `frontend/cypress/e2e/` — 13 suites covering the full user journey
-- Cypress tests require containers to be running (`./deploy-dev.sh` first)
+## Ponteiros
+- Histórias completas + BDD: `./docs/spec.md`
+- Blueprint técnico: `./ROADMAP.md`
+- Identidade visual: `./design/tokens.css` + `./design/DESIGN.md`
+- Comandos de dev, ambiente local, notas de teste: `./docs/DEV.md`
+- Memória técnica: `./memoria-tecnica/`

@@ -1,0 +1,16 @@
+{
+  "userIgnoreFilters": [
+    "frontend/node_modules",
+    "frontend/dist",
+    "frontend/template-ref",
+    "backend/target",
+    "backups",
+    "secrets",
+    "scratch",
+    "testsprite_tests",
+    ".git",
+    ".github",
+    ".vscode",
+    ".claude"
+  ]
+}
