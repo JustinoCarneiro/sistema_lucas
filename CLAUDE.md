@@ -54,6 +54,10 @@ AGUARDANDO_CONFIRMACAO ──aprovar (profissional)──→ AGENDADA ──conf
 - `marcarFalta` não tem guarda de estado prévio e sempre aciona penalidade (E7), independente de janela de tempo.
 - `cancelar` pode ser feito pelo paciente, profissional dono, ou qualquer ADMIN, de qualquer estado, com justificativa obrigatória. Penalidade só se aplica se `< 24h` da consulta **e** o estado já passou de `AGUARDANDO_CONFIRMACAO`.
 
+
+## Diretivas de Gestão (Regra de Ouro do Trello)
+> **ATENÇÃO:** Toda vez que você (Claude/IA) criar, modificar ou deletar qualquer especificação funcional ou técnica nos arquivos `CLAUDE.md`, `ROADMAP.md`, `docs/spec.md` ou `design/DESIGN.md`, você é **OBRIGADO** a executar o script `./scripts/trello_sync.py` para espelhar essa exata alteração no Trello correspondente (criando cards no Backlog, atualizando os Critérios de Aceite ou arquivando o que foi cancelado). Documentação e Trello são a mesma entidade.
+
 ## Convenções
 - Erros padronizados via `GlobalExceptionHandler` (`@RestControllerAdvice`) — `ExceptionDTO(message, code)`.
 - DTOs como Java Records; controller nunca retorna `@Entity`.
