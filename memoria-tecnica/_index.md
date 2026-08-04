@@ -30,3 +30,4 @@ partir do código real, não escrito durante o desenvolvimento original.
 
 ## Decisões
 - [[mfa-totp-fundacao-de-schema-sem-fluxo-ativo]]
+- [[backup-criptografado-offsite-drive]]

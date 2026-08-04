@@ -3,6 +3,10 @@
 # --- script de backup para o projeto lucas ---
 # este script gera um dump do banco postgres local (homologação) e da produção
 # e os mantém organizados, salvando também uma cópia da produção localmente.
+# Desde 04/08/2026: dump criptografado (AES-256), cópia off-site no Google Drive
+# via rclone e alerta por e-mail em caso de falha.
+
+set -o pipefail
 
 # Garante que os caminhos relativos (.env, ./backups) resolvem para o diretório
 # do script, independente de onde ele for chamado (ex: cron não faz cd antes)
@@ -26,16 +30,49 @@ BACKUP_DIR="./backups"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 mkdir -p "$BACKUP_DIR"
 
+KEY_FILE="./secrets/backup_encryption_key.txt"
+MAIL_PASSWORD_FILE="./secrets/mail_password.txt"
+RCLONE_REMOTE="gdrive:sistema-lucas-backups"
+
+alert_falha() {
+    local motivo="$1"
+    if [ -f "$MAIL_PASSWORD_FILE" ] && [ -n "$MAIL_USERNAME" ] && [ -n "$INITIAL_ADMIN_EMAIL" ]; then
+        local SMTP_PASS
+        SMTP_PASS=$(cat "$MAIL_PASSWORD_FILE")
+        {
+            echo "To: $INITIAL_ADMIN_EMAIL"
+            echo "From: $MAIL_USERNAME"
+            echo "Subject: [Sistema Lucas] Falha no backup do banco - $TIMESTAMP"
+            echo ""
+            echo "O backup automatico do Sistema Lucas falhou em $TIMESTAMP."
+            echo "Motivo: $motivo"
+            echo "Verificar manualmente no servidor (/root/sistema/sistema_lucas/backup.sh)."
+        } | curl -s --ssl-reqd --url "smtp://smtp.gmail.com:587" \
+            --mail-from "$MAIL_USERNAME" --mail-rcpt "$INITIAL_ADMIN_EMAIL" \
+            --user "$MAIL_USERNAME:$SMTP_PASS" --upload-file - || true
+    fi
+}
+
+if [ ! -f "$KEY_FILE" ]; then
+    echo "❌ Chave de criptografia $KEY_FILE não encontrada."
+    alert_falha "Chave de criptografia ausente em $KEY_FILE"
+    exit 1
+fi
+
 echo "==============================================="
 echo "💾 Iniciando backup Local (Homologação)"
 echo "==============================================="
-LOCAL_FILE="$BACKUP_DIR/backup_homolog_$TIMESTAMP.sql.gz"
+LOCAL_FILE="$BACKUP_DIR/backup_homolog_$TIMESTAMP.sql.gz.enc"
 
-docker exec lucas-db pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$LOCAL_FILE"
-if [ $? -eq 0 ]; then
+if docker exec lucas-db pg_dump -U "$DB_USER" "$DB_NAME" \
+    | gzip \
+    | openssl enc -aes-256-cbc -pbkdf2 -salt -pass file:"$KEY_FILE" -out "$LOCAL_FILE"; then
+    chmod 600 "$LOCAL_FILE"
     echo "✅ Backup local salvo: $LOCAL_FILE"
 else
     echo "❌ Erro ao realizar backup local!"
+    rm -f "$LOCAL_FILE"
+    alert_falha "pg_dump/gzip/openssl retornou código de erro no backup local"
 fi
 
 echo ""
@@ -88,6 +125,17 @@ fi
 
 echo ""
 echo "🧹 Limpando backups antigos locais (mais de 7 dias)..."
-find "$BACKUP_DIR" -name "backup_*.sql.gz" -mtime +7 -delete
+find "$BACKUP_DIR" -name "backup_*.sql.gz*" -mtime +7 -delete
+
+# Cópia off-site (Google Drive via rclone) — só o arquivo já criptografado, nunca a chave
+if [ -f "$LOCAL_FILE" ] && command -v rclone &> /dev/null; then
+    if rclone copy "$LOCAL_FILE" "$RCLONE_REMOTE/" --retries 3 --low-level-retries 5; then
+        echo "✅ Cópia off-site enviada para $RCLONE_REMOTE"
+        rclone delete "$RCLONE_REMOTE" --min-age 7d 2>&1
+    else
+        echo "❌ Erro ao enviar cópia off-site para $RCLONE_REMOTE (backup local já está OK)."
+        alert_falha "Backup local OK, mas envio off-site (rclone -> $RCLONE_REMOTE) falhou"
+    fi
+fi
 
 echo "✨ Processo 100% finalizado!"
