@@ -33,13 +33,14 @@ Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, *
 1. **E1 · Autenticação & Sessão** *(Grande · risco alto)* — login, registro de paciente, JWT + refresh rotativo, logout com revogação, verificação de e-mail, recuperação de senha, rate limiting.
 2. **E2 · Gestão de Perfil** *(Pequeno)* — paciente e profissional veem/editam o próprio perfil; admin cadastra/edita/exclui profissionais.
 3. **E3 · Disponibilidade & Agenda do Profissional** *(Médio)* — grade mensal por data específica (não recorrente por dia-da-semana), slots de 1h, regras de edição (só mês atual/próximo).
-4. **E4 · Agendamento de Consultas** *(Grande · risco alto)* — máquina de estados completa (ver abaixo), aprovação do profissional, dupla confirmação, cancelamento, reagendamento, falta.
+4. **E4 · Agendamento de Consultas** *(Grande · risco alto)* — máquina de estados completa (ver abaixo), aprovação do profissional, dupla confirmação, cancelamento, reagendamento, falta. Inclui, em Backlog (aprovado 10/08/2026): lembrete via WhatsApp (US-4.7) e lista de espera para cancelamentos (US-4.8).
 5. **E5 · Prontuário Eletrônico** *(Médio · risco alto pela sensibilidade do dado)* — criação de prontuário pelo profissional; é o único ponto do sistema que conclui a consulta.
 6. **E6 · Documentos Clínicos** *(Médio)* — upload de documento (texto ou PDF em base64, validado por magic bytes), controle de visibilidade pro paciente.
 7. **E7 · Penalidades por Falta/Cancelamento Tardio** *(Médio · risco médio)* — advertência na 1ª infração, bloqueio de 15 dias na 2ª, desbloqueio administrativo (reset completo).
 8. **E8 · Exportação de Dados & Portabilidade LGPD** *(Pequeno)* — export CSV (admin/profissional) e JSON com metadados de consentimento (paciente, Art. 18 V LGPD).
 9. **E9 · Painel Administrativo** *(Médio)* — dashboards por role (admin/profissional/paciente) com métricas e listagens operacionais.
 10. **E10 · Segurança & Conformidade LGPD** *(Transversal · risco alto)* — criptografia de campo, hash de CPF, anonimização, auditoria, consentimento. Não é uma tela, é um conjunto de garantias que atravessa todos os épicos acima.
+11. **E11 · Satisfação do Paciente (NPS)** *(Pequeno)* — 🔲 Backlog, aprovado 10/08/2026, ainda não desenvolvido. NPS pós-consulta automático, disparado no mesmo gatilho de `CONCLUIDA` (`ProntuarioService.create()`).
 
 ## Máquina de estados principal
 

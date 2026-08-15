@@ -283,6 +283,77 @@ Então o estado vira FALTA e a penalidade é aplicada ao paciente **sempre**, in
   qualquer janela de 24h (diferente do cancelamento tardio).
 ```
 
+#### US-4.7: Lembrete de Consulta via WhatsApp
+**Status:** 🔲 Backlog — aprovado pelo cliente em 10/08/2026, ainda não desenvolvido.
+
+**Como** paciente,
+**eu quero** receber um lembrete da minha consulta também por WhatsApp, além do e-mail que já recebo,
+**para que** eu não esqueça o horário — estudos mostram que lembrete por WhatsApp reduz falta em consulta entre 30% e 69%.
+
+```gherkin
+Dado que uma consulta está confirmada pra amanhã e o paciente tem telefone/WhatsApp cadastrado,
+Quando o `LembreteScheduler` roda (mesmo job diário às 10h que já dispara o lembrete por e-mail),
+Então uma mensagem de WhatsApp equivalente é disparada pro número cadastrado, além do e-mail.
+
+Dado que o envio por WhatsApp falha (API fora do ar, número inválido etc.),
+Quando isso acontece,
+Então o lembrete por e-mail continua sendo enviado normalmente — falha no WhatsApp nunca deve
+  quebrar o canal que já funciona.
+```
+
+> **Nota de implementação:** plugar no mesmo gatilho do lembrete por e-mail já existente —
+> `LembreteScheduler` (`@Scheduled(cron = "0 0 10 * * *")`) → `EmailTemplateService.enviarLembrete()`.
+> O campo `Patient.phone` já existe e já é rotulado "WhatsApp" no formulário de cadastro do
+> frontend, mas hoje é usado só como referência de contato humano — nenhuma integração de envio
+> existe. Precisa de client novo (`WhatsAppService` ou similar) plugado ao lado do `EmailService`,
+> não substituindo-o.
+>
+> **Nota de custo (levantamento 10/08/2026):** não é gratuito, mas também não é caro por mensagem
+> — lembrete de consulta se enquadra em categoria "utilidade" (mensagem transacional ligada a um
+> evento), tabelada em ~R$0,04–0,09 por envio no Brasil em 2026 via API oficial (Meta/WhatsApp
+> Business Platform). O custo que pesa de verdade não é a Meta, é a **mensalidade de um
+> provedor/BSP** (Twilio, Zenvia, 360dialog etc.) — R$200–1.200/mês no Brasil — necessária pra
+> acessar a API oficial. Existe alternativa não-oficial sem mensalidade (bibliotecas tipo
+> Baileys/whatsapp-web.js), mas ela **viola os Termos de Uso do WhatsApp** (risco de banimento do
+> número, sem suporte oficial) — não recomendada pra uso clínico sem esse risco estar explícito
+> pro cliente. Zero integração de WhatsApp/Twilio/BSP existe hoje no repositório.
+
+#### US-4.8: Lista de Espera para Cancelamentos
+**Status:** 🔲 Backlog — aprovado pelo cliente em 10/08/2026, ainda não desenvolvido.
+
+**Como** paciente que não encontrou horário livre com um profissional,
+**eu quero** entrar numa lista de espera pra um profissional/horário específico,
+**para que** eu seja avisado automaticamente se uma vaga abrir por cancelamento, sem precisar
+ficar checando o sistema manualmente.
+
+```gherkin
+Dado que não há slot livre pro profissional/data desejados,
+Quando o paciente entra na lista de espera pra esse profissional + data + horário,
+Então o pedido de espera é registrado, vinculado ao paciente.
+
+Dado que existe alguém na lista de espera pra um profissional/data/horário específicos,
+Quando uma consulta com essa mesma chave (professionalId + date + startTime) é cancelada
+  (`AppointmentService.cancelar`),
+Então o primeiro da fila é notificado automaticamente de que a vaga abriu (mesmo canal de
+  notificação do lembrete: e-mail, e WhatsApp se a US-4.7 já estiver ativa).
+
+Dado que o paciente notificado não responde/confirma dentro de um prazo definido,
+Quando o prazo expira,
+Então a vaga é oferecida ao próximo da fila — critério exato de prazo e de "resposta" (nova rota
+  de aceite, ou apenas reabrir a vaga pro fluxo normal de agendamento) fica pra detalhar na
+  próxima sessão de spec com o cliente antes de estimar com precisão.
+```
+
+> **Nota de implementação:** ponto de plugue natural é o fim de `AppointmentService.cancelar()`
+> — o método já tem `professional` e `dateTime` do registro cancelado disponíveis no escopo antes
+> de retornar. Chave natural pra fila de espera: `(professionalId, date, startTime)`, mesma chave
+> de `ProfessionalAvailability`. Requer entidade nova (`WaitlistEntry` ou similar: paciente,
+> profissional, data, horário desejado, timestamp de entrada — ordem de fila por ordem de chegada).
+> **Decisão de produto em aberto:** o que conta como "confirmar a vaga" — o paciente responde a um
+> link/botão, ou a vaga simplesmente aparece livre pra ele agendar e quem chegar primeiro leva?
+> Isso muda a complexidade do módulo (peso 🟡 Médio assume a segunda opção, mais simples; a
+> primeira empurraria pra 🔴 Grande pela necessidade de um novo estado transitório "oferecida").
+
 ---
 
 ## ÉPICO 5: PRONTUÁRIO ELETRÔNICO
@@ -502,3 +573,50 @@ Então o sistema captura o erro de integridade e recua pra anonimização em vez
 **Como** sistema,
 **eu quero** registrar toda operação sensível,
 **para que** haja trilha auditável de quem acessou/alterou o quê.
+
+---
+
+## ÉPICO 11: SATISFAÇÃO DO PACIENTE (NPS)
+
+**Escopo:** Coleta estruturada de feedback do paciente após o atendimento. Novo em 10/08/2026 —
+aprovado pelo cliente a partir de proposta de evolução (benchmark com institutos/clínicas
+similares + estudos sobre agendamento em saúde). Ainda não desenvolvido.
+
+#### US-11.1: NPS Pós-Consulta
+**Status:** 🔲 Backlog — aprovado pelo cliente em 10/08/2026, ainda não desenvolvido.
+
+**Como** administrador,
+**eu quero** que o paciente receba automaticamente um pedido de nota de 0 a 10 depois que a
+consulta é concluída,
+**para que** o Instituto tenha um retorno estruturado da experiência do paciente — hoje não existe
+nenhum mecanismo de feedback.
+
+```gherkin
+Dado que uma consulta muda pra CONCLUIDA (efeito colateral de `ProntuarioService.create()`,
+  único ponto do sistema que conclui uma consulta),
+Quando essa transição acontece,
+Então um pedido de avaliação (nota 0-10 + comentário opcional) é disparado ao paciente por e-mail,
+  de forma assíncrona, sem bloquear a criação do prontuário.
+
+Dado que o paciente responde a avaliação,
+Quando ele submete a nota,
+Então ela é salva vinculada à consulta e ao paciente (não ao prontuário — não deve tocar dado
+  clínico sensível).
+
+Dado que o paciente não responde,
+Quando qualquer prazo (a definir) se esgota,
+Então nada quebra — a ausência de resposta é um estado válido, não um erro.
+```
+
+> **Nota de implementação:** plugar em `ProntuarioService.create()`, o único gatilho de
+> `CONCLUIDA` no sistema — mesmo ponto de extensão natural que qualquer outro efeito colateral
+> pós-conclusão. Reaproveitar `EmailService`/`EmailTemplateService` já existentes (mesmo padrão do
+> lembrete de consulta). Requer entidade nova (`NpsResponse` ou similar: `appointmentId`,
+> `patientId`, `score` (0-10), `comentario` opcional, `respondidoEm`). Cálculo do NPS agregado
+> (% promotores − % detratores) pode alimentar o Dashboard do Administrador (E9) como métrica
+> nova, mas isso é um passo seguinte, não faz parte do escopo mínimo aprovado aqui.
+> **Decisão de produto em aberto:** link de avaliação exige login (paciente autenticado clica e
+> avalia dentro do sistema) ou é um link público de uso único (token na URL, sem exigir login)?
+> A segunda opção é mais simples pro paciente responder, mas segue o mesmo padrão de link público
+> sem proteção antiabuso que também foi levantado como risco no Sistema Melvin (US-7.4) — validar
+> com o cliente antes de estimar.

@@ -22,6 +22,9 @@
 | M8 | Exportação & Portabilidade | Pequeno | E8 | ✅ Concluído (retroativo) | CSV (admin/profissional) + JSON (paciente) |
 | M9 | Painel Administrativo | Médio | E9 | ✅ Concluído (retroativo) | 3 dashboards, sem Service dedicado (acesso direto a repositórios) |
 | M10 | Segurança & Conformidade LGPD | **Grande · risco alto · transversal** | E10 | ✅ Concluído (retroativo) | Criptografia de campo, hash de CPF, anonimização, auditoria |
+| M11 | Satisfação do Paciente (NPS) | Pequeno | E11 (US-11.1) | 🔲 Backlog | Aprovado 10/08/2026. Gatilho: `ProntuarioService.create()` (mesmo ponto que seta `CONCLUIDA`) |
+| M12 | Lembrete de Consulta via WhatsApp | Médio | E4 (US-4.7) | 🔲 Backlog | Aprovado 10/08/2026. Plugar no `LembreteScheduler` já existente (canal novo, mesmo gatilho do lembrete por e-mail) |
+| M13 | Lista de Espera para Cancelamentos | Médio | E4 (US-4.8) | 🔲 Backlog | Aprovado 10/08/2026. Plugar no fim de `AppointmentService.cancelar()`. Peso pode subir pra Grande dependendo da decisão de produto em aberto (ver docs/spec.md) |
 
 **Coração do sistema:** M4 (Agendamento) é o módulo de maior risco — máquina de estados com 3 atores diferentes mexendo no mesmo recurso, guardas de transição não centralizadas (cada método do `AppointmentService` valida seu próprio pré-requisito), e efeito colateral cruzado com M5 (só o `ProntuarioService` conclui a consulta) e M7 (penalidade disparada a partir de M4).
 
@@ -127,3 +130,35 @@ Response: 200 — application/json — dados cadastrais + prontuários + documen
 ### M10 · Segurança (não é endpoint, é comportamento transversal)
 
 **Toda entidade com campo sensível** (`Patient`, `Professional`, `Appointment`, `Documento`, `Prontuario`) aplica `EncryptionConverter` (`@Convert`) nos campos listados no `docs/spec.md` (ÉPICO 10) — isso não aparece no contrato JSON do endpoint (a serialização do DTO já entrega o valor decifrado), mas é o motivo pelo qual `EncryptionConverter` precisa ser considerado em qualquer endpoint novo que exponha esses campos.
+
+### M11 · NPS (proposta — 🔲 Backlog)
+
+**POST `/nps/{appointmentId}/responder`**
+```
+Request:  { "score": int (0-10), "comentario"?: string }
+Response: 201 — resposta registrada
+          404 — consulta não existe ou não pertence ao paciente autenticado
+          409 — já existe resposta pra essa consulta
+```
+
+Efeito colateral novo em `ProntuarioService.create()`: dispara e-mail (assíncrono) com link/token de avaliação, mesmo padrão de `EmailTemplateService` já usado no lembrete de consulta.
+
+### M12 · Lembrete WhatsApp (proposta — 🔲 Backlog)
+
+Sem endpoint novo — é um canal adicional dentro do job já existente:
+```
+LembreteScheduler (cron diário 10h) → além de EmailTemplateService.enviarLembrete(),
+  chama um WhatsAppService.enviarLembrete() novo, usando Patient.phone já existente.
+Falha no envio de WhatsApp não deve impedir o envio do e-mail (canais independentes).
+```
+
+### M13 · Lista de Espera (proposta — 🔲 Backlog)
+
+**POST `/waitlist`**
+```
+Request:  { "professionalId": UUID, "date": ISO-date, "startTime": ISO-time }
+Response: 201 — entrada criada, paciente na fila
+          409 — já existe slot livre pra esse professional/date/startTime (não devia entrar em espera)
+```
+
+Efeito colateral novo em `AppointmentService.cancelar()`: após confirmar o cancelamento, busca `WaitlistEntry` pela chave `(professionalId, date, startTime)` da consulta cancelada e notifica o primeiro da fila (e-mail, +WhatsApp se M12 já estiver ativo). Critério exato de "aceitar a vaga" ainda em aberto — ver nota de produto em `docs/spec.md` (US-4.8).
