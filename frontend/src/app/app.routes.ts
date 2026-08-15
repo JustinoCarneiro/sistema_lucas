@@ -20,6 +20,8 @@ import { VerifyEmail } from './pages/verify-email/verify-email';
 import { MyAvailabilityComponent } from './pages/my-availability/my-availability';
 import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy';
 import { NpsAvaliacaoComponent } from './pages/nps-avaliacao/nps-avaliacao';
+import { WaitlistComponent } from './pages/waitlist/waitlist';
+import { WaitlistOfertaComponent } from './pages/waitlist-oferta/waitlist-oferta';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -30,6 +32,7 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'avaliar', component: NpsAvaliacaoComponent },
+  { path: 'lista-espera/confirmar', component: WaitlistOfertaComponent },
   {
     path: 'panel',
     component: PanelComponent,
@@ -45,7 +48,8 @@ export const routes: Routes = [
       { path: 'professional-appointments', component: ProfessionalAppointmentsComponent },
       { path: 'my-availability', component: MyAvailabilityComponent },
       { path: 'medical-record/:id', component: MedicalRecordComponent },
-      { path: 'dashboard', component: DashboardComponent }
+      { path: 'dashboard', component: DashboardComponent },
+      { path: 'waitlist', component: WaitlistComponent }
     ]
   }
 ];

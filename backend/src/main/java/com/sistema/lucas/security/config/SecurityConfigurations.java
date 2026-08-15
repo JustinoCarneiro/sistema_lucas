@@ -52,6 +52,8 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/nps/*").permitAll() // M11: status do link de avaliação (token na URL)
                         .requestMatchers(HttpMethod.POST, "/nps/responder").permitAll() // M11: submissão da avaliação
+                        .requestMatchers(HttpMethod.GET, "/waitlist/oferta/*").permitAll() // M13: status da oferta de vaga (token na URL)
+                        .requestMatchers(HttpMethod.POST, "/waitlist/oferta/confirmar").permitAll() // M13: confirmação da vaga
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

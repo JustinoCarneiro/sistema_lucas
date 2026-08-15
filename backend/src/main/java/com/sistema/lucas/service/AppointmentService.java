@@ -1,11 +1,15 @@
 // backend/src/main/java/com/sistema/lucas/service/AppointmentService.java
 package com.sistema.lucas.service;
 
+import com.sistema.lucas.event.ConsultaCanceladaEvent;
 import com.sistema.lucas.model.*;
 import com.sistema.lucas.model.dto.*;
 import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +20,8 @@ import java.util.List;
 @Service
 public class AppointmentService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
+
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private ProfessionalRepository professionalRepository;
     @Autowired private PatientRepository patientRepository;
@@ -23,6 +29,7 @@ public class AppointmentService {
     @Autowired private EmailTemplateService emailTemplateService;
     @Autowired private ProfessionalAvailabilityRepository availabilityRepository;
     @Autowired private AuditLogService auditLogService;
+    @Autowired private ApplicationEventPublisher eventPublisher;
 
     public static final List<StatusConsulta> STATUSES_PENDENTES = List.of(
         StatusConsulta.AGUARDANDO_CONFIRMACAO,
@@ -147,6 +154,27 @@ public class AppointmentService {
         
         auditLogService.log(email, "CANCELAMENTO_CONSULTA", "Appointment", id, "Justificativa: " + justificativa);
         emailTemplateService.notificarConsultaCancelada(consulta); // ✅ e-mail
+
+        // M13: horário abriu — publica evento pro WaitlistService ofertar pro primeiro da fila,
+        // se houver (via evento, não injeção direta, pra evitar dependência circular entre
+        // AppointmentService e WaitlistService — ver ConsultaCanceladaEvent).
+        eventPublisher.publishEvent(new ConsultaCanceladaEvent(consulta.getProfessional().getId(), consulta.getDateTime()));
+    }
+
+    // Cancelamento de sistema (ex.: oferta de lista de espera não confirmada a tempo pelo
+    // paciente) — não passa pelas regras de penalidade nem exige justificativa, porque quem
+    // está cancelando é o sistema, não uma ação do paciente.
+    @Transactional
+    public void cancelarPorExpiracaoDeOferta(@org.springframework.lang.NonNull Long appointmentId) {
+        var consulta = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+
+        consulta.setStatus(StatusConsulta.CANCELADA);
+        consulta.setCancelReason("Vaga da lista de espera não confirmada a tempo.");
+        appointmentRepository.save(consulta);
+
+        auditLogService.log("SYSTEM", "CANCELAMENTO_AUTOMATICO", "Appointment", appointmentId,
+            "Oferta de vaga da lista de espera expirou sem confirmação do paciente.");
     }
 
     @Transactional

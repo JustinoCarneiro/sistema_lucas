@@ -429,6 +429,30 @@ public class EmailTemplateService {
         );
     }
 
+    // ─── Lista de Espera (M13) ────────────────────────────────────────────────
+
+    public void notificarVagaDisponivel(com.sistema.lucas.model.WaitlistEntry entry) {
+        String data = entry.getDateTime().format(FMT);
+        String nomePaciente = entry.getPatient().getName();
+        String nomeProfissional = entry.getProfessional().getName();
+        String urlConfirmacao = frontendUrl + "/lista-espera/confirmar?token=" + entry.getToken();
+        int horasPrazo = (int) java.time.Duration.between(java.time.LocalDateTime.now(), entry.getOfertaExpiraEm()).toHours();
+
+        emailService.enviar(
+            entry.getPatient().getEmail(),
+            "Uma vaga abriu com " + nomeProfissional + "!",
+            buildPremiumTemplate(
+                "Vaga disponível na lista de espera",
+                "Olá, " + nomePaciente + "!",
+                "O horário que você estava esperando com " + nomeProfissional + ", em <b>" + data + "</b>, acabou de abrir. Reservamos essa vaga pra você.",
+                "Confirme em até " + horasPrazo + "h",
+                "Se você não confirmar dentro do prazo, a vaga será oferecida automaticamente ao próximo da fila.",
+                "Confirmar minha vaga",
+                urlConfirmacao
+            )
+        );
+    }
+
     // ─── Template HTML base ──────────────────────────────────────────────────
 
     private String buildTemplate(

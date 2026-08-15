@@ -1,0 +1,77 @@
+<!-- frontend/src/app/pages/waitlist-oferta/waitlist-oferta.html -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center items-center p-4 transition-colors duration-300">
+  <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+
+    <div class="p-8 text-center bg-blue-900 flex flex-col items-center">
+      <div class="w-20 h-20 mb-4 overflow-hidden rounded-xl shadow-lg border-2 border-white/20">
+        <img src="logo.jpeg" alt="Logo" class="w-full h-full object-cover">
+      </div>
+      <h1 class="text-3xl font-bold text-white mb-1">Projeto Lucas</h1>
+      <p class="text-blue-200 text-sm italic">Lugar de cuidado, amor e salvação</p>
+    </div>
+
+    <div class="p-8">
+
+      <!-- Carregando -->
+      <div *ngIf="isLoadingStatus()" class="text-center py-6">
+        <p class="text-gray-500 dark:text-gray-400 text-sm">Carregando...</p>
+      </div>
+
+      <ng-container *ngIf="!isLoadingStatus()">
+
+        <!-- Sucesso após confirmar -->
+        <div *ngIf="sucesso()" class="text-center">
+          <div class="text-5xl mb-4">✅</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Vaga confirmada!</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Agora é só aguardar a aprovação do profissional, como em qualquer agendamento. Acompanhe pelo sistema.</p>
+        </div>
+
+        <!-- Link inválido / token ausente -->
+        <div *ngIf="!sucesso() && (!token || !status()?.valido)" class="text-center">
+          <div class="text-5xl mb-4">❌</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Link inválido</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Este link de confirmação não é válido.</p>
+        </div>
+
+        <!-- Já confirmada -->
+        <div *ngIf="!sucesso() && token && status()?.valido && status()?.jaConfirmada" class="text-center">
+          <div class="text-5xl mb-4">✅</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Você já confirmou esta vaga</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Acompanhe o agendamento pelo sistema.</p>
+        </div>
+
+        <!-- Expirada -->
+        <div *ngIf="!sucesso() && token && status()?.valido && !status()?.jaConfirmada && status()?.expirada" class="text-center">
+          <div class="text-5xl mb-4">⏳</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">O prazo pra confirmar essa vaga expirou</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">A vaga foi oferecida ao próximo da lista de espera. Você pode entrar na fila novamente pelo sistema.</p>
+        </div>
+
+        <!-- Confirmação pendente -->
+        <div *ngIf="!sucesso() && token && status()?.valido && !status()?.jaConfirmada && !status()?.expirada" class="text-center">
+          <div class="text-5xl mb-4">🎉</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Uma vaga abriu pra você!</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            Com {{ status()?.profissionalNome }}, em {{ status()?.dataHora }}
+          </p>
+
+          <div *ngIf="erro()"
+            class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 text-sm rounded-lg px-4 py-3 mb-4">
+            {{ erro() }}
+          </div>
+
+          <button type="button" (click)="confirmar()" [disabled]="isConfirming()"
+            class="w-full bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ isConfirming() ? 'Confirmando...' : 'Confirmar minha vaga' }}
+          </button>
+
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-4">
+            Se você não confirmar dentro do prazo, a vaga será oferecida automaticamente ao próximo da fila.
+          </p>
+        </div>
+
+      </ng-container>
+
+    </div>
+  </div>
+</div>

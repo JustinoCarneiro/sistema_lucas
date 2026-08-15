@@ -1,0 +1,70 @@
+<!-- frontend/src/app/pages/waitlist/waitlist.html -->
+<div class="p-8">
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Lista de Espera</h2>
+    <p class="text-gray-500 dark:text-gray-400">Não achou horário livre? Entre na fila e a gente avisa por e-mail se abrir uma vaga.</p>
+  </div>
+
+  <!-- Formulário -->
+  <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6 mb-8">
+    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Entrar na fila</h3>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profissional</label>
+        <select formControlName="professionalId"
+          class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition">
+          <option value="">Selecione...</option>
+          <option *ngFor="let p of professionals()" [value]="p.id">{{ p.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data</label>
+        <input type="date" formControlName="date"
+          class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horário</label>
+        <input type="time" formControlName="time"
+          class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition">
+      </div>
+      <div class="sm:col-span-4">
+        <button type="submit" [disabled]="form.invalid || isSubmitting()"
+          class="bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ isSubmitting() ? 'Entrando...' : 'Entrar na lista de espera' }}
+        </button>
+      </div>
+    </form>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-3">
+      Só funciona para horários que já estão ocupados — se o horário estiver livre, agende normalmente em Minhas Consultas.
+    </p>
+  </div>
+
+  <!-- Minhas entradas -->
+  <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Minhas entradas</h3>
+
+  <div *ngIf="isLoading()" class="text-center text-blue-600 dark:text-blue-400 animate-pulse py-10">Carregando...</div>
+
+  <div *ngIf="!isLoading() && entradas().length === 0"
+    class="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 p-10 rounded-2xl text-center">
+    <div class="text-5xl mb-4">⏳</div>
+    <p class="text-gray-500 dark:text-gray-400">Você não está em nenhuma lista de espera no momento.</p>
+  </div>
+
+  <div *ngIf="!isLoading() && entradas().length > 0" class="bg-white dark:bg-gray-800 shadow-sm rounded-xl overflow-hidden">
+    <div *ngFor="let e of entradas()" class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 last:border-0">
+      <div>
+        <p class="font-semibold text-gray-800 dark:text-gray-100">{{ e.professionalName }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ e.dateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-bold px-3 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+          {{ statusLabel[e.status] || e.status }}
+        </span>
+        <button *ngIf="e.status === 'AGUARDANDO'" (click)="sair(e.id)"
+          class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
+          Sair da fila
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

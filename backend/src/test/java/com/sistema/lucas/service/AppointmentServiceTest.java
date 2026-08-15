@@ -42,6 +42,7 @@ class AppointmentServiceTest {
     @Mock private EmailTemplateService emailTemplateService;
     @Mock private ProfessionalAvailabilityRepository availabilityRepository;
     @Mock private AuditLogService auditLogService;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     // ──────────────────────── Agendamento ────────────────────────
 
@@ -268,6 +269,7 @@ class AppointmentServiceTest {
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
             consulta.setDateTime(LocalDateTime.now().plusHours(25)); // 25h > 24h — sem penalidade
             consulta.setStatus(StatusConsulta.AGENDADA);
 
@@ -294,6 +296,7 @@ class AppointmentServiceTest {
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
             consulta.setDateTime(LocalDateTime.now().plusHours(23)); // 23h < 24h → penalidade
             consulta.setStatus(StatusConsulta.AGENDADA);
 
@@ -324,6 +327,7 @@ class AppointmentServiceTest {
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
             consulta.setDateTime(LocalDateTime.now().plusHours(10)); // < 24h
             consulta.setStatus(StatusConsulta.CONFIRMADA);
 
@@ -350,6 +354,7 @@ class AppointmentServiceTest {
             var consulta = new Appointment();
             consulta.setId(id);
             consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
             consulta.setDateTime(LocalDateTime.now().plusHours(2)); // < 24h mas pendente
             consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
 
@@ -382,6 +387,63 @@ class AppointmentServiceTest {
 
             var ex = assertThrows(RuntimeException.class, () -> appointmentService.reagendar(id, email, novaData, ""));
             assertEquals("A justificativa é obrigatória para o reagendamento.", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("M13: cancelar publica evento pro WaitlistService ofertar a vaga (sem depender dele diretamente)")
+        void cancelar_publicaEventoDeConsultaCancelada() {
+            Long id = 1L;
+            String email = "paciente@email.com";
+
+            var profissional = new Professional();
+            profissional.setId(9L);
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setProfessional(profissional);
+            consulta.setDateTime(LocalDateTime.now().plusHours(25));
+            consulta.setStatus(StatusConsulta.AGENDADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.cancelar(id, email, "Imprevisto"));
+
+            var captor = org.mockito.ArgumentCaptor.forClass(com.sistema.lucas.event.ConsultaCanceladaEvent.class);
+            verify(eventPublisher, times(1)).publishEvent(captor.capture());
+            assertEquals(9L, captor.getValue().professionalId());
+            assertEquals(consulta.getDateTime(), captor.getValue().dateTime());
+        }
+    }
+
+    // ──────────────────────── Cancelamento interno (M13: oferta expirada) ────────────────────────
+
+    @Nested
+    @DisplayName("Cancelamento por expiração de oferta da lista de espera (M13)")
+    class CancelamentoPorExpiracaoDeOfertaTests {
+
+        @Test
+        @DisplayName("Cancela sem aplicar penalidade e sem exigir justificativa do paciente")
+        void cancelarPorExpiracaoDeOferta_semPenalidade() {
+            Long appointmentId = 42L;
+            var paciente = new Patient();
+            var consulta = new Appointment();
+            consulta.setId(appointmentId);
+            consulta.setPatient(paciente);
+            consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
+
+            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.cancelarPorExpiracaoDeOferta(appointmentId));
+
+            assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
+            assertEquals("Vaga da lista de espera não confirmada a tempo.", consulta.getCancelReason());
+            verify(patientRepository, never()).save(any());
+            verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
+            verify(auditLogService).log(eq("SYSTEM"), eq("CANCELAMENTO_AUTOMATICO"), eq("Appointment"), eq(appointmentId), anyString());
         }
     }
 

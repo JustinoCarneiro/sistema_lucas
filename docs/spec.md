@@ -319,40 +319,58 @@ Então o lembrete por e-mail continua sendo enviado normalmente — falha no Wha
 > pro cliente. Zero integração de WhatsApp/Twilio/BSP existe hoje no repositório.
 
 #### US-4.8: Lista de Espera para Cancelamentos
-**Status:** 🔲 Backlog — aprovado pelo cliente em 10/08/2026, ainda não desenvolvido.
+**Status:** 🔍 Implementado em 15/08/2026 (versão robusta), testes unitários verdes (backend e
+frontend) — aguardando code review e homologação com o cliente. Ainda não deployado em produção.
 
 **Como** paciente que não encontrou horário livre com um profissional,
 **eu quero** entrar numa lista de espera pra um profissional/horário específico,
 **para que** eu seja avisado automaticamente se uma vaga abrir por cancelamento, sem precisar
 ficar checando o sistema manualmente.
 
+**Decisão de produto resolvida (15/08/2026):** confirmação ativa — a vaga é reservada de fato
+pro primeiro da fila (não é "quem chega primeiro leva"). Isso repriced o módulo de 🟡 Médio pra
+🔴 Grande, exatamente como a nota de produto original já antecipava.
+
 ```gherkin
 Dado que não há slot livre pro profissional/data desejados,
-Quando o paciente entra na lista de espera pra esse profissional + data + horário,
-Então o pedido de espera é registrado, vinculado ao paciente.
+Quando o paciente entra na lista de espera pra esse profissional + horário,
+Então o pedido de espera é registrado, vinculado ao paciente (status AGUARDANDO).
 
-Dado que existe alguém na lista de espera pra um profissional/data/horário específicos,
-Quando uma consulta com essa mesma chave (professionalId + date + startTime) é cancelada
+Dado que existe alguém na lista de espera pra um profissional/horário específicos,
+Quando uma consulta com essa mesma chave (professionalId + dateTime) é cancelada
   (`AppointmentService.cancelar`),
-Então o primeiro da fila é notificado automaticamente de que a vaga abriu (mesmo canal de
-  notificação do lembrete: e-mail, e WhatsApp se a US-4.7 já estiver ativa).
+Então o primeiro da fila recebe uma consulta reservada em seu nome (status AGUARDANDO_CONFIRMACAO,
+  ocupando o horário de verdade) e um e-mail com um link de confirmação de uso único, válido por
+  2 horas (status da entrada na fila vira OFERECIDA).
 
-Dado que o paciente notificado não responde/confirma dentro de um prazo definido,
+Dado que o paciente confirma a vaga dentro do prazo,
+Quando ele clica no link e confirma,
+Então a entrada na fila vira CONFIRMADA e a consulta reservada segue o ciclo normal — inclusive
+  precisa da aprovação do profissional, como qualquer outra consulta.
+
+Dado que o paciente não confirma dentro do prazo,
 Quando o prazo expira,
-Então a vaga é oferecida ao próximo da fila — critério exato de prazo e de "resposta" (nova rota
-  de aceite, ou apenas reabrir a vaga pro fluxo normal de agendamento) fica pra detalhar na
-  próxima sessão de spec com o cliente antes de estimar com precisão.
+Então a consulta reservada é cancelada automaticamente (sem penalidade — quem cancelou foi o
+  sistema, não o paciente), a entrada na fila vira EXPIRADA, e a vaga é oferecida ao próximo da
+  fila (mesmo fluxo, recursivo).
+
+Dado que o próximo da fila está bloqueado por penalidade no momento em que a vaga seria ofertada,
+Quando o sistema tenta ofertar a ele,
+Então ele é pulado (entrada vira CANCELADA) e a vaga passa pro próximo, sem notificá-lo.
 ```
 
-> **Nota de implementação:** ponto de plugue natural é o fim de `AppointmentService.cancelar()`
-> — o método já tem `professional` e `dateTime` do registro cancelado disponíveis no escopo antes
-> de retornar. Chave natural pra fila de espera: `(professionalId, date, startTime)`, mesma chave
-> de `ProfessionalAvailability`. Requer entidade nova (`WaitlistEntry` ou similar: paciente,
-> profissional, data, horário desejado, timestamp de entrada — ordem de fila por ordem de chegada).
-> **Decisão de produto em aberto:** o que conta como "confirmar a vaga" — o paciente responde a um
-> link/botão, ou a vaga simplesmente aparece livre pra ele agendar e quem chegar primeiro leva?
-> Isso muda a complexidade do módulo (peso 🟡 Médio assume a segunda opção, mais simples; a
-> primeira empurraria pra 🔴 Grande pela necessidade de um novo estado transitório "oferecida").
+> **Nota de implementação (como foi construído):** `AppointmentService.cancelar()` publica um
+> evento (`ConsultaCanceladaEvent`) em vez de chamar `WaitlistService` diretamente —
+> `AppointmentService` e `WaitlistService` dependerem um do outro nos dois sentidos criaria uma
+> dependência circular que o Spring Boot recusa resolver por padrão
+> (`spring.main.allow-circular-references=false`, o padrão desde o Spring Boot 2.6). O
+> `WaitlistService` escuta via `@TransactionalEventListener(phase = AFTER_COMMIT)` — só oferece a
+> vaga depois que o cancelamento realmente foi persistido. Entidade nova `WaitlistEntry`
+> (migration V16): profissional, paciente, `dateTime`, `status` (AGUARDANDO/OFERECIDA/
+> CONFIRMADA/EXPIRADA/CANCELADA), `appointmentId` (a consulta reservada), `token`,
+> `ofertaExpiraEm`. Expiração automática via `WaitlistExpirationScheduler`
+> (`@Scheduled`, a cada 15min). Prazo de confirmação configurável
+> (`app.waitlist.oferta.horas`, padrão 2h).
 
 ---
 

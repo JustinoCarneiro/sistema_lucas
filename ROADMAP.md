@@ -24,7 +24,7 @@
 | M10 | Segurança & Conformidade LGPD | **Grande · risco alto · transversal** | E10 | ✅ Concluído (retroativo) | Criptografia de campo, hash de CPF, anonimização, auditoria |
 | M11 | Satisfação do Paciente (NPS) | Pequeno | E11 (US-11.1) | 🔍 Code Review / Testes (15/08/2026) | Implementado — `NpsResponse`/`NpsService`/`NpsController` + migration V15 + rota pública `/avaliar`. Gatilho: `ProntuarioService.create()` (mesmo ponto que seta `CONCLUIDA`), isolado em transação própria (`REQUIRES_NEW`) pra nunca bloquear a conclusão da consulta. Testes: backend 14/14, frontend 7/7. Ainda não deployado |
 | M12 | Lembrete de Consulta via WhatsApp | Médio | E4 (US-4.7) | 🔲 Backlog | Aprovado 10/08/2026. Plugar no `LembreteScheduler` já existente (canal novo, mesmo gatilho do lembrete por e-mail) |
-| M13 | Lista de Espera para Cancelamentos | Médio | E4 (US-4.8) | 🔲 Backlog | Aprovado 10/08/2026. Plugar no fim de `AppointmentService.cancelar()`. Peso pode subir pra Grande dependendo da decisão de produto em aberto (ver docs/spec.md) |
+| M13 | Lista de Espera para Cancelamentos | **Grande** (repriced de Médio — decisão de produto resolveu pela versão robusta) | E4 (US-4.8) | 🔍 Code Review / Testes (15/08/2026) | Implementado — versão robusta: reserva ativa da vaga (`WaitlistEntry`/`WaitlistService`/`WaitlistExpirationScheduler` + migration V16), cascata automática se não confirmar em 2h. Decoupled de `AppointmentService` via evento (`ConsultaCanceladaEvent`) pra evitar dependência circular. Testes: backend 19/19, frontend 9/9. Ainda não deployado |
 
 **Coração do sistema:** M4 (Agendamento) é o módulo de maior risco — máquina de estados com 3 atores diferentes mexendo no mesmo recurso, guardas de transição não centralizadas (cada método do `AppointmentService` valida seu próprio pré-requisito), e efeito colateral cruzado com M5 (só o `ProntuarioService` conclui a consulta) e M7 (penalidade disparada a partir de M4).
 
@@ -152,13 +152,29 @@ LembreteScheduler (cron diário 10h) → além de EmailTemplateService.enviarLem
 Falha no envio de WhatsApp não deve impedir o envio do e-mail (canais independentes).
 ```
 
-### M13 · Lista de Espera (proposta — 🔲 Backlog)
+### M13 · Lista de Espera (como foi construído — 🔍 Code Review / Testes)
 
-**POST `/waitlist`**
+**POST `/waitlist`** (autenticado, PATIENT)
 ```
-Request:  { "professionalId": UUID, "date": ISO-date, "startTime": ISO-time }
+Request:  { "professionalId": Long, "dateTime": ISO-datetime }
 Response: 201 — entrada criada, paciente na fila
-          409 — já existe slot livre pra esse professional/date/startTime (não devia entrar em espera)
+          400 — esse horário está livre (agendar direto) ou já está na fila pra esse horário
 ```
 
-Efeito colateral novo em `AppointmentService.cancelar()`: após confirmar o cancelamento, busca `WaitlistEntry` pela chave `(professionalId, date, startTime)` da consulta cancelada e notifica o primeiro da fila (e-mail, +WhatsApp se M12 já estiver ativo). Critério exato de "aceitar a vaga" ainda em aberto — ver nota de produto em `docs/spec.md` (US-4.8).
+**GET `/waitlist/minhas`** (autenticado, PATIENT) — lista as próprias entradas, com status.
+**DELETE `/waitlist/{id}`** (autenticado, PATIENT) — sai da fila (só permitido em status AGUARDANDO).
+
+**GET `/waitlist/oferta/{token}`** (público) — status da oferta pro link do e-mail.
+**POST `/waitlist/oferta/confirmar`** (público) — `{ "token": string }`, confirma a vaga.
+
+Fluxo: `AppointmentService.cancelar()` publica `ConsultaCanceladaEvent(professionalId, dateTime)`
+(evento do Spring, não injeção direta — `AppointmentService` e `WaitlistService` referenciando um
+ao outro geraria dependência circular que o Spring Boot recusa resolver por padrão).
+`WaitlistService` escuta esse evento (`@TransactionalEventListener(AFTER_COMMIT)`) e chama
+`ofertarProximoDaFila`: cria de fato uma `Appointment` (`AGUARDANDO_CONFIRMACAO`) pro primeiro da
+fila — isso já ocupa o horário pra qualquer outro paciente, reaproveitando 100% da checagem de
+conflito que `AppointmentService.agendar()` já usa — e dá um prazo (`app.waitlist.oferta.horas`,
+padrão 2h) pra confirmar pelo link. Sem confirmação a tempo, `WaitlistExpirationScheduler`
+(a cada 15min) cancela essa consulta internamente (sem penalidade — quem cancelou foi o sistema,
+não o paciente) e cascateia pro próximo da fila. Paciente bloqueado por penalidade é pulado
+automaticamente na hora de ofertar.
