@@ -32,6 +32,7 @@ class ProntuarioServiceTest {
     @Mock private AppointmentRepository appointmentRepository;
     @Mock private ProfessionalRepository professionalRepository;
     @Mock private AuditLogService auditLogService;
+    @Mock private NpsService npsService;
 
     private Appointment appointmentValido() {
         var patient = new Patient(); patient.setId(1L); patient.setEmail("pac@test.com");
@@ -64,6 +65,25 @@ class ProntuarioServiceTest {
             verify(appointmentRepository).save(appointment);
             verify(prontuarioRepository).save(any(Prontuario.class));
             verify(auditLogService).log(eq("prof@test.com"), eq("CRIACAO"), eq("Prontuario"), anyLong(), anyString());
+            verify(npsService).solicitarAvaliacao(appointment);
+        }
+
+        @Test @DisplayName("Falha ao solicitar NPS não impede a criação do prontuário (efeito colateral não-crítico)")
+        void criar_falhaNoNpsNaoQuebraCriacaoDoProntuario() {
+            var appointment = appointmentValido();
+            var prof = new Professional(); prof.setEmail("prof@test.com");
+            var saved = new Prontuario(); saved.setId(5L);
+
+            when(appointmentRepository.findById(10L)).thenReturn(Optional.of(appointment));
+            when(professionalRepository.findByEmail("prof@test.com")).thenReturn(Optional.of(prof));
+            when(prontuarioRepository.save(any())).thenReturn(saved);
+            doThrow(new RuntimeException("falha simulada no envio do NPS"))
+                .when(npsService).solicitarAvaliacao(any());
+
+            var result = prontuarioService.create(10L, "Notas clínicas...", "prof@test.com");
+
+            assertNotNull(result);
+            assertEquals(StatusConsulta.CONCLUIDA, appointment.getStatus());
         }
 
         @Test @DisplayName("Deve lançar exceção quando consulta não encontrada")

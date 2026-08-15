@@ -22,7 +22,7 @@
 | M8 | Exportação & Portabilidade | Pequeno | E8 | ✅ Concluído (retroativo) | CSV (admin/profissional) + JSON (paciente) |
 | M9 | Painel Administrativo | Médio | E9 | ✅ Concluído (retroativo) | 3 dashboards, sem Service dedicado (acesso direto a repositórios) |
 | M10 | Segurança & Conformidade LGPD | **Grande · risco alto · transversal** | E10 | ✅ Concluído (retroativo) | Criptografia de campo, hash de CPF, anonimização, auditoria |
-| M11 | Satisfação do Paciente (NPS) | Pequeno | E11 (US-11.1) | 🔲 Backlog | Aprovado 10/08/2026. Gatilho: `ProntuarioService.create()` (mesmo ponto que seta `CONCLUIDA`) |
+| M11 | Satisfação do Paciente (NPS) | Pequeno | E11 (US-11.1) | 🔍 Code Review / Testes (15/08/2026) | Implementado — `NpsResponse`/`NpsService`/`NpsController` + migration V15 + rota pública `/avaliar`. Gatilho: `ProntuarioService.create()` (mesmo ponto que seta `CONCLUIDA`), isolado em transação própria (`REQUIRES_NEW`) pra nunca bloquear a conclusão da consulta. Testes: backend 14/14, frontend 7/7. Ainda não deployado |
 | M12 | Lembrete de Consulta via WhatsApp | Médio | E4 (US-4.7) | 🔲 Backlog | Aprovado 10/08/2026. Plugar no `LembreteScheduler` já existente (canal novo, mesmo gatilho do lembrete por e-mail) |
 | M13 | Lista de Espera para Cancelamentos | Médio | E4 (US-4.8) | 🔲 Backlog | Aprovado 10/08/2026. Plugar no fim de `AppointmentService.cancelar()`. Peso pode subir pra Grande dependendo da decisão de produto em aberto (ver docs/spec.md) |
 

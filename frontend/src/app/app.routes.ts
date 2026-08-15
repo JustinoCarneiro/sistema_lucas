@@ -19,6 +19,7 @@ import { ResetPasswordComponent } from './pages/reset-password/reset-password';
 import { VerifyEmail } from './pages/verify-email/verify-email';
 import { MyAvailabilityComponent } from './pages/my-availability/my-availability';
 import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy';
+import { NpsAvaliacaoComponent } from './pages/nps-avaliacao/nps-avaliacao';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -28,6 +29,7 @@ export const routes: Routes = [
   { path: 'verify-email', component: VerifyEmail },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
+  { path: 'avaliar', component: NpsAvaliacaoComponent },
   {
     path: 'panel',
     component: PanelComponent,

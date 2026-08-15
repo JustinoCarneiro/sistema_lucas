@@ -6,6 +6,8 @@ import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,10 +16,13 @@ import java.util.List;
 @Service
 public class ProntuarioService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProntuarioService.class);
+
     @Autowired private ProntuarioRepository prontuarioRepository;
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private ProfessionalRepository professionalRepository;
     @Autowired private AuditLogService auditLogService;
+    @Autowired private NpsService npsService;
 
     public List<Prontuario> getByPatientId(Long patientId, String userEmail) {
         auditLogService.log(userEmail, "VISUALIZACAO", "Prontuario", patientId, "Visualizou histórico de prontuários do paciente ID: " + patientId);
@@ -43,6 +48,14 @@ public class ProntuarioService {
 
         Prontuario saved = prontuarioRepository.save(prontuario);
         auditLogService.log(professionalEmail, "CRIACAO", "Prontuario", saved.getId(), "Criou prontuário para consulta ID: " + appointmentId);
+
+        // NPS (M11): efeito colateral não-crítico — nunca deve impedir a conclusão da consulta.
+        try {
+            npsService.solicitarAvaliacao(appointment);
+        } catch (Exception e) {
+            logger.warn("Falha ao solicitar avaliação NPS para consulta {}: {}", appointmentId, e.getMessage());
+        }
+
         return saved;
     }
 }

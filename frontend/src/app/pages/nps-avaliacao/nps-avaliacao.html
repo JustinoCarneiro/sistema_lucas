@@ -1,0 +1,103 @@
+<!-- frontend/src/app/pages/nps-avaliacao/nps-avaliacao.html -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center items-center p-4 transition-colors duration-300">
+  <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+
+    <div class="p-8 text-center bg-blue-900 flex flex-col items-center">
+      <div class="w-20 h-20 mb-4 overflow-hidden rounded-xl shadow-lg border-2 border-white/20">
+        <img src="logo.jpeg" alt="Logo" class="w-full h-full object-cover">
+      </div>
+      <h1 class="text-3xl font-bold text-white mb-1">Projeto Lucas</h1>
+      <p class="text-blue-200 text-sm italic">Lugar de cuidado, amor e salvação</p>
+    </div>
+
+    <div class="p-8">
+
+      <!-- Carregando -->
+      <div *ngIf="isLoadingStatus()" class="text-center py-6">
+        <p class="text-gray-500 dark:text-gray-400 text-sm">Carregando...</p>
+      </div>
+
+      <ng-container *ngIf="!isLoadingStatus()">
+
+        <!-- Sucesso após enviar -->
+        <div *ngIf="sucesso()" class="text-center">
+          <div class="text-5xl mb-4">🙏</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Obrigado pela sua avaliação!</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Sua opinião ajuda o Instituto a melhorar o atendimento.</p>
+        </div>
+
+        <!-- Link inválido / token ausente -->
+        <div *ngIf="!sucesso() && (!token || !status()?.valido)" class="text-center">
+          <div class="text-5xl mb-4">❌</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Link inválido</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Este link de avaliação não é válido.</p>
+        </div>
+
+        <!-- Já respondido -->
+        <div *ngIf="!sucesso() && token && status()?.valido && status()?.jaRespondido" class="text-center">
+          <div class="text-5xl mb-4">✅</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Você já avaliou esta consulta</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Obrigado pelo retorno!</p>
+        </div>
+
+        <!-- Expirado -->
+        <div *ngIf="!sucesso() && token && status()?.valido && !status()?.jaRespondido && status()?.expirado" class="text-center">
+          <div class="text-5xl mb-4">⏳</div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Prazo de avaliação encerrado</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">O período para avaliar esta consulta já passou.</p>
+        </div>
+
+        <!-- Formulário -->
+        <div *ngIf="!sucesso() && token && status()?.valido && !status()?.jaRespondido && !status()?.expirado">
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">Avalie sua consulta</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            Com {{ status()?.profissionalNome }}, em {{ status()?.dataConsulta }}
+          </p>
+
+          <div *ngIf="erro()"
+            class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 text-sm rounded-lg px-4 py-3 mb-4">
+            {{ erro() }}
+          </div>
+
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            De 0 a 10, o quanto você recomendaria o Instituto Lucas?
+          </p>
+
+          <div class="grid grid-cols-11 gap-1 mb-2">
+            <button *ngFor="let nota of notas" type="button" (click)="escolherNota(nota)"
+              [class.bg-blue-900]="scoreEscolhida() === nota"
+              [class.text-white]="scoreEscolhida() === nota"
+              [class.bg-gray-100]="scoreEscolhida() !== nota"
+              [class.dark:bg-gray-700]="scoreEscolhida() !== nota"
+              [class.text-gray-700]="scoreEscolhida() !== nota"
+              [class.dark:text-gray-200]="scoreEscolhida() !== nota"
+              class="aspect-square rounded-lg text-xs font-bold transition hover:bg-blue-800 hover:text-white">
+              {{ nota }}
+            </button>
+          </div>
+          <div class="flex justify-between text-[11px] text-gray-400 dark:text-gray-500 mb-6">
+            <span>Pouco provável</span>
+            <span>Muito provável</span>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comentário (opcional)</label>
+            <textarea [(ngModel)]="comentario" rows="3" placeholder="Conte um pouco sobre sua experiência"
+              class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+          </div>
+
+          <button type="button" (click)="onSubmit()" [disabled]="scoreEscolhida() === null || isSubmitting()"
+            class="w-full bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ isSubmitting() ? 'Enviando...' : 'Enviar avaliação' }}
+          </button>
+
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-4">
+            Sua resposta é confidencial e não afeta seu atendimento.
+          </p>
+        </div>
+
+      </ng-container>
+
+    </div>
+  </div>
+</div>

@@ -407,6 +407,28 @@ public class EmailTemplateService {
         );
     }
 
+    // ─── Satisfação do Paciente (NPS) ────────────────────────────────────────
+
+    public void solicitarAvaliacaoNps(Appointment consulta, String token) {
+        String nomePaciente = consulta.getPatient().getName();
+        String nomeProfissional = consulta.getProfessional().getName();
+        String urlAvaliacao = frontendUrl + "/avaliar?token=" + token;
+
+        emailService.enviar(
+            consulta.getPatient().getEmail(),
+            "Como foi sua consulta com " + nomeProfissional + "?",
+            buildPremiumTemplate(
+                "Avalie sua consulta",
+                "Olá, " + nomePaciente + "!",
+                "Sua consulta com " + nomeProfissional + " foi concluída. Sua opinião ajuda o Instituto a melhorar o atendimento — leva menos de um minuto para responder.",
+                "De 0 a 10, o quanto você recomendaria o Instituto Lucas?",
+                "Sua resposta é totalmente confidencial e não afeta seu atendimento.",
+                "Avaliar minha consulta",
+                urlAvaliacao
+            )
+        );
+    }
+
     // ─── Template HTML base ──────────────────────────────────────────────────
 
     private String buildTemplate(

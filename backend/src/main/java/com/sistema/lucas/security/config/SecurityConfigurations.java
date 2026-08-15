@@ -50,6 +50,8 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/nps/*").permitAll() // M11: status do link de avaliação (token na URL)
+                        .requestMatchers(HttpMethod.POST, "/nps/responder").permitAll() // M11: submissão da avaliação
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

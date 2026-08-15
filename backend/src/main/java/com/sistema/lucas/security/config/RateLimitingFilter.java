@@ -42,8 +42,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // 🛡️ SEC-04: Barreira contra brute-force em rotas públicas E sensíveis
+        // /nps/ entrou no M11 — é rota pública (token na URL/body), mesma classe de risco
+        // que /auth/ (tentativa de adivinhar token por força bruta).
         if (path.startsWith("/auth/") || path.startsWith("/export/") ||
-            path.startsWith("/prontuarios/") || path.startsWith("/documentos/")) {
+            path.startsWith("/prontuarios/") || path.startsWith("/documentos/") ||
+            path.startsWith("/nps/")) {
             String ip = request.getHeader("X-Forwarded-For");
             if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
                 ip = request.getRemoteAddr();

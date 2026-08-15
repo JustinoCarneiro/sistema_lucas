@@ -580,10 +580,15 @@ Então o sistema captura o erro de integridade e recua pra anonimização em vez
 
 **Escopo:** Coleta estruturada de feedback do paciente após o atendimento. Novo em 10/08/2026 —
 aprovado pelo cliente a partir de proposta de evolução (benchmark com institutos/clínicas
-similares + estudos sobre agendamento em saúde). Ainda não desenvolvido.
+similares + estudos sobre agendamento em saúde). Implementado em 15/08/2026.
 
 #### US-11.1: NPS Pós-Consulta
-**Status:** 🔲 Backlog — aprovado pelo cliente em 10/08/2026, ainda não desenvolvido.
+**Status:** 🔍 Implementado em 15/08/2026, testes unitários verdes (backend e frontend) — aguardando code review e homologação com o cliente. Ainda não deployado em produção.
+
+**Decisão de produto resolvida:** o link de avaliação é público e de uso único (token na URL,
+sem exigir login) — mesmo padrão já usado em `VerificationToken`/`PasswordResetToken` neste
+projeto. Mitigação de abuso: rota `/nps/**` entrou no rate limiting (30 req/min por IP, mesma
+faixa de `/auth/**`), token de 128 bits (`UUID.randomUUID()`) e expiração de 7 dias.
 
 **Como** administrador,
 **eu quero** que o paciente receba automaticamente um pedido de nota de 0 a 10 depois que a
@@ -608,15 +613,14 @@ Quando qualquer prazo (a definir) se esgota,
 Então nada quebra — a ausência de resposta é um estado válido, não um erro.
 ```
 
-> **Nota de implementação:** plugar em `ProntuarioService.create()`, o único gatilho de
-> `CONCLUIDA` no sistema — mesmo ponto de extensão natural que qualquer outro efeito colateral
-> pós-conclusão. Reaproveitar `EmailService`/`EmailTemplateService` já existentes (mesmo padrão do
-> lembrete de consulta). Requer entidade nova (`NpsResponse` ou similar: `appointmentId`,
-> `patientId`, `score` (0-10), `comentario` opcional, `respondidoEm`). Cálculo do NPS agregado
-> (% promotores − % detratores) pode alimentar o Dashboard do Administrador (E9) como métrica
-> nova, mas isso é um passo seguinte, não faz parte do escopo mínimo aprovado aqui.
-> **Decisão de produto em aberto:** link de avaliação exige login (paciente autenticado clica e
-> avalia dentro do sistema) ou é um link público de uso único (token na URL, sem exigir login)?
-> A segunda opção é mais simples pro paciente responder, mas segue o mesmo padrão de link público
-> sem proteção antiabuso que também foi levantado como risco no Sistema Melvin (US-7.4) — validar
-> com o cliente antes de estimar.
+> **Nota de implementação (como foi construído):** plugado em `ProntuarioService.create()`, o
+> único gatilho de `CONCLUIDA` no sistema, dentro de uma transação própria
+> (`@Transactional(propagation = REQUIRES_NEW)`, em `NpsService.solicitarAvaliacao`) — isolar a
+> transação, e não só o `try/catch`, é o que de fato impede que uma falha no pedido de NPS marque
+> a transação da conclusão da consulta como rollback-only. Reaproveita
+> `EmailService`/`EmailTemplateService` (novo método `solicitarAvaliacaoNps`, mesmo padrão do
+> lembrete de consulta). Entidade nova `NpsResponse` (migration V15): `appointmentId` (FK única),
+> `patientId`, `token`, `score`, `comentario`, `criadoEm`, `respondidoEm`, `expiraEm`. Idempotente
+> — se já existe um pedido de NPS pra aquela consulta, não duplica nem reenvia e-mail. Cálculo do
+> NPS agregado (% promotores − % detratores) para o Dashboard do Administrador (E9) não entrou
+> neste escopo — fica como próximo passo, não fez parte do mínimo aprovado.

@@ -40,7 +40,7 @@ Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, *
 8. **E8 · Exportação de Dados & Portabilidade LGPD** *(Pequeno)* — export CSV (admin/profissional) e JSON com metadados de consentimento (paciente, Art. 18 V LGPD).
 9. **E9 · Painel Administrativo** *(Médio)* — dashboards por role (admin/profissional/paciente) com métricas e listagens operacionais.
 10. **E10 · Segurança & Conformidade LGPD** *(Transversal · risco alto)* — criptografia de campo, hash de CPF, anonimização, auditoria, consentimento. Não é uma tela, é um conjunto de garantias que atravessa todos os épicos acima.
-11. **E11 · Satisfação do Paciente (NPS)** *(Pequeno)* — 🔲 Backlog, aprovado 10/08/2026, ainda não desenvolvido. NPS pós-consulta automático, disparado no mesmo gatilho de `CONCLUIDA` (`ProntuarioService.create()`).
+11. **E11 · Satisfação do Paciente (NPS)** *(Pequeno)* — 🔍 Implementado (15/08/2026), testes unitários verdes, aguardando code review/homologação. NPS pós-consulta automático, disparado no mesmo gatilho de `CONCLUIDA` (`ProntuarioService.create()`), via link público de uso único (`NpsResponse`), sem exigir login.
 
 ## Máquina de estados principal
 
