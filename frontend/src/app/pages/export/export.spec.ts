@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ExportService } from './export.service';
+import { NotificationService } from '../../notification.service';
 import { environment } from '../../../environments/environment';
 
 describe('ExportService', () => {
@@ -70,10 +71,11 @@ describe('ExportService', () => {
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
   });
 
-  it('exibe alerta quando o backend retorna erro de rede', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockReturnValue(undefined);
+  it('exibe notificação de erro quando o backend retorna erro de rede', () => {
+    const notify = TestBed.inject(NotificationService);
+    const errorSpy = vi.spyOn(notify, 'error');
     service.exportAdmin();
     http.expectOne(`${base}/admin`).error(new ErrorEvent('network'));
-    expect(alertSpy).toHaveBeenCalledWith('Não foi possível gerar a exportação no momento.');
+    expect(errorSpy).toHaveBeenCalledWith('Não foi possível gerar a exportação no momento.');
   });
 });
