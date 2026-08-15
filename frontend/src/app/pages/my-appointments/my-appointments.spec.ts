@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyAppointmentsComponent } from './my-appointments';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
+import { describe, beforeEach, afterEach, it, expect } from 'vitest';
+import { environment } from '../../../environments/environment';
 
-describe('MyAppointmentsComponent (Lógica de Datas)', () => {
+describe('MyAppointmentsComponent (Carregamento de Datas Disponíveis)', () => {
   let component: MyAppointmentsComponent;
   let fixture: ComponentFixture<MyAppointmentsComponent>;
+  let httpMock: HttpTestingController;
 
   beforeEach(async () => {
-    // Nota: O ambiente de teste deve ser inicializado pelo runner do projeto (ng test).
-    // Este teste assume que o TestBed está pronto para configuração.
     await TestBed.configureTestingModule({
       imports: [
         MyAppointmentsComponent,
@@ -22,45 +22,60 @@ describe('MyAppointmentsComponent (Lógica de Datas)', () => {
 
     fixture = TestBed.createComponent(MyAppointmentsComponent);
     component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('deve gerar apenas a próxima ocorrência para cada dia da semana', () => {
-    const days = ['MONDAY', 'WEDNESDAY'];
-    
-    // Usando Vitest para mockar a data (substituindo jasmine.clock)
-    vi.useFakeTimers();
-    const mockDate = new Date(2026, 3, 14); // 14 de Abril de 2026 (Terça)
-    vi.setSystemTime(mockDate);
+  it('onProfessionalChange sem profissional selecionado não busca datas nem quebra o estado', () => {
+    component.scheduleForm.patchValue({ professionalId: '' });
 
-    component.generateAvailableDates(days);
-    const dates = component.availableDates();
+    component.onProfessionalChange();
 
-    expect(dates.length).toBe(2);
-    expect(dates[0].value).toBe('2026-04-15'); // Quarta
-    expect(dates[0].label).toContain('quarta-feira');
-    expect(dates[1].value).toBe('2026-04-20'); // Segunda (próxima semana)
-    expect(dates[1].label).toContain('segunda-feira');
-
-    vi.useRealTimers();
+    expect(component.selectedProfessional()).toBeNull();
+    expect(component.availableDates()).toEqual([]);
+    expect(component.availableSlots()).toEqual([]);
+    // Nenhuma requisição deve ter sido disparada — httpMock.verify() no afterEach garante isso.
   });
 
-  it('quando hoje é o dia configurado, retorna a PRÓXIMA ocorrência (nunca hoje)', () => {
-    const days = ['WEDNESDAY'];
+  it('onProfessionalChange busca as datas disponíveis do profissional selecionado e formata pra exibição', () => {
+    component.professionals.set([{ id: 1, name: 'Dra. Ana' }]);
+    component.scheduleForm.patchValue({ professionalId: '1' });
 
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 3, 15)); // Hoje é Quarta (15/04/2026)
+    component.onProfessionalChange();
 
-    component.generateAvailableDates(days);
+    expect(component.selectedProfessional()?.name).toBe('Dra. Ana');
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/disponibilidade/1/available-dates`);
+    expect(req.request.method).toBe('GET');
+    req.flush(['2026-04-15', '2026-04-20']); // quarta-feira, segunda-feira seguinte
+
     const dates = component.availableDates();
-
-    expect(dates.length).toBe(1);
-    expect(dates[0].value).toBe('2026-04-22'); // Próxima quarta (7 dias depois)
+    expect(dates.length).toBe(2);
+    expect(dates[0].value).toBe('2026-04-15');
     expect(dates[0].label).toContain('quarta-feira');
+    expect(dates[1].value).toBe('2026-04-20');
+    expect(dates[1].label).toContain('segunda-feira');
+  });
 
-    vi.useRealTimers();
+  it('onProfessionalChange reseta seleção de data/slot ao trocar de profissional', () => {
+    component.professionals.set([{ id: 1, name: 'Dra. Ana' }]);
+    component.scheduleForm.patchValue({ professionalId: '1' });
+    component.selectedDate.set('2026-04-15');
+    component.selectedSlot.set({ startTime: '09:00' });
+    component.availableSlots.set([{ startTime: '09:00' }]);
+
+    component.onProfessionalChange();
+    httpMock.expectOne(`${environment.apiUrl}/disponibilidade/1/available-dates`).flush([]);
+
+    expect(component.selectedDate()).toBe('');
+    expect(component.selectedSlot()).toBeNull();
+    expect(component.availableSlots()).toEqual([]);
   });
 });
