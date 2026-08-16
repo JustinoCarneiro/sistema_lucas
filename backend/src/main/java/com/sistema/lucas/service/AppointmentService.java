@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -65,12 +66,26 @@ public class AppointmentService {
     public AppointmentResponseDTO buscarPorId(@org.springframework.lang.NonNull Long id, String email) {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
-            
+
         // 🛡️ Segurança (IDOR): Apenas paciente logado ou o médico logado podem ver isso
         if (!consulta.getPatient().getEmail().equals(email) && !consulta.getProfessional().getEmail().equals(email)) {
             throw new RuntimeException("Operação de Segurança: Acesso negado (IDOR). Você não pode vasculhar informações de terceiros.");
         }
         return new AppointmentResponseDTO(consulta);
+    }
+
+    // Reaproveitado por WaitlistService (M13) — mesma checagem de conflito usada em
+    // agendar()/reagendar() abaixo. Extraído como método público só pra essa reutilização nova;
+    // os dois usos originais em agendar()/reagendar() foram mantidos como estavam (Diretiva
+    // Primária: não alterar sintaxe de código já existente).
+    public boolean horarioEstaOcupado(Long professionalId, LocalDateTime dateTime) {
+        LocalDateTime inicioDia = dateTime.toLocalDate().atStartOfDay();
+        LocalDateTime fimDia = dateTime.toLocalDate().plusDays(1).atStartOfDay();
+        LocalTime horario = dateTime.toLocalTime().withMinute(0).withSecond(0).withNano(0);
+        return appointmentRepository
+            .findByProfessionalIdAndDateTimeBetweenAndStatusNot(professionalId, inicioDia, fimDia, StatusConsulta.CANCELADA)
+            .stream()
+            .anyMatch(c -> c.getDateTime().toLocalTime().equals(horario));
     }
 
     // ─── Agendamento ─────────────────────────────────────────────────────────
@@ -158,16 +173,27 @@ public class AppointmentService {
         // M13: horário abriu — publica evento pro WaitlistService ofertar pro primeiro da fila,
         // se houver (via evento, não injeção direta, pra evitar dependência circular entre
         // AppointmentService e WaitlistService — ver ConsultaCanceladaEvent).
-        eventPublisher.publishEvent(new ConsultaCanceladaEvent(consulta.getProfessional().getId(), consulta.getDateTime()));
+        eventPublisher.publishEvent(new ConsultaCanceladaEvent(consulta.getId(), consulta.getProfessional().getId(), consulta.getDateTime()));
     }
 
-    // Cancelamento de sistema (ex.: oferta de lista de espera não confirmada a tempo pelo
-    // paciente) — não passa pelas regras de penalidade nem exige justificativa, porque quem
-    // está cancelando é o sistema, não uma ação do paciente.
-    @Transactional
+    // Cancelamento de sistema (oferta de lista de espera não confirmada a tempo pelo paciente) —
+    // não passa pelas regras de penalidade nem exige justificativa, porque quem está cancelando
+    // é o sistema, não uma ação do paciente. REQUIRES_NEW: chamado num loop por
+    // WaitlistService.expirarOfertasVencidas() — isola cada cancelamento na sua própria
+    // transação, pra uma falha numa entrada não desfazer o processamento das demais no mesmo
+    // ciclo do scheduler (mesmo racional do NpsService.solicitarAvaliacao).
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cancelarPorExpiracaoDeOferta(@org.springframework.lang.NonNull Long appointmentId) {
         var consulta = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+
+        // Guarda de estado (como aprovarAgendamento/recusarAgendamento já fazem): se a consulta
+        // já saiu de AGUARDANDO_CONFIRMACAO — por ter sido aprovada/confirmada pelo fluxo normal
+        // do painel, por exemplo —, não é mais "não confirmada a tempo". Quem chama este método
+        // (WaitlistService) já checa isso antes, mas a guarda fica aqui como defesa em camadas.
+        if (consulta.getStatus() != StatusConsulta.AGUARDANDO_CONFIRMACAO) {
+            throw new RuntimeException("Consulta já avançou de status — não deve ser cancelada por expiração de oferta.");
+        }
 
         consulta.setStatus(StatusConsulta.CANCELADA);
         consulta.setCancelReason("Vaga da lista de espera não confirmada a tempo.");
@@ -224,6 +250,11 @@ public class AppointmentService {
             throw new RuntimeException("Este novo horário já está ocupado.");
         }
 
+        // M13: captura o horário ANTIGO antes de mover a consulta — é esse horário que fica
+        // livre de fato e deve ser oferecido pra lista de espera, não o novo.
+        Long profissionalId = profissional.getId();
+        LocalDateTime dataAntiga = consulta.getDateTime();
+
         consulta.setDateTime(novaData);
         consulta.setCancelReason(justificativa); // Reutilizando campo para justificativa de mudança
         consulta.setStatus(StatusConsulta.AGENDADA); // Volta para agendada (precisa reconfirmar?)
@@ -231,6 +262,9 @@ public class AppointmentService {
 
         auditLogService.log(email, "REAGENDAMENTO_CONSULTA", "Appointment", id, "Nova Data: " + novaData + " | Justificativa: " + justificativa);
         emailTemplateService.notificarConsultaAgendada(consulta);
+
+        // M13: horário antigo abriu — mesma cascata da lista de espera que cancelar() dispara.
+        eventPublisher.publishEvent(new ConsultaCanceladaEvent(id, profissionalId, dataAntiga));
     }
 
     // ─── Falta ───────────────────────────────────────────────────────────────
@@ -324,6 +358,9 @@ public class AppointmentService {
         auditLogService.log(emailProfissional, "RECUSA_AGENDAMENTO", "Appointment", id,
             "Justificativa: " + consulta.getCancelReason());
         emailTemplateService.notificarPacienteAgendamentoRecusado(consulta, consulta.getCancelReason());
+
+        // M13: horário abriu (recusa também libera o slot, igual a cancelar()).
+        eventPublisher.publishEvent(new ConsultaCanceladaEvent(consulta.getId(), consulta.getProfessional().getId(), consulta.getDateTime()));
     }
 
     @Transactional

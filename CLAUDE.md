@@ -23,7 +23,7 @@ Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, *
 - **Campo sensível nunca fica em texto plano em repouso**: CPF, telefone, endereço, contato de emergência, alergias, motivo/justificativa de consulta, conteúdo de prontuário e documento — todos `AES-256-GCM` por campo (`EncryptionConverter`), com suporte a rotação de chave (chaves legadas + fallback AES-128-ECB só para dado histórico pré-migração).
 - **CPF nunca é comparado em texto plano** — unicidade via `cpf_hash` (HMAC-SHA256 com pepper secreto), não SHA-256 puro (SHA-256 puro foi a escolha original na V5 e foi considerado fraco contra rainbow table dado o universo limitado de CPFs válidos; `CpfHashBackfillRunner` migra o histórico).
 - **Exclusão de paciente é anonimização, não DELETE, quando há vínculo clínico** — CFM exige retenção de prontuário por 20 anos; só o vínculo de identidade é apagado (nome, e-mail, CPF, contato viram irreversíveis), o registro clínico permanece.
-- **Rate limiting** em `/auth/**`, `/export/**`, `/prontuarios/**`, `/documentos/**` — 30 req/min por IP (Bucket4j), 429 ao estourar.
+- **Rate limiting** em `/auth/**`, `/export/**`, `/prontuarios/**`, `/documentos/**`, `/nps/**` (M11), `/waitlist/**` (M13) — 30 req/min por IP (Bucket4j), 429 ao estourar.
 - **Consentimento LGPD registrado e versionado** — `terms_accepted_at` + `terms_version` no cadastro do paciente, não só um booleano.
 - **MFA/TOTP tem fundação de schema mas não está ativo** — `users.mfa_enabled`/`totp_secret` existem (migration V10), nenhum fluxo de login usa ainda. Não assumir que MFA está ativo ao trabalhar em auth.
 

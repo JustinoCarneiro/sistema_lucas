@@ -44,9 +44,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // 🛡️ SEC-04: Barreira contra brute-force em rotas públicas E sensíveis
         // /nps/ (M11) e /waitlist/ (M13) são rotas públicas (token na URL/body), mesma classe
         // de risco que /auth/ (tentativa de adivinhar token por força bruta).
+        // Checa também o path exato ("/waitlist", sem barra) — POST /waitlist (entrar na fila)
+        // não bate em startsWith("/waitlist/") e escapava do rate limiting até esse fix.
         if (path.startsWith("/auth/") || path.startsWith("/export/") ||
             path.startsWith("/prontuarios/") || path.startsWith("/documentos/") ||
-            path.startsWith("/nps/") || path.startsWith("/waitlist/")) {
+            path.startsWith("/nps/") || path.equals("/nps") ||
+            path.startsWith("/waitlist/") || path.equals("/waitlist")) {
             String ip = request.getHeader("X-Forwarded-For");
             if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
                 ip = request.getRemoteAddr();

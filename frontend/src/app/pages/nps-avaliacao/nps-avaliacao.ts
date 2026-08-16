@@ -3,7 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 interface NpsStatus {
@@ -76,10 +76,22 @@ export class NpsAvaliacaoComponent implements OnInit {
         this.sucesso.set(true);
         this.isSubmitting.set(false);
       },
-      error: (err: any) => {
-        this.erro.set(err.error || 'Não foi possível registrar sua avaliação. Tente novamente.');
+      error: (err: HttpErrorResponse) => {
+        this.erro.set(this.parseError(err));
         this.isSubmitting.set(false);
       }
     });
+  }
+
+  // responseType: 'text' faz o Angular nunca tentar JSON.parse no corpo do erro — mas o backend
+  // responde erro como JSON (ExceptionDTO via GlobalExceptionHandler). Sem isso, err.error vem
+  // como a string JSON crua (ex.: '{"message":"...","code":"400"}') direto na tela.
+  private parseError(err: HttpErrorResponse): string {
+    try {
+      const body = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;
+      return body?.message || 'Não foi possível registrar sua avaliação. Tente novamente.';
+    } catch {
+      return err.error || 'Não foi possível registrar sua avaliação. Tente novamente.';
+    }
   }
 }

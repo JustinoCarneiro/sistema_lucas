@@ -33,6 +33,9 @@ class NpsServiceTest {
     @Mock
     private EmailTemplateService emailTemplateService;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private Appointment novaConsulta(Long appointmentId) {
         var professional = new Professional();
         professional.setId(10L);
@@ -87,8 +90,12 @@ class NpsServiceTest {
         @Test
         @DisplayName("Registra a nota e o comentário quando o token é válido, não usado e não expirado")
         void respondeComSucesso() {
+            var paciente = new Patient();
+            paciente.setEmail("pac@teste.com");
+
             var nps = new NpsResponse();
             nps.setToken("token-valido");
+            nps.setPatient(paciente);
             nps.setExpiraEm(LocalDateTime.now().plusDays(1));
             when(npsResponseRepository.findByToken("token-valido")).thenReturn(Optional.of(nps));
 
@@ -98,6 +105,7 @@ class NpsServiceTest {
             assertEquals("Ótimo atendimento", nps.getComentario());
             assertNotNull(nps.getRespondidoEm());
             verify(npsResponseRepository, times(1)).save(nps);
+            verify(auditLogService, times(1)).log(eq("pac@teste.com"), eq("RESPOSTA_NPS"), eq("NpsResponse"), any(), anyString());
         }
 
         @Test

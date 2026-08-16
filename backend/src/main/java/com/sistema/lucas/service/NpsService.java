@@ -21,6 +21,7 @@ public class NpsService {
 
     @Autowired private NpsResponseRepository npsResponseRepository;
     @Autowired private EmailTemplateService emailTemplateService;
+    @Autowired private AuditLogService auditLogService;
 
     // Chamado de dentro da transação de ProntuarioService.create(). REQUIRES_NEW
     // isola numa transação própria: se algo falhar aqui, só esse pedido de NPS é
@@ -77,5 +78,8 @@ public class NpsService {
         nps.setComentario(comentario);
         nps.setRespondidoEm(LocalDateTime.now());
         npsResponseRepository.save(nps);
+
+        auditLogService.log(nps.getPatient().getEmail(), "RESPOSTA_NPS", "NpsResponse", nps.getId(),
+            "Paciente respondeu a avaliação via link público (token). Nota: " + score);
     }
 }

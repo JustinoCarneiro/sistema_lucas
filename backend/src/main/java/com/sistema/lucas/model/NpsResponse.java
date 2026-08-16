@@ -1,6 +1,7 @@
 // backend/src/main/java/com/sistema/lucas/model/NpsResponse.java
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,7 +33,10 @@ public class NpsResponse {
 
     private Integer score;
 
+    // Texto livre do paciente sobre o atendimento — mesma categoria de dado sensível que
+    // Appointment.reason/cancelReason (motivo/justificativa de consulta), portanto cifrado.
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String comentario;
 
     @Column(nullable = false)

@@ -201,6 +201,33 @@ class AppointmentServiceTest {
         }
 
         @Test
+        @DisplayName("M13: recusarAgendamento também publica evento — horário liberado precisa cascatear pra lista de espera")
+        void recusarAgendamento_publicaEvento() {
+            Long id = 2L;
+            String emailProf = "ana@clinica.com";
+
+            var professional = new Professional();
+            professional.setId(9L);
+            professional.setEmail(emailProf);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setPatient(new Patient());
+            consulta.setStatus(StatusConsulta.AGUARDANDO_CONFIRMACAO);
+            consulta.setDateTime(LocalDateTime.now().plusDays(2));
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.recusarAgendamento(id, emailProf, "Agenda lotada"));
+
+            var captor = org.mockito.ArgumentCaptor.forClass(com.sistema.lucas.event.ConsultaCanceladaEvent.class);
+            verify(eventPublisher, times(1)).publishEvent(captor.capture());
+            assertEquals(id, captor.getValue().appointmentId());
+            assertEquals(9L, captor.getValue().professionalId());
+        }
+
+        @Test
         @DisplayName("Profissional errado não pode aprovar consulta de outro profissional")
         void aprovarAgendamento_profissionalErrado_lancaExcecao() {
             Long id = 3L;
@@ -390,6 +417,47 @@ class AppointmentServiceTest {
         }
 
         @Test
+        @DisplayName("M13: reagendar publica evento com o horário ANTIGO (que ficou livre), não o novo")
+        void reagendar_publicaEventoComHorarioAntigo() {
+            Long id = 1L;
+            String email = "paciente@email.com";
+            LocalDateTime dataAntiga = LocalDateTime.now().plusDays(5);
+            LocalDateTime novaData = getNextDayOfWeek(DayOfWeek.MONDAY).atTime(9, 0);
+
+            var professional = new Professional();
+            professional.setId(9L);
+            professional.setEmail("ana@clinica.com");
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setProfessional(professional);
+            consulta.setDateTime(dataAntiga); // > 24h — sem penalidade
+            consulta.setStatus(StatusConsulta.AGENDADA);
+
+            var availability = new ProfessionalAvailability();
+            availability.setStartTime(LocalTime.of(9, 0));
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+            when(availabilityRepository.findByProfessionalEmailAndDate("ana@clinica.com", novaData.toLocalDate()))
+                .thenReturn(List.of(availability));
+            when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
+                eq(9L), any(), any(), any()
+            )).thenReturn(List.of());
+
+            assertDoesNotThrow(() -> appointmentService.reagendar(id, email, novaData, "Preciso mudar o horário"));
+
+            var captor = org.mockito.ArgumentCaptor.forClass(com.sistema.lucas.event.ConsultaCanceladaEvent.class);
+            verify(eventPublisher, times(1)).publishEvent(captor.capture());
+            assertEquals(id, captor.getValue().appointmentId());
+            assertEquals(9L, captor.getValue().professionalId());
+            assertEquals(dataAntiga, captor.getValue().dateTime());
+        }
+
+        @Test
         @DisplayName("M13: cancelar publica evento pro WaitlistService ofertar a vaga (sem depender dele diretamente)")
         void cancelar_publicaEventoDeConsultaCancelada() {
             Long id = 1L;
@@ -444,6 +512,60 @@ class AppointmentServiceTest {
             verify(patientRepository, never()).save(any());
             verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
             verify(auditLogService).log(eq("SYSTEM"), eq("CANCELAMENTO_AUTOMATICO"), eq("Appointment"), eq(appointmentId), anyString());
+        }
+
+        @Test
+        @DisplayName("Recusa cancelar se a consulta já avançou de AGUARDANDO_CONFIRMACAO (aprovada/confirmada pelo painel)")
+        void cancelarPorExpiracaoDeOferta_recusaSeJaAvancou() {
+            Long appointmentId = 42L;
+            var consulta = new Appointment();
+            consulta.setId(appointmentId);
+            consulta.setPatient(new Patient());
+            consulta.setStatus(StatusConsulta.CONFIRMADA); // já avançou pelo fluxo normal
+
+            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.cancelarPorExpiracaoDeOferta(appointmentId));
+            assertTrue(ex.getMessage().contains("já avançou de status"));
+            assertEquals(StatusConsulta.CONFIRMADA, consulta.getStatus()); // não foi alterado
+            verify(appointmentRepository, never()).save(any());
+        }
+    }
+
+    // ──────────────────────── Checagem de conflito compartilhada (M13) ────────────────────────
+
+    @Nested
+    @DisplayName("horarioEstaOcupado (reaproveitado por WaitlistService)")
+    class HorarioEstaOcupadoTests {
+
+        @Test
+        @DisplayName("Retorna true quando existe consulta não-cancelada no mesmo horário")
+        void retornaTrueQuandoOcupado() {
+            Long professionalId = 1L;
+            LocalDateTime dateTime = getNextDayOfWeek(DayOfWeek.MONDAY).atTime(9, 0);
+
+            var existente = new Appointment();
+            existente.setDateTime(dateTime);
+
+            when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
+                eq(professionalId), any(), any(), any()
+            )).thenReturn(List.of(existente));
+
+            assertTrue(appointmentService.horarioEstaOcupado(professionalId, dateTime));
+        }
+
+        @Test
+        @DisplayName("Retorna false quando não há consulta nesse horário")
+        void retornaFalseQuandoLivre() {
+            Long professionalId = 1L;
+            LocalDateTime dateTime = getNextDayOfWeek(DayOfWeek.MONDAY).atTime(9, 0);
+
+            when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
+                eq(professionalId), any(), any(), any()
+            )).thenReturn(List.of());
+
+            assertFalse(appointmentService.horarioEstaOcupado(professionalId, dateTime));
         }
     }
 

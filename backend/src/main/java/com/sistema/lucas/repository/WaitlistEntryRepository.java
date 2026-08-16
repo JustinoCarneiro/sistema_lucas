@@ -13,6 +13,8 @@ public interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, Lo
 
     Optional<WaitlistEntry> findByToken(String token);
 
+    Optional<WaitlistEntry> findByAppointmentId(Long appointmentId);
+
     Optional<WaitlistEntry> findFirstByProfessionalIdAndDateTimeAndStatusOrderByCriadoEmAsc(
         Long professionalId, LocalDateTime dateTime, WaitlistStatus status);
 

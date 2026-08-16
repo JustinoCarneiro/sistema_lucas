@@ -370,7 +370,21 @@ Então ele é pulado (entrada vira CANCELADA) e a vaga passa pro próximo, sem n
 > CONFIRMADA/EXPIRADA/CANCELADA), `appointmentId` (a consulta reservada), `token`,
 > `ofertaExpiraEm`. Expiração automática via `WaitlistExpirationScheduler`
 > (`@Scheduled`, a cada 15min). Prazo de confirmação configurável
-> (`app.waitlist.oferta.horas`, padrão 2h).
+> (`app.waitlist.oferta.horas`, padrão 2h), nunca ultrapassando o horário da própria consulta.
+>
+> **Revisão pós-implementação (16/08/2026)** encontrou e corrigiu 7 problemas reais nessa versão
+> inicial: (1) consultas já confirmadas pelo fluxo normal do painel eram canceladas pelo
+> scheduler por engano — agora `expirarOfertasVencidas` checa o status real da consulta antes de
+> cancelar; (2) `self-invocation` (chamada `this.` dentro da própria classe) fazia o
+> `@Transactional` de `ofertarProximoDaFila` não ter efeito nenhum quando chamado a partir do
+> listener do evento — corrigido com uma auto-referência `@Lazy`; (3) `POST /waitlist` escapava
+> do rate limiting por falta de barra no `startsWith` do filtro; (4) `recusarAgendamento` e
+> `reagendar` também liberam horário mas não publicavam o evento — agora publicam; (5) fila
+> aceitava entrada duplicada por corrida — novo índice único parcial (migration V17); (6)
+> `comentario` do NPS e as escritas da lista de espera não tinham criptografia/auditoria,
+> respectivamente — corrigido; (7) `ofertarProximoDaFila` passou a revalidar conflito de horário
+> e disponibilidade do profissional antes de reservar, e a avisar o profissional por e-mail
+> (antes só o paciente era avisado).
 
 ---
 
