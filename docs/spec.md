@@ -384,7 +384,12 @@ Então ele é pulado (entrada vira CANCELADA) e a vaga passa pro próximo, sem n
 > `comentario` do NPS e as escritas da lista de espera não tinham criptografia/auditoria,
 > respectivamente — corrigido; (7) `ofertarProximoDaFila` passou a revalidar conflito de horário
 > e disponibilidade do profissional antes de reservar, e a avisar o profissional por e-mail
-> (antes só o paciente era avisado).
+> (antes só o paciente era avisado). Um oitavo problema, inicialmente registrado como pendência
+> conhecida (corrida rara entre `confirmarOferta` e `expirarOfertasVencidas` disputando a mesma
+> linha no mesmíssimo instante), foi fechado depois: `WaitlistEntry` ganhou `@Version` (lock
+> otimista, migration V18), e `expirarOfertasVencidas` passou a salvar `EXPIRADA` antes de
+> cancelar a consulta de verdade — se o paciente confirmou bem nesse instante, o save do
+> scheduler falha por conflito de versão antes de qualquer coisa irreversível acontecer.
 
 ---
 

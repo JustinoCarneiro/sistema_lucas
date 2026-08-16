@@ -386,6 +386,23 @@ class WaitlistServiceTest {
         }
 
         @Test
+        @DisplayName("Corrida com o scheduler: lock otimista vira mensagem amigável, não erro 500")
+        void recusaComMensagemAmigavelSeSchedulerVenceuACorrida() {
+            var entry = new WaitlistEntry();
+            entry.setToken("token-corrida");
+            entry.setStatus(WaitlistStatus.OFERECIDA);
+            entry.setOfertaExpiraEm(LocalDateTime.now().plusMinutes(1)); // ainda não expirou pro relógio local...
+            when(waitlistEntryRepository.findByToken("token-corrida")).thenReturn(Optional.of(entry));
+            // ...mas o scheduler já processou e salvou esta mesma linha no banco entre a leitura
+            // e o save — simulado aqui como o save lançando o conflito de versão.
+            doThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException(WaitlistEntry.class, 1L))
+                .when(waitlistEntryRepository).save(entry);
+
+            var ex = assertThrows(RuntimeException.class, () -> waitlistService.confirmarOferta("token-corrida"));
+            assertTrue(ex.getMessage().contains("expirou"));
+        }
+
+        @Test
         @DisplayName("Recusa confirmar oferta expirada")
         void recusaSeExpirada() {
             var entry = new WaitlistEntry();

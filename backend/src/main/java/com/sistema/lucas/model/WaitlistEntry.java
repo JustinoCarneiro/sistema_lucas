@@ -49,6 +49,13 @@ public class WaitlistEntry {
 
     private LocalDateTime ofertaExpiraEm;
 
+    // Lock otimista: confirmarOferta (clique do paciente) e expirarOfertasVencidas (scheduler,
+    // a cada 15min) podem tentar mutar a mesma entrada quase ao mesmo tempo. Sem isso, o que
+    // salvar por último vence silenciosamente — com isso, quem perde a corrida recebe
+    // OptimisticLockingFailureException em vez de sobrescrever a mudança do outro sem avisar.
+    @Version
+    private Long version;
+
     public boolean isOfertaExpirada() {
         return ofertaExpiraEm != null && LocalDateTime.now().isAfter(ofertaExpiraEm);
     }

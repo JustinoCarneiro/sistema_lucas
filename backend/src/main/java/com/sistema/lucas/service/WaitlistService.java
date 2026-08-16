@@ -254,7 +254,13 @@ public class WaitlistService {
         }
 
         entry.setStatus(WaitlistStatus.CONFIRMADA);
-        waitlistEntryRepository.save(entry);
+        try {
+            waitlistEntryRepository.save(entry);
+        } catch (org.springframework.dao.OptimisticLockingFailureException e) {
+            // Corrida rara: o scheduler (a cada 15min) processou esta mesma oferta como vencida
+            // no mesmíssimo instante — quem confirmar primeiro no banco vence, o outro cai aqui.
+            throw new RuntimeException("O prazo para confirmar esta vaga expirou.");
+        }
 
         auditLogService.log(entry.getPatient().getEmail(), "CONFIRMACAO_VAGA_LISTA_ESPERA", "WaitlistEntry", entry.getId(),
             "Paciente confirmou a vaga via link público (token).");
@@ -279,9 +285,15 @@ public class WaitlistService {
                     continue;
                 }
 
-                appointmentService.cancelarPorExpiracaoDeOferta(appointment.getId());
+                // Marca EXPIRADA e salva ANTES de cancelar a consulta de verdade — de propósito.
+                // Se o paciente confirmou a oferta bem nesse instante (confirmarOferta já
+                // comitou CONFIRMADA), o @Version em WaitlistEntry faz este save falhar com
+                // OptimisticLockingFailureException aqui, ANTES de qualquer coisa irreversível
+                // acontecer — a consulta nunca chega a ser cancelada por engano.
                 entry.setStatus(WaitlistStatus.EXPIRADA);
                 waitlistEntryRepository.save(entry);
+
+                appointmentService.cancelarPorExpiracaoDeOferta(appointment.getId());
                 self.ofertarProximoDaFila(entry.getProfessional().getId(), entry.getDateTime());
             } catch (Exception e) {
                 logger.warn("Falha ao expirar oferta de lista de espera {}: {}", entry.getId(), e.getMessage());
