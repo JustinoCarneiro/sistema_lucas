@@ -51,6 +51,7 @@ require_manual "mail_password.txt"
 write_secret "jwt_secret.txt"             "$(generate)"
 write_secret "encryption_key.txt"         "$(generate)"
 write_secret "cpf_hash_pepper.txt"        "$(generate)"
+write_secret "mfa_backup_pepper.txt"      "$(generate)"
 write_secret "initial_admin_password.txt" "$(generate)"
 
 # --- Legacy keys (começa vazio; preencher durante rotação de chave) ---
