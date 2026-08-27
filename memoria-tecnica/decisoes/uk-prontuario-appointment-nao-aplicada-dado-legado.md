@@ -4,17 +4,26 @@ data: 2026-08-27
 status: Resolvida (mesmo dia) — ver atualização no final
 ---
 
-# Constraint única `uk_prontuario_appointment` (V20) não aplicada em produção — dado legado
+# Constraint única `uk_prontuario_appointment` (V20/V22) — histórico completo do incidente
 
-> ✅ **Atualização, mesmo dia (27/08/2026):** o usuário pediu pra verificar o conteúdo real das
-> duas entradas pelo próprio sistema (login, abrir o histórico de prontuário do paciente
-> [Luiz Guimarães Neto](#), `patient_id=26`) — texto **confirmado idêntico**. Com a incerteza
-> original resolvida, o usuário decidiu reverter a decisão abaixo: `prontuarios.id=3` foi
-> **apagado manualmente** em produção (mantendo `id=2` como o registro válido), e a constraint
-> foi reaplicada como **V22** (mesmo SQL da V20, renumerada pra não reescrever um número de
-> versão que já tinha falhado uma vez em prod). Migration V22 já deployada com sucesso. O texto
-> abaixo fica como registro de como e por que a decisão original foi tomada — a decisão em si
-> não vale mais.
+> ✅ **Resolução final (27/08/2026):** o usuário verificou o conteúdo real pelo próprio sistema
+> (login, histórico de prontuário do paciente na UI — texto descriptografado normalmente) e
+> confirmou **conteúdo idêntico** nos pares duplicados. Com a incerteza original resolvida, a
+> decisão abaixo foi revertida: os registros duplicados foram apagados manualmente em produção
+> (mantendo sempre o mais antigo de cada par como o válido) e a constraint foi reaplicada como
+> **V22** (mesmo SQL da V20, renumerada pra não reescrever um número de versão que já tinha
+> falhado uma vez em prod). Migration V22 deployada com sucesso, tabela sem nenhum
+> `appointment_id` duplicado. O texto abaixo (Contexto/Decisão originais) fica só como registro
+> histórico de como e por que a primeira decisão foi tomada.
+>
+> **Lição importante que não estava no relato original:** a primeira tentativa de correção só
+> reagiu ao *primeiro* erro que o Flyway reportou (`appointment_id=9`) — só depois de já ter
+> reativado a migration uma vez e ela falhar de novo (agora em `appointment_id=50`) é que rodou
+> um `GROUP BY appointment_id HAVING COUNT(*) > 1` pra levantar **todos** os pares de uma vez.
+> Resultado: 3 pares no total (`appointment_id` 9, 16 e 50), não 1. **Regra geral pra próxima
+> vez:** ao investigar uma constraint única que falha por dado duplicado, sempre levantar
+> *todos* os grupos duplicados antes de decidir/corrigir, nunca reagir só ao primeiro erro do
+> Flyway — ele para na primeira violação, não lista as demais.
 
 ## Contexto
 No deploy de produção de 27/08/2026 (primeiro em 6 semanas, trazendo todo o trabalho de M11/M13
@@ -47,20 +56,24 @@ checagem já está em produção desde este mesmo deploy e já impede a criaçã
 independente da constraint de banco existir ou não. A V20 seria só uma segunda camada de defesa
 em profundidade (fecha a corrida check-then-act a nível de banco), não a proteção primária.
 
-## Consequências
-- Os dois prontuários (`id=2` e `id=3`, `appointment_id=9`) continuam existindo pra sempre, sem
-  constraint impedindo esse tipo de duplicidade a nível de banco especificamente para eles (ou
-  qualquer duplicidade futura, na hipótese — não confirmada — de algum outro caminho de código
-  algum dia bypassar a checagem em `ProntuarioService`).
-- **Nunca renomear `V20__....sql.disabled` de volta pra `.sql`** sem antes decidir explicitamente
-  com o usuário o que fazer com esses dois registros — reativar a migration sem resolver isso
-  primeiro reproduz o mesmo crash loop de 27/08/2026.
+## Consequências (do estado final, pós-resolução)
+- `uk_prontuario_appointment` está ativa em produção (V22) — nenhum `appointment_id` pode mais
+  ter mais de um prontuário, a nível de banco, não só de aplicação.
+- Os 3 pares duplicados (`appointment_id` 9, 16, 50) tiveram o registro mais recente apagado —
+  `prontuarios.id` 3, 9 e 17 não existem mais. Isso foi uma exceção deliberada e única à regra
+  geral do projeto de nunca fazer `DELETE` físico de prontuário — só aconteceu depois de
+  confirmação visual do usuário, pelo próprio sistema, de que o conteúdo era idêntico (duplo-
+  submit, não duas anotações clínicas distintas).
 - Efeito colateral descoberto neste incidente: `push-and-deploy.sh` usa `rsync` sem `--delete`,
   então um arquivo removido/renomeado localmente **não** some do servidor sozinho no próximo
   deploy — ficou um arquivo fantasma (`V20__....sql`, sem o `.disabled`) que mascarou a primeira
-  tentativa de correção. Não corrigido no script ainda (fora do escopo deste incidente); qualquer
-  remoção de arquivo em deploy futuro precisa ser conferida manualmente no servidor até isso ser
-  corrigido.
+  tentativa de correção. Ainda não corrigido no script (fora do escopo deste incidente); qualquer
+  remoção de arquivo em deploy futuro precisa ser conferida manualmente no servidor, ou usar
+  `rsync --delete` diretamente contra a pasta específica (foi o que resolveu na 2ª rodada deste
+  mesmo incidente).
+- Se uma constraint única nova algum dia falhar de novo por dado legado: **levantar todos os
+  grupos duplicados de uma vez** (`GROUP BY ... HAVING COUNT(*) > 1`) antes de investigar/corrigir
+  qualquer um — não reagir só ao primeiro erro do Flyway.
 
 ## Ligado a
 - [[h2-nao-suporta-indice-unico-parcial-em-teste]] — mesma migration V20 apareceu antes, num

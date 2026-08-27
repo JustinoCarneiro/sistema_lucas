@@ -45,7 +45,22 @@ risco de `--delete` também remover coisas no servidor que não deveriam sumir �
 já são excluídos do rsync, então não seriam afetados, mas vale revisar as exclusões antes de
 adicionar `--delete` de verdade).
 
+## Atualização — 2ª rodada, mesmo dia
+A constraint foi reativada como V22 depois do usuário confirmar (pela UI) que o conteúdo do par
+duplicado era idêntico, e o registro extra foi apagado. **V22 falhou de novo** no primeiro
+deploy — só tinha corrigido `appointment_id=9`, mas havia mais 2 pares (`appointment_id` 16 e
+50) que nunca tinham aparecido, porque o Flyway só reporta a *primeira* violação que encontra.
+Corrigido rodando `SELECT appointment_id, COUNT(*) FROM prontuarios GROUP BY appointment_id
+HAVING COUNT(*) > 1` pra levantar todos de uma vez — daí sim os 3 pares foram verificados e
+resolvidos juntos, e a V22 aplicou limpo. Ver detalhes completos em
+[[uk-prontuario-appointment-nao-aplicada-dado-legado]] (que também guarda a decisão final e por
+que os 3 registros foram apagados, revertendo a decisão original abaixo).
+
+Nessa 2ª rodada, `rsync --delete` direto contra a pasta de migrations (em vez de renomear
+localmente e torcer) resolveu de primeira o problema descrito abaixo — vale como o jeito certo
+de fazer isso da próxima vez.
+
 ## Ligado a
-- [[uk-prontuario-appointment-nao-aplicada-dado-legado]] — a decisão de não tocar nos dados.
+- [[uk-prontuario-appointment-nao-aplicada-dado-legado]] — decisão original e a reversão final.
 - [[h2-nao-suporta-indice-unico-parcial-em-teste]] — mesma migration V20, achado anterior no
   mesmo dia, em contexto de teste.
