@@ -24,8 +24,21 @@ SERVER_PATH="~/sistema/sistema_lucas/"
 
 echo "📡 Transferindo arquivos para o servidor ($SERVER_IP)..."
 
-rsync -avz --exclude 'node_modules' --exclude 'dist' --exclude '.git' --exclude 'target' \
---exclude 'backups' --exclude 'secrets' \
+# --delete: sem isso, um arquivo removido/renomeado localmente nunca sumia do servidor sozinho —
+# só ficava um arquivo novo ao lado do antigo, silenciosamente (foi a causa de dois incidentes de
+# deploy em 27/08/2026, ver memoria-tecnica/bugs/deploy-crash-loop-v20-dado-legado-duplicado.md).
+# --delete respeita os --exclude abaixo (não apaga o que está excluído da transferência), então
+# secrets/, backups/ e .env nunca são tocados por isso.
+#
+# Antes de ativar --delete pela primeira vez, um dry-run (-n) revelou 4 documentos de compliance
+# LGPD que só existiam no servidor, sem versionamento nenhum — resgatados pra docs/compliance/
+# antes desta mudança (ver commit correspondente). Se um dia aparecer algo inesperado de novo no
+# dry-run, resgatar antes de deixar o --delete apagar.
+rsync -avz --delete \
+--exclude 'node_modules' --exclude 'dist' --exclude '.git' --exclude 'target' \
+--exclude 'backups' --exclude 'secrets' --exclude '.angular' \
+--exclude 'cypress/downloads' --exclude 'cypress/videos' \
+--exclude '.github-workflows-backup' --exclude 'testsprite_tests/tmp' \
 ./ $SERVER_USER@$SERVER_IP:$SERVER_PATH
 
 if [ $? -ne 0 ]; then
