@@ -3,6 +3,7 @@ package com.sistema.lucas.service;
 import com.sistema.lucas.model.PasswordResetToken;
 import com.sistema.lucas.model.User;
 import com.sistema.lucas.repository.PasswordResetTokenRepository;
+import com.sistema.lucas.repository.RefreshTokenRepository;
 import com.sistema.lucas.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,6 +32,7 @@ class PasswordResetServiceTest {
     @Mock private PasswordResetTokenRepository tokenRepository;
     @Mock private EmailService emailService;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private RefreshTokenRepository refreshTokenRepository;
 
     @org.junit.jupiter.api.BeforeEach
     void setup() {
@@ -101,6 +103,9 @@ class PasswordResetServiceTest {
             assertEquals("hash-nova-senha", token.getUser().getPassword());
             assertTrue(token.isUsado());
             verify(userRepository).save(token.getUser());
+            // Toda sessão ativa precisa cair após uma redefinição de senha — sem isso, um
+            // refresh token roubado antes da troca continuava valendo depois dela.
+            verify(refreshTokenRepository).deleteByUser(token.getUser());
         }
 
         @Test @DisplayName("Deve lançar exceção para token inválido (não encontrado)")

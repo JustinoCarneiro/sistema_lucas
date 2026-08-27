@@ -98,14 +98,35 @@ class NpsServiceTest {
             nps.setPatient(paciente);
             nps.setExpiraEm(LocalDateTime.now().plusDays(1));
             when(npsResponseRepository.findByToken("token-valido")).thenReturn(Optional.of(nps));
+            // UPDATE condicional atômico (fecha corrida entre duas submissões concorrentes) —
+            // 1 linha afetada é o caminho de sucesso; ver NpsService.responder().
+            when(npsResponseRepository.responderSeAindaNaoRespondido(eq("token-valido"), eq(9), eq("Ótimo atendimento"), any()))
+                .thenReturn(1);
 
             npsService.responder("token-valido", 9, "Ótimo atendimento");
 
-            assertEquals(9, nps.getScore());
-            assertEquals("Ótimo atendimento", nps.getComentario());
-            assertNotNull(nps.getRespondidoEm());
-            verify(npsResponseRepository, times(1)).save(nps);
+            verify(npsResponseRepository).responderSeAindaNaoRespondido(eq("token-valido"), eq(9), eq("Ótimo atendimento"), any());
             verify(auditLogService, times(1)).log(eq("pac@teste.com"), eq("RESPOSTA_NPS"), eq("NpsResponse"), any(), anyString());
+        }
+
+        @Test
+        @DisplayName("Recusa quando o UPDATE atômico não afeta nenhuma linha (corrida com outra submissão concorrente)")
+        void recusaQuandoUpdateAtomicoNaoAfetaLinha() {
+            var paciente = new Patient();
+            paciente.setEmail("pac@teste.com");
+
+            var nps = new NpsResponse();
+            nps.setToken("token-valido");
+            nps.setPatient(paciente);
+            nps.setExpiraEm(LocalDateTime.now().plusDays(1));
+            when(npsResponseRepository.findByToken("token-valido")).thenReturn(Optional.of(nps));
+            when(npsResponseRepository.responderSeAindaNaoRespondido(eq("token-valido"), eq(9), any(), any()))
+                .thenReturn(0);
+
+            var ex = assertThrows(RuntimeException.class, () -> npsService.responder("token-valido", 9, "x"));
+
+            assertTrue(ex.getMessage().contains("já foi avaliada"));
+            verifyNoInteractions(auditLogService);
         }
 
         @Test

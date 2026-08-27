@@ -4,6 +4,7 @@ import com.sistema.lucas.model.Documento;
 import com.sistema.lucas.model.Patient;
 import com.sistema.lucas.model.Professional;
 import com.sistema.lucas.model.enums.TipoDocumento;
+import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.DocumentoRepository;
 import com.sistema.lucas.repository.PatientRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
@@ -30,6 +31,7 @@ class DocumentoServiceTest {
     @Mock private DocumentoRepository documentoRepository;
     @Mock private PatientRepository patientRepository;
     @Mock private ProfessionalRepository professionalRepository;
+    @Mock private AppointmentRepository appointmentRepository;
     @Mock private AuditLogService auditLogService;
 
     private Patient paciente() {
@@ -79,6 +81,7 @@ class DocumentoServiceTest {
         void criar_laudo_sucesso() {
             when(patientRepository.findById(1L)).thenReturn(Optional.of(paciente()));
             when(professionalRepository.findByEmail("prof@test.com")).thenReturn(Optional.of(profissional()));
+            when(appointmentRepository.existsByProfessionalEmailAndPatientId("prof@test.com", 1L)).thenReturn(true);
             var saved = new Documento();
             saved.setId(10L);
             saved.setPaciente(paciente());
@@ -96,12 +99,26 @@ class DocumentoServiceTest {
         void criar_arquivoInvalido_lancaExcecao() {
             when(patientRepository.findById(1L)).thenReturn(Optional.of(paciente()));
             when(professionalRepository.findByEmail("prof@test.com")).thenReturn(Optional.of(profissional()));
+            when(appointmentRepository.existsByProfessionalEmailAndPatientId("prof@test.com", 1L)).thenReturn(true);
 
             var ex = assertThrows(RuntimeException.class, () ->
                 documentoService.criar(1L, TipoDocumento.LAUDO_PSICOLOGICO, "Laudo", null, "laudo.pdf",
                     "SomethingNotPDF123==", true, "prof@test.com"));
 
             assertTrue(ex.getMessage().contains("Operação de Segurança"));
+        }
+
+        @Test @DisplayName("Deve negar criação de documento pra paciente sem vínculo clínico com o profissional (IDOR)")
+        void criar_semVinculoClinico_lancaExcecao() {
+            when(patientRepository.findById(1L)).thenReturn(Optional.of(paciente()));
+            when(professionalRepository.findByEmail("prof@test.com")).thenReturn(Optional.of(profissional()));
+            when(appointmentRepository.existsByProfessionalEmailAndPatientId("prof@test.com", 1L)).thenReturn(false);
+
+            var ex = assertThrows(RuntimeException.class, () ->
+                documentoService.criar(1L, TipoDocumento.LAUDO_PSICOLOGICO, "Laudo", "Conteúdo", null, null, true, "prof@test.com"));
+
+            assertTrue(ex.getMessage().contains("nunca atendeu"));
+            verify(documentoRepository, never()).save(any());
         }
 
         @Test @DisplayName("Deve lançar exceção quando paciente não encontrado")

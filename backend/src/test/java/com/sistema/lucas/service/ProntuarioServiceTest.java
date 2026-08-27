@@ -4,10 +4,13 @@ import com.sistema.lucas.model.Appointment;
 import com.sistema.lucas.model.Patient;
 import com.sistema.lucas.model.Professional;
 import com.sistema.lucas.model.Prontuario;
+import com.sistema.lucas.model.User;
+import com.sistema.lucas.model.enums.Role;
 import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
 import com.sistema.lucas.repository.ProntuarioRepository;
+import com.sistema.lucas.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,7 @@ class ProntuarioServiceTest {
     @Mock private ProntuarioRepository prontuarioRepository;
     @Mock private AppointmentRepository appointmentRepository;
     @Mock private ProfessionalRepository professionalRepository;
+    @Mock private UserRepository userRepository;
     @Mock private AuditLogService auditLogService;
     @Mock private NpsService npsService;
 
@@ -98,13 +102,27 @@ class ProntuarioServiceTest {
 
         @Test @DisplayName("Deve lançar exceção quando profissional não encontrado")
         void criar_profissionalNaoEncontrado_lancaExcecao() {
+            // Dono da consulta bate com quem está chamando (passa pela guarda de posse), mas o
+            // e-mail não existe em ProfessionalRepository — inconsistência de dados isolada.
+            var appointment = appointmentValido();
+            appointment.getProfessional().setEmail("orfao@test.com");
+            when(appointmentRepository.findById(10L)).thenReturn(Optional.of(appointment));
+            when(professionalRepository.findByEmail("orfao@test.com")).thenReturn(Optional.empty());
+
+            var ex = assertThrows(RuntimeException.class, () ->
+                prontuarioService.create(10L, "Notas", "orfao@test.com"));
+
+            assertTrue(ex.getMessage().contains("Profissional não encontrado"));
+        }
+
+        @Test @DisplayName("Deve lançar exceção quando quem chama não é o profissional dono da consulta")
+        void criar_naoEhDonoDaConsulta_lancaExcecao() {
             when(appointmentRepository.findById(10L)).thenReturn(Optional.of(appointmentValido()));
-            when(professionalRepository.findByEmail("desconhecido@test.com")).thenReturn(Optional.empty());
 
             var ex = assertThrows(RuntimeException.class, () ->
                 prontuarioService.create(10L, "Notas", "desconhecido@test.com"));
 
-            assertTrue(ex.getMessage().contains("Profissional não encontrado"));
+            assertTrue(ex.getMessage().contains("não é o profissional"));
         }
     }
 
@@ -113,9 +131,16 @@ class ProntuarioServiceTest {
     @Nested @DisplayName("Busca de prontuário")
     class BuscaTests {
 
+        private User professionalUser(String email) {
+            var u = new User(); u.setEmail(email); u.setRole(Role.PROFESSIONAL);
+            return u;
+        }
+
         @Test @DisplayName("getByPatientId deve retornar lista e registrar auditoria")
         void getByPatientId_retornaListaERegistraAuditoria() {
             var prontuario = new Prontuario();
+            when(userRepository.findByEmail("prof@test.com")).thenReturn(professionalUser("prof@test.com"));
+            when(appointmentRepository.existsByProfessionalEmailAndPatientId("prof@test.com", 1L)).thenReturn(true);
             when(prontuarioRepository.findByPatientIdOrderByCriadoEmDesc(1L)).thenReturn(List.of(prontuario));
 
             var resultado = prontuarioService.getByPatientId(1L, "prof@test.com");
@@ -126,11 +151,37 @@ class ProntuarioServiceTest {
 
         @Test @DisplayName("getByPatientId deve retornar lista vazia quando sem prontuários")
         void getByPatientId_semRegistros_retornaVazio() {
+            when(userRepository.findByEmail("prof@test.com")).thenReturn(professionalUser("prof@test.com"));
+            when(appointmentRepository.existsByProfessionalEmailAndPatientId("prof@test.com", 1L)).thenReturn(true);
             when(prontuarioRepository.findByPatientIdOrderByCriadoEmDesc(1L)).thenReturn(List.of());
 
             var resultado = prontuarioService.getByPatientId(1L, "prof@test.com");
 
             assertTrue(resultado.isEmpty());
+        }
+
+        @Test @DisplayName("getByPatientId nega acesso a profissional que nunca atendeu o paciente (IDOR)")
+        void getByPatientId_profissionalSemVinculo_lancaExcecao() {
+            when(userRepository.findByEmail("prof@test.com")).thenReturn(professionalUser("prof@test.com"));
+            when(appointmentRepository.existsByProfessionalEmailAndPatientId("prof@test.com", 1L)).thenReturn(false);
+
+            var ex = assertThrows(RuntimeException.class, () ->
+                prontuarioService.getByPatientId(1L, "prof@test.com"));
+
+            assertTrue(ex.getMessage().contains("Acesso negado"));
+            verifyNoInteractions(auditLogService);
+        }
+
+        @Test @DisplayName("getByPatientId permite ADMIN ver qualquer paciente sem checar vínculo")
+        void getByPatientId_admin_naoChecaVinculo() {
+            var admin = new User(); admin.setEmail("admin@test.com"); admin.setRole(Role.ADMIN);
+            when(userRepository.findByEmail("admin@test.com")).thenReturn(admin);
+            when(prontuarioRepository.findByPatientIdOrderByCriadoEmDesc(1L)).thenReturn(List.of(new Prontuario()));
+
+            var resultado = prontuarioService.getByPatientId(1L, "admin@test.com");
+
+            assertEquals(1, resultado.size());
+            verify(appointmentRepository, never()).existsByProfessionalEmailAndPatientId(any(), any());
         }
     }
 }

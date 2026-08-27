@@ -249,6 +249,7 @@ class ProfessionalServiceTest {
         @Test
         @DisplayName("Deve apagar documentos, prontuários, disponibilidade, consultas e depois o profissional")
         void forceDelete_cascataCompleta() {
+            // Sem prontuário nem consulta vinculados — exclusão física é segura.
             var prof = new Professional();
             prof.setId(1L); prof.setEmail("prof@test.com");
 
@@ -263,10 +264,33 @@ class ProfessionalServiceTest {
             assertDoesNotThrow(() -> professionalService.forceDelete(1L));
 
             verify(documentoRepository).deleteAll(anyList());
-            verify(prontuarioRepository).deleteAll(anyList());
             verify(availabilityRepository).deleteAll(anyList());
-            verify(appointmentRepository).deleteAll(anyList());
             verify(professionalRepository).delete(prof);
+            verify(appointmentRepository, never()).deleteAll(anyList());
+            verify(prontuarioRepository, never()).deleteAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Deve anonimizar em vez de excluir fisicamente quando há vínculo clínico (CFM 20 anos)")
+        void forceDelete_comVinculoClinico_anonimiza() {
+            var prof = new Professional();
+            prof.setId(1L); prof.setEmail("prof@test.com"); prof.setName("Dr. Original");
+
+            when(professionalRepository.findById(1L)).thenReturn(Optional.of(prof));
+            when(prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc("prof@test.com"))
+                .thenReturn(List.of(new com.sistema.lucas.model.Prontuario()));
+            when(availabilityRepository.findByProfessionalId(1L)).thenReturn(List.of());
+
+            assertDoesNotThrow(() -> professionalService.forceDelete(1L));
+
+            // O registro clínico (prontuário/consulta) precisa sobreviver — só a identidade some.
+            verify(prontuarioRepository, never()).deleteAll(anyList());
+            verify(appointmentRepository, never()).deleteAll(anyList());
+            verify(documentoRepository, never()).deleteAll(anyList());
+            verify(professionalRepository, never()).delete(any());
+            verify(professionalRepository).save(prof);
+            assertEquals("Profissional Removido", prof.getName());
+            assertTrue(prof.getEmail().startsWith("anonymized-1@"));
         }
 
         @Test
