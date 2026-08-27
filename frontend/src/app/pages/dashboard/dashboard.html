@@ -226,10 +226,10 @@
               class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700/60 last:border-0 last:pb-0">
               <div class="flex items-center gap-3 min-w-0">
                 <div class="shrink-0 w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300 flex items-center justify-center text-xs font-bold">
-                  {{ $any(c).dateTime | date:'HH:mm' }}
+                  {{ $any(c).startTime | date:'HH:mm' }}
                 </div>
                 <div class="min-w-0">
-                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ $any(c).patient?.name }}</p>
+                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ $any(c).patientName }}</p>
                   <p class="text-xs text-gray-400 truncate">{{ $any(c).reason || '—' }}</p>
                 </div>
               </div>
@@ -252,8 +252,8 @@
             <div *ngFor="let c of dados()?.proximasConsultas | slice:0:5"
               class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700/60 last:border-0 last:pb-0">
               <div>
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $any(c).patient?.name }}</p>
-                <p class="text-xs text-gray-400">{{ $any(c).dateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $any(c).patientName }}</p>
+                <p class="text-xs text-gray-400">{{ $any(c).startTime | date:'dd/MM/yyyy HH:mm' }}</p>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@
             </div>
             <div *ngFor="let p of dados()?.ultimosProntuarios" class="py-3 border-b border-gray-100 dark:border-gray-700/60 last:border-0 last:pb-0">
               <div class="flex items-center justify-between">
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $any(p).patient?.name }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $any(p).nomePaciente }}</p>
                 <p class="text-xs text-gray-400">{{ $any(p).criadoEm | date:'dd/MM/yyyy HH:mm' }}</p>
               </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{{ $any(p).notas }}</p>
@@ -292,7 +292,7 @@
               <div class="min-w-0">
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ $any(d).titulo }}</p>
                 <p class="text-xs text-gray-400 truncate">
-                  {{ $any(d).paciente?.name }} · {{ $any(d).criadoEm | date:'dd/MM/yyyy' }}
+                  {{ $any(d).nomePaciente }} · {{ $any(d).criadoEm | date:'dd/MM/yyyy' }}
                 </p>
               </div>
               <span class="text-xs font-medium px-2.5 py-1 rounded-full shrink-0"
@@ -392,10 +392,10 @@
 
             <div *ngIf="proximaConsulta()" class="space-y-2">
               <p class="text-3xl font-bold text-gray-800 dark:text-gray-100">
-                {{ proximaConsulta().dateTime | date:'dd/MM/yyyy' }}
+                {{ proximaConsulta().startTime | date:'dd/MM/yyyy' }}
               </p>
-              <p class="text-lg text-gray-600 dark:text-gray-300">{{ proximaConsulta().dateTime | date:'HH:mm' }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">{{ proximaConsulta().professional?.name }}</p>
+              <p class="text-lg text-gray-600 dark:text-gray-300">{{ proximaConsulta().startTime | date:'HH:mm' }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ proximaConsulta().professionalName }}</p>
               <p class="text-sm text-gray-500 dark:text-gray-400">Motivo: {{ proximaConsulta().reason || '—' }}</p>
 
               <!-- Aguardando profissional confirmar -->

@@ -65,6 +65,26 @@ describe('Patients', () => {
     expect(component.filteredPatients().length).toBe(0);
   });
 
+  it('filteredPatients ANONIMIZADOS retorna apenas pacientes com active=false', () => {
+    component.patientsList.set([
+      { id: 1, blockedUntil: null, infractionCount: 0, active: true },
+      { id: 2, blockedUntil: null, infractionCount: 0, active: false }
+    ]);
+    component.filtroStatus.set('ANONIMIZADOS');
+    const resultado = component.filteredPatients();
+    expect(resultado.length).toBe(1);
+    expect(resultado[0].id).toBe(2);
+  });
+
+  it('maskCpf mascara CPF válido mantendo só os 3 primeiros e 2 últimos dígitos', () => {
+    expect(component.maskCpf('123.456.789-00')).toBe('123.***.***-00');
+  });
+
+  it('maskCpf devolve máscara neutra para CPF ausente ou malformado', () => {
+    expect(component.maskCpf(null)).toBe('—');
+    expect(component.maskCpf('123')).toBe('***.***.***-**');
+  });
+
   it('openDetails define selectedItem', () => {
     const item = { id: 1, name: 'Paciente Teste' };
     component.openDetails(item);

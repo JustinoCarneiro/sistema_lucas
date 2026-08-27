@@ -78,7 +78,7 @@ export class ProfessionalsComponent implements OnInit {
   }
 
   deleteProfessional(id: number) {
-    if (confirm('ATENÇÃO: Exclusão Forçada!\n\nTem certeza que deseja remover este profissional?\n\nIsso apagará DE FORMA PERMANENTE todas as consultas, prontuários, horários e documentos vinculados a ele. Essa ação não pode ser desfeita.')) {
+    if (confirm('ATENÇÃO: Exclusão de Profissional!\n\nTem certeza que deseja remover este profissional?\n\nSe ele tiver consultas ou prontuários vinculados, o registro clínico é preservado por exigência legal (retenção de 20 anos) — só a identidade do profissional é anonimizada, de forma irreversível. Sem vínculo clínico, a exclusão é permanente. Essa ação não pode ser desfeita.')) {
       this.professionalService.deleteProfessional(id).subscribe({
         next: () => { this.notify.success('Profissional removido com sucesso!'); this.loadProfessionals(); },
         error: (msg: string) => this.notify.error(msg) // string direta do service

@@ -19,6 +19,10 @@
       [class]="filtroStatus() === 'COM_INFRACOES' ? 'bg-amber-600 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 px-4 py-2 rounded-xl text-sm transition-all'">
       Com Histórico de Ausências
     </button>
+    <button (click)="filtroStatus.set('ANONIMIZADOS')"
+      [class]="filtroStatus() === 'ANONIMIZADOS' ? 'bg-gray-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 px-4 py-2 rounded-xl text-sm transition-all'">
+      Anonimizados
+    </button>
   </div>
 
   <div *ngIf="filteredPatients().length === 0"
@@ -45,11 +49,14 @@
               <div class="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-xs">
                 {{ patient.name.charAt(0) }}
               </div>
-              <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ patient.name }}</span>
+              <div>
+                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ patient.name }}</span>
+                <span *ngIf="!patient.active" class="block text-[10px] text-gray-400 font-bold uppercase mt-0.5">Anonimizado</span>
+              </div>
             </div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 italic">{{ patient.email }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{{ patient.cpf || '—' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{{ maskCpf(patient.cpf) }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
             {{ patient.phone || '—' }}
             <span *ngIf="patient.blockedUntil" class="block text-[10px] text-red-500 font-bold uppercase mt-1">Bloqueado</span>
@@ -59,7 +66,7 @@
               class="text-sm text-green-600 hover:text-green-900 font-medium transition mr-3">
               Desbloquear
             </button>
-            <button (click)="deletePaciente(patient.id, patient.name)"
+            <button *ngIf="patient.active" (click)="deletePaciente(patient.id, patient.name)"
               class="text-sm text-red-600 hover:text-red-900 font-medium transition">
               Remover
             </button>
@@ -77,7 +84,10 @@
           {{ patient.name.charAt(0) }}
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-base font-bold text-gray-800 dark:text-gray-100 truncate">{{ patient.name }}</p>
+          <p class="text-base font-bold text-gray-800 dark:text-gray-100 truncate">
+            {{ patient.name }}
+            <span *ngIf="!patient.active" class="ml-1 text-[10px] text-gray-400 font-bold uppercase align-middle">Anonimizado</span>
+          </p>
           <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ patient.email }}</p>
         </div>
       </div>
@@ -85,7 +95,7 @@
         <button (click)="openDetails(patient)" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
           Ver detalhes
         </button>
-        <button (click)="deletePaciente(patient.id, patient.name)" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
+        <button *ngIf="patient.active" (click)="deletePaciente(patient.id, patient.name)" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
           Remover
         </button>
       </div>
@@ -105,7 +115,10 @@
         </div>
         <div>
           <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ selectedItem.name }}</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Paciente</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Paciente
+            <span *ngIf="!selectedItem.active" class="ml-1 text-[10px] text-gray-400 font-bold uppercase">· Anonimizado</span>
+          </p>
         </div>
       </div>
 
@@ -117,7 +130,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">CPF</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ selectedItem.cpf || '—' }}</p>
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ maskCpf(selectedItem.cpf) }}</p>
           </div>
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">WhatsApp</p>

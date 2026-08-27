@@ -38,7 +38,7 @@
           <span class="text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2 py-1 rounded">
             {{ item.criadoEm | date:'dd/MM/yyyy HH:mm' }}
           </span>
-          <span class="text-xs text-gray-400">{{ item.professional?.name || 'Profissional' }}</span>
+          <span class="text-xs text-gray-400">{{ item.nomeProfissional || 'Profissional' }}</span>
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ item.notas }}</p>
       </div>

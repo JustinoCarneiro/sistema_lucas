@@ -49,7 +49,10 @@ export class Register implements OnInit, OnDestroy {
       }
     }
     this.formSub = this.registerForm.valueChanges.subscribe(value => {
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+      // Nunca salva senha nem CPF em texto plano no navegador — sessionStorage é legível por
+      // qualquer script na mesma origem (DevTools, XSS) e persiste até a aba fechar.
+      const { password, cpf, ...draftSemDadosSensiveis } = value;
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftSemDadosSensiveis));
     });
   }
 
