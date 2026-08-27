@@ -8,7 +8,10 @@
 -- memoria-tecnica/decisoes/uk-prontuario-appointment-nao-aplicada-dado-legado.md). Motivo da
 -- renumeração em vez de reativar o arquivo V20 original: evitar reescrever um número de versão
 -- que já foi tentado (e falhou) em produção — mais seguro nomear como uma migration nova.
--- O dado legado duplicado que bloqueava a V20 (appointment_id=9, prontuarios id=2 e id=3) foi
--- resolvido antes desta migration: conteúdo confirmado idêntico pelo usuário (via UI, comparação
--- visual das duas notas descriptografadas), duplicado (id=3) removido manualmente em produção.
+--
+-- Levantamento completo do dado legado duplicado (feito só na 2ª tentativa — a 1ª só reagiu ao
+-- primeiro erro do Flyway, achou só appointment_id=9): 3 pares no total —
+-- appointment_id 9, 16 e 50. Todos com conteúdo confirmado idêntico pelo usuário (via UI,
+-- comparação visual das notas descriptografadas no histórico do paciente) antes de apagar o
+-- registro mais recente de cada par (mantendo o mais antigo como o válido).
 ALTER TABLE prontuarios ADD CONSTRAINT uk_prontuario_appointment UNIQUE (appointment_id);
