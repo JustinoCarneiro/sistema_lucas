@@ -67,8 +67,12 @@ public class AppointmentService {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
 
-        // 🛡️ Segurança (IDOR): Apenas paciente logado ou o médico logado podem ver isso
-        if (!consulta.getPatient().getEmail().equals(email) && !consulta.getProfessional().getEmail().equals(email)) {
+        // 🛡️ Segurança (IDOR): paciente logado, o médico logado, ou ADMIN (mesmo bypass já usado
+        // em ProntuarioService.getByPatientId — suporte/auditoria precisa conseguir ver qualquer
+        // consulta, sem precisar ser o paciente/profissional dela).
+        var solicitante = userRepository.findByEmail(email);
+        boolean isAdmin = solicitante != null && solicitante.getRole() == com.sistema.lucas.model.enums.Role.ADMIN;
+        if (!isAdmin && !consulta.getPatient().getEmail().equals(email) && !consulta.getProfessional().getEmail().equals(email)) {
             throw new RuntimeException("Operação de Segurança: Acesso negado (IDOR). Você não pode vasculhar informações de terceiros.");
         }
         return new AppointmentResponseDTO(consulta);

@@ -56,7 +56,10 @@ export const routes: Routes = [
       { path: 'document-management', component: DocumentManagementComponent, canActivate: [roleGuard(['PROFESSIONAL'])] },
       { path: 'professional-appointments', component: ProfessionalAppointmentsComponent, canActivate: [roleGuard(['PROFESSIONAL'])] },
       { path: 'my-availability', component: MyAvailabilityComponent, canActivate: [roleGuard(['PROFESSIONAL'])] },
-      { path: 'medical-record/:id', component: MedicalRecordComponent, canActivate: [roleGuard(['PROFESSIONAL'])] },
+      // ADMIN também pode ver o histórico (backend: GET /prontuarios/paciente/{id} aceita
+      // ADMIN e PROFESSIONAL) — só a criação de prontuário (POST) é exclusiva do profissional
+      // dono da consulta, e isso já é garantido pelo backend independente do que o front mostra.
+      { path: 'medical-record/:id', component: MedicalRecordComponent, canActivate: [roleGuard(['PROFESSIONAL', 'ADMIN'])] },
       { path: 'my-profile', component: MyProfileComponent, canActivate: [roleGuard(['PROFESSIONAL', 'PATIENT'])] },
       // dashboard renderiza conteúdo diferente por role internamente — sem restrição de guard.
       { path: 'dashboard', component: DashboardComponent }

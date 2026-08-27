@@ -659,6 +659,53 @@ class AppointmentServiceTest {
         }
     }
 
+    // ──────────────────────── Busca por ID ────────────────────────
+
+    @Nested @DisplayName("buscarPorId")
+    class BuscarPorIdTests {
+
+        private Appointment consultaValida() {
+            var patient = new Patient(); patient.setEmail("pac@test.com");
+            var prof = new Professional(); prof.setEmail("prof@test.com");
+            var a = new Appointment();
+            a.setId(9L); a.setPatient(patient); a.setProfessional(prof);
+            a.setDateTime(LocalDateTime.now().plusDays(1));
+            return a;
+        }
+
+        @Test @DisplayName("Paciente da consulta pode ver")
+        void pacienteDaConsultaPodeVer() {
+            when(appointmentRepository.findById(9L)).thenReturn(Optional.of(consultaValida()));
+            assertDoesNotThrow(() -> appointmentService.buscarPorId(9L, "pac@test.com"));
+        }
+
+        @Test @DisplayName("Profissional da consulta pode ver")
+        void profissionalDaConsultaPodeVer() {
+            when(appointmentRepository.findById(9L)).thenReturn(Optional.of(consultaValida()));
+            assertDoesNotThrow(() -> appointmentService.buscarPorId(9L, "prof@test.com"));
+        }
+
+        @Test @DisplayName("ADMIN pode ver qualquer consulta (suporte/auditoria)")
+        void adminPodeVerQualquerConsulta() {
+            when(appointmentRepository.findById(9L)).thenReturn(Optional.of(consultaValida()));
+            var admin = new com.sistema.lucas.model.User();
+            admin.setEmail("admin@test.com"); admin.setRole(com.sistema.lucas.model.enums.Role.ADMIN);
+            when(userRepository.findByEmail("admin@test.com")).thenReturn(admin);
+
+            assertDoesNotThrow(() -> appointmentService.buscarPorId(9L, "admin@test.com"));
+        }
+
+        @Test @DisplayName("Terceiro sem vínculo (nem paciente, nem profissional, nem ADMIN) é rejeitado (IDOR)")
+        void terceiroSemVinculoLancaExcecao() {
+            when(appointmentRepository.findById(9L)).thenReturn(Optional.of(consultaValida()));
+            when(userRepository.findByEmail("outro@test.com")).thenReturn(null);
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.buscarPorId(9L, "outro@test.com"));
+            assertTrue(ex.getMessage().contains("IDOR"));
+        }
+    }
+
     // ──────────────────────── Helper ────────────────────────
 
     private java.time.LocalDate getNextDayOfWeek(DayOfWeek target) {
