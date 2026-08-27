@@ -9,8 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 @Service
 public class TokenService {
@@ -46,7 +44,11 @@ public class TokenService {
         }
     }
 
+    // Instant.now() é um ponto absoluto no tempo, sem depender do fuso horário local da JVM —
+    // evita o bug de LocalDateTime.now() (wall-clock) interpretado com um offset -03:00
+    // hardcoded quando o container roda em UTC, o que fazia o token durar ~3h a mais dos 15min
+    // documentados.
     private Instant genExpirationDate() {
-        return LocalDateTime.now().plusMinutes(15).toInstant(ZoneOffset.of("-03:00"));
+        return Instant.now().plusSeconds(15 * 60);
     }
 }

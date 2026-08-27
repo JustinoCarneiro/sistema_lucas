@@ -22,6 +22,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByProfessionalEmail(String email);
 
+    boolean existsByProfessionalEmailAndPatientId(String professionalEmail, Long patientId);
+
     // Agenda de hoje do profissional
     @Query("SELECT a FROM Appointment a WHERE a.professional.email = :email AND CAST(a.dateTime AS date) = CURRENT_DATE")
     List<Appointment> findTodayAppointmentsByProfessionalEmail(@Param("email") String email);

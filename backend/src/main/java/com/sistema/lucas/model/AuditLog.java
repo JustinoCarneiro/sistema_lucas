@@ -1,5 +1,6 @@
 package com.sistema.lucas.model;
 
+import com.sistema.lucas.config.jpa.EncryptionConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,7 +21,11 @@ public class AuditLog {
     private String tipoEntidade; // ex: Prontuario, Documento
     private Long entidadeId;
     
+    // Pode carregar cópia de campo sensível (ex.: justificativa de cancelamento, que é cifrada
+    // na origem em Appointment.cancelReason) — cifrado pelo mesmo motivo. Coluna já era TEXT,
+    // não precisa alargar.
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String detalhes;
 
     @PrePersist

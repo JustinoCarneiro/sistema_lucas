@@ -4,11 +4,15 @@ package com.sistema.lucas.security.dto;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record RegisterDTO(
     @NotBlank String name,
     @Email @NotBlank String email,
-    @NotBlank String password,
+    // Mesmo mínimo já exigido em /auth/redefinir-senha (PasswordResetController) — o front já
+    // aplica essa regra (register.ts, Validators.minLength(6)), isso é só a mesma trava no
+    // backend, pra quem chamar a API direto sem passar pela UI.
+    @NotBlank @Size(min = 6, message = "A senha deve ter pelo menos 6 caracteres.") String password,
     String cpf,
     String phone,
     // LGPD — consentimento expresso obrigatório. O cadastro só prossegue se true.

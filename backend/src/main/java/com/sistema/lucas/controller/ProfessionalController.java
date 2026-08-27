@@ -21,7 +21,12 @@ public class ProfessionalController {
     @Autowired private ProfessionalService service;
     @Autowired private AuditLogService auditLogService;
 
+    // ADMIN apenas — o único consumidor deste endpoint é a tela de gestão de profissionais
+    // (professionals.service.ts). Pacientes escolhendo profissional pra agendar usam
+    // GET /disponibilidade/profissionais-disponiveis, que já devolve só id/nome/especialidade/
+    // modalidade, sem CPF/telefone/endereço/data de nascimento — este aqui devolve tudo.
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ProfessionalResponseDTO>> getAll() {
         return ResponseEntity.ok(
             service.findAll().stream().map(ProfessionalResponseDTO::new).toList()

@@ -24,9 +24,10 @@ public class PatientController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSIONAL')")
     public ResponseEntity<List<PatientResponseDTO>> getAll(Principal principal) {
-        auditLogService.log(principal.getName(), "VISUALIZACAO_LISTA", "Patient", null, "Listou todos os pacientes");
+        auditLogService.log(principal.getName(), "VISUALIZACAO_LISTA", "Patient", null, "Listou pacientes");
+        // ADMIN vê todos; PROFESSIONAL só os pacientes que já atendeu (ver PatientService).
         return ResponseEntity.ok(
-            service.findAll().stream().map(PatientResponseDTO::new).toList()
+            service.findAllVisivelPara(principal.getName()).stream().map(PatientResponseDTO::new).toList()
         );
     }
 

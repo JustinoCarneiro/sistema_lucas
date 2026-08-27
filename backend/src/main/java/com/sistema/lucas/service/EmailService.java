@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -38,7 +39,11 @@ public class EmailService {
 
             mailSender.send(mensagem);
         } catch (MessagingException | UnsupportedEncodingException e) {
-            System.err.println("⚠️ Erro ao enviar e-mail para " + destinatario + ": " + e.getMessage());
+            System.err.println("⚠️ Erro ao montar e-mail para " + destinatario + ": " + e.getMessage());
+        } catch (MailException e) {
+            // mailSender.send() lança MailException (unchecked, ex.: MailSendException se o
+            // SMTP recusar a conexão) — não é subtipo de MessagingException, ficava sem log.
+            System.err.println("⚠️ Erro ao enviar e-mail para " + destinatario + " (falha de SMTP): " + e.getMessage());
         }
     }
 }

@@ -109,12 +109,14 @@ public class AuthController {
         }
 
         var rtOpt = refreshTokenService.findByToken(refreshToken);
-        if (rtOpt.isEmpty() || !refreshTokenService.isValid(rtOpt.get())) {
+        // consumirSeValido faz a checagem de validade + marcação como usado num único UPDATE
+        // condicional atômico — fecha a corrida (TOCTOU) que permitia duas requisições
+        // concorrentes reaproveitarem o mesmo refresh token (ver RefreshTokenService).
+        if (rtOpt.isEmpty() || !refreshTokenService.consumirSeValido(rtOpt.get())) {
             return ResponseEntity.status(401).build();
         }
 
         var rt = rtOpt.get();
-        refreshTokenService.markAsUsed(rt); // Rotacionar: o antigo já era
 
         User user = rt.getUser();
         String newToken = tokenService.generateToken(user);

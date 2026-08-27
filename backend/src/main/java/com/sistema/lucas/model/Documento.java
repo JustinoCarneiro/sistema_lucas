@@ -19,6 +19,11 @@ public class Documento {
     @Enumerated(EnumType.STRING)
     private TipoDocumento tipo;
 
+    // Pode conter diagnóstico (ex.: "Laudo — Transtorno Depressivo Maior") — mesma categoria
+    // de dado sensível que conteudoTexto/arquivoBase64. Coluna alargada pra TEXT (migration
+    // V19) porque o valor cifrado é maior que VARCHAR(255) comporta.
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String titulo;
 
     // Para documentos digitados diretamente
@@ -26,7 +31,10 @@ public class Documento {
     @Convert(converter = EncryptionConverter.class)
     private String conteudoTexto;
 
-    // Para upload de PDF — armazena o nome original do arquivo
+    // Para upload de PDF — armazena o nome original do arquivo. Cifrado pelo mesmo motivo
+    // que titulo (nome de arquivo pode ser tão revelador quanto o título).
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptionConverter.class)
     private String nomeArquivo;
 
     // Conteúdo do PDF em Base64

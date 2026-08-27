@@ -4,6 +4,7 @@ package com.sistema.lucas.service;
 import com.sistema.lucas.model.Documento;
 import com.sistema.lucas.model.enums.TipoDocumento;
 import com.sistema.lucas.model.dto.DocumentoResponseDTO;
+import com.sistema.lucas.repository.AppointmentRepository;
 import com.sistema.lucas.repository.DocumentoRepository;
 import com.sistema.lucas.repository.PatientRepository;
 import com.sistema.lucas.repository.ProfessionalRepository;
@@ -18,6 +19,7 @@ public class DocumentoService {
     @Autowired private DocumentoRepository documentoRepository;
     @Autowired private PatientRepository patientRepository;
     @Autowired private ProfessionalRepository professionalRepository;
+    @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private AuditLogService auditLogService;
 
     // Paciente — só vê documentos disponibilizados
@@ -60,6 +62,13 @@ public class DocumentoService {
             .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
         var profissional = professionalRepository.findByEmail(emailProfissional)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
+
+        // 🛡️ Segurança (IDOR): só cria documento pra paciente que já tem vínculo clínico com
+        // esse profissional (consulta em comum) — evita anexar documento a qualquer pacienteId
+        // adivinhado por enumeração.
+        if (!appointmentRepository.existsByProfessionalEmailAndPatientId(emailProfissional, pacienteId)) {
+            throw new RuntimeException("Operação de Segurança: Você nunca atendeu este paciente.");
+        }
 
         // 🛡️ Segurança: Validação de Malware de PDF via Magic Bytes e Sizing Lock
         if (arquivoBase64 != null && !arquivoBase64.trim().isEmpty()) {

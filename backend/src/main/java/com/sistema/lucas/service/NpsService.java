@@ -74,10 +74,15 @@ public class NpsService {
             throw new RuntimeException("A nota deve estar entre 0 e 10.");
         }
 
-        nps.setScore(score);
-        nps.setComentario(comentario);
-        nps.setRespondidoEm(LocalDateTime.now());
-        npsResponseRepository.save(nps);
+        // UPDATE condicional atômico (WHERE respondido_em IS NULL) em vez de setar os campos no
+        // objeto em memória e salvar — fecha a corrida entre duas submissões concorrentes com o
+        // mesmo token: a checagem isRespondido() acima e este UPDATE são dois passos, mas só o
+        // UPDATE precisa ser atômico pra garantir que a segunda chamada nunca sobrescreve a
+        // primeira silenciosamente.
+        int atualizados = npsResponseRepository.responderSeAindaNaoRespondido(token, score, comentario, LocalDateTime.now());
+        if (atualizados == 0) {
+            throw new RuntimeException("Esta consulta já foi avaliada.");
+        }
 
         auditLogService.log(nps.getPatient().getEmail(), "RESPOSTA_NPS", "NpsResponse", nps.getId(),
             "Paciente respondeu a avaliação via link público (token). Nota: " + score);

@@ -44,6 +44,27 @@ public class PatientService {
         return repository.findAll();
     }
 
+    // Escopado por vínculo clínico: só pacientes que esse profissional já atendeu (tiveram ao
+    // menos uma consulta com ele) — diferente de findAll(), que é irrestrito e deve ficar
+    // reservado a ADMIN.
+    public List<Patient> findAllForProfessional(String professionalEmail) {
+        return appointmentRepository.findByProfessionalEmail(professionalEmail).stream()
+            .map(com.sistema.lucas.model.Appointment::getPatient)
+            .distinct()
+            .toList();
+    }
+
+    // GET /patients é liberado tanto pra ADMIN quanto PROFESSIONAL — ADMIN vê todos os
+    // pacientes, PROFESSIONAL só os que já atendeu (evita excesso de privilégio sobre dado de
+    // saúde de pacientes sem nenhum vínculo com ele).
+    public List<Patient> findAllVisivelPara(String email) {
+        var user = userRepository.findByEmail(email);
+        if (user != null && user.getRole() == Role.PROFESSIONAL) {
+            return findAllForProfessional(email);
+        }
+        return findAll();
+    }
+
     // AUD-11: Verificação de CPF via hash no banco (sem carregar todos em memória)
     private boolean cpfExiste(String cpf) {
         String hash = cpfHashService.hash(cpf);

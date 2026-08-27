@@ -1,6 +1,9 @@
 // backend/src/main/java/com/sistema/lucas/controller/DashboardController.java
 package com.sistema.lucas.controller;
 
+import com.sistema.lucas.model.dto.AppointmentResponseDTO;
+import com.sistema.lucas.model.dto.DocumentoResponseDTO;
+import com.sistema.lucas.model.dto.ProntuarioResponseDTO;
 import com.sistema.lucas.model.enums.StatusConsulta;
 import com.sistema.lucas.repository.*;
 import com.sistema.lucas.service.AuditLogService;
@@ -63,7 +66,8 @@ public class DashboardController {
 
         // Consultas de hoje
         dados.put("consultasHoje",
-            appointmentRepository.findTodayAppointmentsByProfessionalEmail(email));
+            appointmentRepository.findTodayAppointmentsByProfessionalEmail(email)
+                .stream().map(AppointmentResponseDTO::new).toList());
 
         // Consultas pendentes de confirmação pelo profissional
         dados.put("pendentesConfirmacao",
@@ -78,7 +82,8 @@ public class DashboardController {
 
         // Próximas consultas agendadas
         dados.put("proximasConsultas",
-            appointmentRepository.findProximasByProfissionalEmail(email, LocalDateTime.now()));
+            appointmentRepository.findProximasByProfissionalEmail(email, LocalDateTime.now())
+                .stream().map(AppointmentResponseDTO::new).toList());
 
         // Total de pacientes únicos atendidos
         dados.put("totalPacientes",
@@ -87,12 +92,12 @@ public class DashboardController {
         // Últimos prontuários
         dados.put("ultimosProntuarios",
             prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc(email)
-                .stream().limit(5).toList());
+                .stream().limit(5).map(ProntuarioResponseDTO::new).toList());
 
         // Documentos recentes
         dados.put("documentosRecentes",
             documentoRepository.findByProfissionalEmailOrderByCriadoEmDesc(email)
-                .stream().limit(5).toList());
+                .stream().limit(5).map(DocumentoResponseDTO::new).toList());
 
         return ResponseEntity.ok(dados);
     }
@@ -106,7 +111,8 @@ public class DashboardController {
 
         // Próxima consulta agendada
         dados.put("proximaConsulta",
-            appointmentRepository.findProximaByPacienteEmail(email, LocalDateTime.now()));
+            appointmentRepository.findProximaByPacienteEmail(email, LocalDateTime.now())
+                .stream().map(AppointmentResponseDTO::new).toList());
 
         // Consultas pendentes de confirmação de presença pelo paciente
         dados.put("pendentesConfirmacao",
@@ -123,7 +129,7 @@ public class DashboardController {
         // Documentos disponíveis
         dados.put("documentosDisponiveis",
             documentoRepository.findByPacienteEmailAndDisponivelTrueOrderByCriadoEmDesc(email)
-                .stream().limit(5).toList());
+                .stream().limit(5).map(DocumentoResponseDTO::new).toList());
 
         // Perfil resumido
         var paciente = patientRepository.findByEmail(email);

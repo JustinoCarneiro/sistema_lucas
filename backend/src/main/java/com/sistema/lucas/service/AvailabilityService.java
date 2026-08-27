@@ -65,7 +65,27 @@ public class AvailabilityService {
     @Transactional
     public void salvarMes(String email, List<AvailabilityDTO> dtos, YearMonth mesAlvo) {
         verificarPrazoSubmissao(mesAlvo);
-        
+
+        // ✅ O parâmetro mesAlvo (da URL) já foi validado acima, mas nada garantia que as datas
+        // dentro do corpo da requisição batessem com ele — sem isso, dava pra contornar a regra
+        // de "só mês atual/próximo" enviando um dto com date() de qualquer outro mês.
+        for (AvailabilityDTO dto : dtos) {
+            if (!YearMonth.from(dto.date()).equals(mesAlvo)) {
+                throw new RuntimeException("Data " + dto.date() + " não pertence ao mês " + mesAlvo + " informado na requisição.");
+            }
+            // ✅ Todo slot dura exatamente 1h (endTime = startTime + 1h) e a checagem de
+            // conflito em todo o sistema compara por igualdade exata de horário, não por
+            // sobreposição de intervalo — um horário fora da hora cheia (ex.: 09:15) geraria
+            // slots que se sobrepõem com os da hora cheia vizinha (09:00 e 10:00).
+            if (dto.startTimes() != null) {
+                for (LocalTime horario : dto.startTimes()) {
+                    if (horario.getMinute() != 0 || horario.getSecond() != 0) {
+                        throw new RuntimeException("Horário " + horario + " inválido — os slots só podem começar em horas cheias.");
+                    }
+                }
+            }
+        }
+
         var profissional = professionalRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado."));
 

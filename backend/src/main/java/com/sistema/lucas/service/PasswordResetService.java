@@ -3,6 +3,7 @@ package com.sistema.lucas.service;
 
 import com.sistema.lucas.model.PasswordResetToken;
 import com.sistema.lucas.repository.PasswordResetTokenRepository;
+import com.sistema.lucas.repository.RefreshTokenRepository;
 import com.sistema.lucas.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ public class PasswordResetService {
 
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordResetTokenRepository tokenRepository;
+    @Autowired private RefreshTokenRepository refreshTokenRepository;
     @Autowired private EmailService emailService;
     @Autowired private PasswordEncoder passwordEncoder;
 
@@ -72,6 +74,11 @@ public class PasswordResetService {
 
         resetToken.setUsado(true);
         tokenRepository.save(resetToken);
+
+        // Revoga todos os refresh tokens do usuário — sem isso, uma sessão comprometida
+        // continua válida (renovando access tokens via /auth/refresh) mesmo depois da vítima
+        // trocar a senha achando que encerrou o acesso do invasor.
+        refreshTokenRepository.deleteByUser(user);
     }
 
     // ─── E-mail de recuperação ────────────────────────────────────────────────

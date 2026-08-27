@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * gravados com a chave antiga (AES-128) ou em texto plano legado.
  *
  * <p>Cobre TODAS as colunas anotadas com {@code @Convert(EncryptionConverter)}:
- * users, patient, professional, prontuarios, documentos e appointments.
+ * users, patient, professional, prontuarios, documentos, appointments e audit_logs.
  * Garantir cobertura total é pré-requisito do AUD-02 — só assim o
  * {@code convertToEntityAttribute} pode ser estrito sem risco de quebrar
  * leituras de dados legados.
@@ -142,21 +142,27 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
         });
         totalMigrated += (prontuariosMigrated != null ? prontuariosMigrated : 0);
 
-        // 5. Documentos (conteúdo de texto e PDF em Base64)
-        Integer documentosMigrated = jdbcTemplate.query("SELECT id, conteudo_texto, arquivo_base64 FROM documentos", rs -> {
+        // 5. Documentos (conteúdo de texto, PDF em Base64, título e nome do arquivo — os dois
+        //    últimos entraram pra criptografia depois, na revisão de 27/08/2026, porque título
+        //    de documento clínico pode conter diagnóstico)
+        Integer documentosMigrated = jdbcTemplate.query("SELECT id, conteudo_texto, arquivo_base64, titulo, nome_arquivo FROM documentos", rs -> {
             int count = 0;
             java.util.List<Object[]> batch = new java.util.ArrayList<>();
             while (rs.next()) {
                 String conteudo = rs.getString("conteudo_texto");
                 String arquivo = rs.getString("arquivo_base64");
+                String titulo = rs.getString("titulo");
+                String nomeArquivo = rs.getString("nome_arquivo");
                 if (encryptionConverter.isEncryptedWithOldKey(conteudo) ||
-                    encryptionConverter.isEncryptedWithOldKey(arquivo)) {
-                    batch.add(new Object[]{reencrypt(conteudo), reencrypt(arquivo), rs.getLong("id")});
+                    encryptionConverter.isEncryptedWithOldKey(arquivo) ||
+                    encryptionConverter.isEncryptedWithOldKey(titulo) ||
+                    encryptionConverter.isEncryptedWithOldKey(nomeArquivo)) {
+                    batch.add(new Object[]{reencrypt(conteudo), reencrypt(arquivo), reencrypt(titulo), reencrypt(nomeArquivo), rs.getLong("id")});
                     count++;
                 }
             }
             if (!batch.isEmpty()) {
-                jdbcTemplate.batchUpdate("UPDATE documentos SET conteudo_texto = ?, arquivo_base64 = ? WHERE id = ?", batch);
+                jdbcTemplate.batchUpdate("UPDATE documentos SET conteudo_texto = ?, arquivo_base64 = ?, titulo = ?, nome_arquivo = ? WHERE id = ?", batch);
             }
             return count;
         });
@@ -181,6 +187,25 @@ public class EncryptionMigrationRunner implements CommandLineRunner {
             return count;
         });
         totalMigrated += (appointmentsMigrated != null ? appointmentsMigrated : 0);
+
+        // 7. Audit logs (detalhes — entrou pra criptografia na revisão de 27/08/2026, porque
+        //    pode carregar cópia de justificativa de cancelamento/reagendamento em texto livre)
+        Integer auditLogsMigrated = jdbcTemplate.query("SELECT id, detalhes FROM audit_logs WHERE detalhes IS NOT NULL", rs -> {
+            int count = 0;
+            java.util.List<Object[]> batch = new java.util.ArrayList<>();
+            while (rs.next()) {
+                String detalhes = rs.getString("detalhes");
+                if (encryptionConverter.isEncryptedWithOldKey(detalhes)) {
+                    batch.add(new Object[]{reencrypt(detalhes), rs.getLong("id")});
+                    count++;
+                }
+            }
+            if (!batch.isEmpty()) {
+                jdbcTemplate.batchUpdate("UPDATE audit_logs SET detalhes = ? WHERE id = ?", batch);
+            }
+            return count;
+        });
+        totalMigrated += (auditLogsMigrated != null ? auditLogsMigrated : 0);
 
         if (totalMigrated > 0) {
             log.info("[AUD-01] Batch Migration concluída! {} registros foram recifrados para AES-256.", totalMigrated);

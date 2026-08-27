@@ -10,4 +10,5 @@ import java.util.List;
 public interface ProntuarioRepository extends JpaRepository<Prontuario, Long> {
     List<Prontuario> findByPatientIdOrderByCriadoEmDesc(Long patientId);
     List<Prontuario> findByProfessionalEmailOrderByCriadoEmDesc(String email);
+    boolean existsByAppointmentId(Long appointmentId);
 }

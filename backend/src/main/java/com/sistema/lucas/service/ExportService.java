@@ -32,10 +32,10 @@ public class ExportService {
         List<Appointment> all = appointmentRepository.findAll();
         for (Appointment a : all) {
             csv.append(String.format("%d;%s;%s;%s;%s\n",
-                    a.getId(), 
-                    a.getPatient() != null ? a.getPatient().getName() : "N/A", 
-                    a.getProfessional() != null ? a.getProfessional().getName() : "N/A", 
-                    a.getDateTime(), 
+                    a.getId(),
+                    a.getPatient() != null ? csvSafe(a.getPatient().getName()) : "N/A",
+                    a.getProfessional() != null ? csvSafe(a.getProfessional().getName()) : "N/A",
+                    a.getDateTime(),
                     a.getStatus()));
         }
         return csv.toString();
@@ -50,7 +50,7 @@ public class ExportService {
         for (Prontuario p : logs) {
             String notasSeguras = p.getNotas() != null ? p.getNotas().replace("\"", "'").replace("\n", " ") : "";
             csv.append(String.format("%d;%s;%s;\"%s\"\n",
-                    p.getId(), p.getCriadoEm(), p.getPatient().getName(), notasSeguras));
+                    p.getId(), p.getCriadoEm(), csvSafe(p.getPatient().getName()), csvSafe(notasSeguras)));
         }
         return csv.toString();
     }
@@ -136,6 +136,19 @@ public class ExportService {
         return val.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
     }
 
+    // Neutraliza CSV Injection (Formula Injection): se um valor vindo do usuário (nome de
+    // paciente/profissional, etc.) começar com um caractere que Excel/LibreOffice interpretam
+    // como início de fórmula (=, +, -, @, tab, CR), prefixa com aspas simples — o programa
+    // exibe o valor literal em vez de executar a "fórmula".
+    private String csvSafe(String val) {
+        if (val == null) return "";
+        String v = val.replace(";", ",").replace("\n", " ").replace("\r", "");
+        if (!v.isEmpty() && "=+-@\t\r".indexOf(v.charAt(0)) >= 0) {
+            return "'" + v;
+        }
+        return v;
+    }
+
     public String exportPatientsData() {
         StringBuilder csv = new StringBuilder();
         csv.append("ID;Nome;Email;Telefone;CPF;Data Nasc\n");
@@ -143,7 +156,7 @@ public class ExportService {
         for (Patient p : all) {
             String maskedCpf = maskCpf(p.getCpf());
             csv.append(String.format("%d;%s;%s;%s;%s;%s\n",
-                    p.getId(), p.getName(), p.getEmail(), p.getPhone(), maskedCpf, p.getBirthDate()));
+                    p.getId(), csvSafe(p.getName()), csvSafe(p.getEmail()), csvSafe(p.getPhone()), maskedCpf, p.getBirthDate()));
         }
         return csv.toString();
     }
@@ -154,7 +167,7 @@ public class ExportService {
         List<Professional> all = professionalRepository.findAll();
         for (Professional p : all) {
             csv.append(String.format("%d;%s;%s;%s;%s;%s\n",
-                    p.getId(), p.getName(), p.getRegistroConselho(), p.getSpecialty(), p.getEmail(), p.getPhone()));
+                    p.getId(), csvSafe(p.getName()), csvSafe(p.getRegistroConselho()), csvSafe(p.getSpecialty()), csvSafe(p.getEmail()), csvSafe(p.getPhone())));
         }
         return csv.toString();
     }
@@ -163,7 +176,9 @@ public class ExportService {
         if (cpf == null || cpf.length() < 11) return "N/A";
         // Formato esperado: 123.456.789-00 ou 12345678900
         String clean = cpf.replaceAll("[^0-9]", "");
-        if (clean.length() != 11) return cpf;
+        // Dado legado/corrompido sem 11 dígitos: falha seguro (nunca devolve o CPF sem
+        // máscara) em vez de vazar o valor bruto no export.
+        if (clean.length() != 11) return "***.***.***-**";
         return clean.substring(0, 3) + ".***.***-" + clean.substring(9, 11);
     }
 }

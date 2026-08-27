@@ -140,25 +140,49 @@ public class ProfessionalService {
         }
     }
 
+    // Renomeado só na intenção (mantém o nome forceDelete pro contrato da rota
+    // /professionals/force/{id} não mudar): quando há vínculo clínico, isso NÃO apaga
+    // fisicamente Prontuario/Documento/Appointment mais — o CFM exige reter prontuário por 20
+    // anos, a mesma regra que já protege a exclusão de paciente (PatientService.deleteOrAnonymize).
+    // Em vez disso, anonimiza a identidade do profissional (preserva o vínculo, que é só o que
+    // a lei exige apagar é o dado de identificação, não o registro clínico em si).
     @Transactional
     public void forceDelete(@org.springframework.lang.NonNull Long id) {
         Professional prof = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
-        // Apagar Documentos
-        documentoRepository.deleteAll(java.util.Objects.requireNonNull(documentoRepository.findByProfissionalEmailOrderByCriadoEmDesc(prof.getEmail())));
-        
-        // Apagar Prontuários
-        prontuarioRepository.deleteAll(java.util.Objects.requireNonNull(prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc(prof.getEmail())));
+        boolean temVinculoClinico =
+            !prontuarioRepository.findByProfessionalEmailOrderByCriadoEmDesc(prof.getEmail()).isEmpty()
+            || !appointmentRepository.findByProfessionalId(id).isEmpty();
 
-        // Apagar Disponibilidades
+        // Disponibilidade é só metadado de agenda, sem valor clínico — sempre seguro apagar.
         availabilityRepository.deleteAll(java.util.Objects.requireNonNull(availabilityRepository.findByProfessionalId(id)));
 
-        // Apagar Consultas
-        appointmentRepository.deleteAll(java.util.Objects.requireNonNull(appointmentRepository.findByProfessionalId(id)));
+        if (temVinculoClinico) {
+            anonymize(prof);
+            return;
+        }
 
-        // Finalmente, apagar o Profissional
+        // Sem prontuário nem consulta vinculados — exclusão física é segura.
+        documentoRepository.deleteAll(java.util.Objects.requireNonNull(documentoRepository.findByProfissionalEmailOrderByCriadoEmDesc(prof.getEmail())));
         repository.delete(prof);
+    }
+
+    private void anonymize(Professional prof) {
+        String stamp = "anonymized-" + prof.getId();
+        prof.setName("Profissional Removido");
+        prof.setEmail(stamp + "@deleted.local");
+        prof.setCpf(null);
+        prof.setPhone(null);
+        prof.setAddress(null);
+        prof.setBirthDate(null);
+        prof.setGender(null);
+        prof.setRegistroConselho(stamp);
+        // Senha aleatória: torna login impossível, mesmo efeito de isActive=false em Patient
+        // (Professional não tem essa flag hoje).
+        prof.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+        repository.save(prof);
+        repository.flush();
     }
 
     public Professional getMyProfile(String email) {

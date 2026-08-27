@@ -19,7 +19,10 @@ public record PatientResponseDTO(
     String address,
     java.time.LocalDateTime blockedUntil,
     int infractionCount,
-    boolean receivedFirstWarning
+    boolean receivedFirstWarning,
+    // Sem isso, um paciente anonimizado (vínculo clínico apagado, ver PatientService.anonymize)
+    // aparecia na listagem do admin com todos os campos em branco e nenhuma indicação do porquê.
+    boolean active
 ) {
     public PatientResponseDTO(Patient p) {
         this(
@@ -36,7 +39,8 @@ public record PatientResponseDTO(
             p.getAddress(),
             p.getBlockedUntil(),
             p.getInfractionCount(),
-            p.isReceivedFirstWarning()
+            p.isReceivedFirstWarning(),
+            p.isActive()
         );
     }
 }
