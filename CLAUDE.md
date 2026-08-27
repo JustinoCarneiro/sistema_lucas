@@ -8,12 +8,12 @@ Plataforma de prontuário eletrônico e agendamento de consultas, com forte foco
 
 ## Stack
 - **Frontend:** Angular 21 (standalone components, Signals), Tailwind CSS v4 (config CSS-first, sem `tailwind.config`).
-- **Backend:** Spring Boot 3.4 · **Java 17** (`pom.xml` real — ver nota de divergência abaixo).
+- **Backend:** Spring Boot 3.4 · **Java 21** (`pom.xml` alinhado — ver nota abaixo).
 - **Banco:** PostgreSQL 15, migrations via Flyway.
 - **Auth:** JWT (access token 15min, cookie HttpOnly) + refresh token rotativo (7 dias) + denylist de revogação no logout.
 - **Deploy:** Docker Compose (`deploy-dev.sh` / `deploy-prod.sh` / `push-and-deploy.sh` via rsync+SSH).
 
-> ⚠️ **Divergência de versão a reconciliar:** `.cursorrules`, `README.md` e o `CLAUDE.md` anterior afirmavam Java 21, mas o `pom.xml` real configura `<java.version>17</java.version>`. Escolhido documentar a versão real (17) aqui. Decisão pendente: atualizar o `pom.xml` pra 21 (alinhar ao que sempre foi a intenção declarada), ou corrigir as demais referências pra 17. Nenhuma das duas ações foi tomada — só a documentação foi corrigida pra refletir o que roda hoje.
+> ✅ **Divergência de versão reconciliada (27/08/2026):** o `Dockerfile` sempre rodou JDK 21 em produção (`eclipse-temurin:21-jdk-alpine`, build e runtime); só o `pom.xml` mirava bytecode 17 (`<java.version>`/`<release>` desatualizados). `.cursorrules` e `README.md` já diziam 21 corretamente — eram eles que refletiam a intenção real, não o `pom.xml`. Alinhado o `pom.xml` pra 21 (zero risco de runtime, já era o JDK do container) — suíte de backend inteira (164 testes) rodou verde no novo alvo antes de commitar.
 
 ## Perfil de projeto
 Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, **PATIENT** · dado sensível de saúde, alto peso de conformidade LGPD.
@@ -65,7 +65,7 @@ AGUARDANDO_CONFIRMACAO ──aprovar (profissional)──→ AGENDADA ──conf
 - `snake_case` no banco, `camelCase` no Java/TypeScript.
 - Diretiva Primária na Fase 4: não alterar sintaxe de código existente.
 
-> ⚠️ **API REST `/api/v1` — não implementado.** Nenhuma rota usa prefixo `/api` nem `/v1` (confirmado: rotas são `/consultas`, `/auth`, `/patients` etc., direto na raiz). Nomes de rota também misturam português (`/consultas`, `/disponibilidade`, `/documentos`, `/prontuarios`) e inglês (`/patients`, `/professionals`, `/dashboard`). **Decisão pendente, não executada:** aplicar o prefixo/padronizar idioma é uma mudança de contrato que afeta backend, frontend e as ~45 suítes de teste (Cypress + JUnit) — feita só com aprovação explícita, fora do escopo desta correção de documentação.
+> ✅ **API REST `/api/v1` — decidido não aplicar (27/08/2026).** Nenhuma rota usa prefixo `/api` nem `/v1` (rotas são `/consultas`, `/auth`, `/patients` etc., direto na raiz, misturando português e inglês). Avaliado e descartado: sistema interno de uma única clínica, sem consumidor externo de API que exija versionamento REST — o custo da migração (contrato quebrado em backend + frontend + ~45 suítes de teste Cypress/JUnit) não se paga sem um motivo funcional real. Revisitar só se surgir um consumidor externo de verdade.
 
 ## Memória Técnica (Bugs e Decisões)
 Vault Obsidian em [`./memoria-tecnica/`](./memoria-tecnica/_index.md), dentro do próprio repo — bugs
