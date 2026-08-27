@@ -34,6 +34,7 @@ public class AuthController {
     @Autowired private com.sistema.lucas.security.service.RefreshTokenService refreshTokenService;
     @Autowired private com.sistema.lucas.security.service.TokenDenylistService tokenDenylistService;
     @Autowired private com.sistema.lucas.service.CpfHashService cpfHashService;
+    @Autowired private com.sistema.lucas.security.service.AuthCookieService authCookieService;
 
     // SEC-01: cookie Secure ativo só em produção (HTTPS). Em dev (HTTP) é desativado
     // via application-dev.properties — senão o navegador descarta o cookie de sessão.
@@ -49,31 +50,33 @@ public class AuthController {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
         var user = (User) auth.getPrincipal();
-        var token = tokenService.generateToken(user);
-        
-        // SEC-01: Token é enviado exclusivamente via cookie HttpOnly
-        ResponseCookie cookie = ResponseCookie.from("token", java.util.Objects.requireNonNull(token))
-            .httpOnly(true)
-            .secure(cookieSecure) // SEC-01: true em produção (HTTPS); false em dev (HTTP)
-            .path("/")
-            .maxAge(15 * 60) // SEC-03: 15 minutos de validade
-            .sameSite("Strict")
-            .build();
 
-        // SEC-03: Gerar Refresh Token de 7 dias
-        String refreshTokenStr = refreshTokenService.createRefreshToken(user);
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", java.util.Objects.requireNonNull(refreshTokenStr))
-            .httpOnly(true)
-            .secure(cookieSecure)
-            .path("/")
-            .maxAge(7 * 24 * 60 * 60) // 7 dias
-            .sameSite("Strict")
-            .build();
+        // MFA (SEC-02): com o segundo fator ativo, a senha correta NÃO é suficiente pra abrir
+        // sessão — emite só um token curto de "pendente" (cookie diferente de "token", que é o
+        // único que SecurityFilter reconhece como sessão válida) e devolve mfaRequired=true. A
+        // sessão de verdade só nasce em POST /auth/mfa/verify, depois do código conferir.
+        if (user.isMfaEnabled()) {
+            String pendingToken = tokenService.generateMfaPendingToken(user);
+            ResponseCookie pendingCookie = ResponseCookie.from("mfa_pending_token", java.util.Objects.requireNonNull(pendingToken))
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(5 * 60)
+                .sameSite("Strict")
+                .build();
 
-        return ResponseEntity.ok()
-            .header(HttpHeaders.SET_COOKIE, cookie.toString())
-            .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-            .body(new LoginResponseDTO(user.getRole().name(), user.isVerified()));
+            return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, pendingCookie.toString())
+                .body(new LoginResponseDTO(null, false, true));
+        }
+
+        var cookies = authCookieService.gerarCookiesDeSessao(user);
+
+        var builder = ResponseEntity.ok();
+        for (var cookie : cookies) {
+            builder.header(HttpHeaders.SET_COOKIE, cookie.toString());
+        }
+        return builder.body(new LoginResponseDTO(user.getRole().name(), user.isVerified()));
     }
 
     @PostMapping("/logout")

@@ -22,7 +22,9 @@ public record PatientResponseDTO(
     boolean receivedFirstWarning,
     // Sem isso, um paciente anonimizado (vínculo clínico apagado, ver PatientService.anonymize)
     // aparecia na listagem do admin com todos os campos em branco e nenhuma indicação do porquê.
-    boolean active
+    boolean active,
+    // MFA (SEC-02): a tela "Segurança" do próprio perfil precisa saber se já está ativo.
+    boolean mfaEnabled
 ) {
     public PatientResponseDTO(Patient p) {
         this(
@@ -40,7 +42,8 @@ public record PatientResponseDTO(
             p.getBlockedUntil(),
             p.getInfractionCount(),
             p.isReceivedFirstWarning(),
-            p.isActive()
+            p.isActive(),
+            p.isMfaEnabled()
         );
     }
 }

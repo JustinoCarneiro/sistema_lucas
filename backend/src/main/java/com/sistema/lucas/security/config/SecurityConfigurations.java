@@ -50,6 +50,9 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+                        // MFA (SEC-02): usuário ainda não tem sessão nesse ponto do fluxo (só o
+                        // cookie mfa_pending_token, curto e sem privilégio nenhum, ver login()).
+                        .requestMatchers(HttpMethod.POST, "/auth/mfa/verify").permitAll()
                         .requestMatchers(HttpMethod.GET, "/nps/*").permitAll() // M11: status do link de avaliação (token na URL)
                         .requestMatchers(HttpMethod.POST, "/nps/responder").permitAll() // M11: submissão da avaliação
                         .requestMatchers(HttpMethod.GET, "/waitlist/oferta/*").permitAll() // M13: status da oferta de vaga (token na URL)

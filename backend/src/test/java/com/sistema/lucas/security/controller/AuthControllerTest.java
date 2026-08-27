@@ -32,9 +32,38 @@ class AuthControllerTest {
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private com.sistema.lucas.service.CpfHashService cpfHashService;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @BeforeEach
     void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(java.util.Objects.requireNonNull(context)).build();
+    }
+
+    // MFA (SEC-02): com mfaEnabled=true, o login NUNCA deve emitir o cookie de sessão "token" —
+    // só o cookie curto "mfa_pending_token", que SecurityFilter não reconhece como sessão válida.
+    @Test
+    void loginComMfaAtivoNaoEmiteCookieDeSessao() throws Exception {
+        var user = new com.sistema.lucas.model.User();
+        user.setId(1L);
+        user.setEmail("mfa@test.com");
+        user.setPassword(passwordEncoder.encode("senha123"));
+        user.setRole(com.sistema.lucas.model.enums.Role.PATIENT);
+        user.setMfaEnabled(true);
+
+        org.mockito.Mockito.when(userRepository.findByEmail("mfa@test.com")).thenReturn(user);
+
+        var dto = new com.sistema.lucas.security.dto.LoginRequestDTO("mfa@test.com", "senha123");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/login")
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.mfaRequired").value(true))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.role").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie().exists("mfa_pending_token"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie().doesNotExist("token"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie().doesNotExist("refresh_token"));
     }
 
     @Test

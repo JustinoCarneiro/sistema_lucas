@@ -18,7 +18,9 @@ public record ProfessionalResponseDTO(
     LocalDate birthDate,
     String gender,
     String address,
-    ModalidadeAtendimento modalidadeAtendimento
+    ModalidadeAtendimento modalidadeAtendimento,
+    // MFA (SEC-02): a tela "Segurança" do próprio perfil precisa saber se já está ativo.
+    boolean mfaEnabled
 ) {
     public ProfessionalResponseDTO(Professional p) {
         this(
@@ -33,7 +35,8 @@ public record ProfessionalResponseDTO(
             p.getBirthDate(),
             p.getGender(),
             p.getAddress(),
-            p.getModalidadeAtendimento() != null ? p.getModalidadeAtendimento() : ModalidadeAtendimento.PRESENCIAL
+            p.getModalidadeAtendimento() != null ? p.getModalidadeAtendimento() : ModalidadeAtendimento.PRESENCIAL,
+            p.isMfaEnabled()
         );
     }
 }

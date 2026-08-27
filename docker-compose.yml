@@ -50,6 +50,7 @@ services:
       - encryption_key
       - encryption_key_old
       - cpf_hash_pepper
+      - mfa_backup_pepper
     ports:
       - "8081:8081"
     networks:
@@ -91,3 +92,5 @@ secrets:
     file: ./secrets/encryption_key_old.txt
   cpf_hash_pepper:
     file: ./secrets/cpf_hash_pepper.txt
+  mfa_backup_pepper:
+    file: ./secrets/mfa_backup_pepper.txt
