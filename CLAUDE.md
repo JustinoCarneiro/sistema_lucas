@@ -81,3 +81,4 @@ cabeludos resolvidos (causa raiz, não só sintoma) e decisões técnicas tomada
 - Identidade visual: `./design/tokens.css` + `./design/DESIGN.md`
 - Comandos de dev, ambiente local, notas de teste: `./docs/DEV.md`
 - Memória técnica: `./memoria-tecnica/`
+- Compliance LGPD (auditoria, designação de DPO, plano de resposta a incidentes): `./docs/compliance/` — resgatados em 27/08/2026 de um servidor de produção onde viviam sem controle de versão nenhum (ver `docs/compliance/prompts_itens_adiados.md` pro histórico dos 5 itens de auditoria, todos já concluídos)
