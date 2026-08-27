@@ -42,6 +42,11 @@ services:
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL}
       INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+      # AUD-01/AUD-03: liga por 1 ciclo de deploy pra migrar dado legado em texto plano
+      # (Documento.titulo/nomeArquivo, AuditLog.detalhes) e o backfill de cpf_hash — depois
+      # desliga de novo (padrão já usado na rotação original de chave AES). Sem esta linha, não
+      # havia como o .env chegar no container: docker compose só repassa o que está listado aqui.
+      APP_MIGRATION_CRYPTO_ENABLED: ${APP_MIGRATION_CRYPTO_ENABLED:-false}
     secrets:
       - db_pass
       - jwt_secret
