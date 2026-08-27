@@ -1,10 +1,20 @@
 ---
 tipo: decisao
 data: 2026-08-27
-status: Ativa
+status: Resolvida (mesmo dia) — ver atualização no final
 ---
 
 # Constraint única `uk_prontuario_appointment` (V20) não aplicada em produção — dado legado
+
+> ✅ **Atualização, mesmo dia (27/08/2026):** o usuário pediu pra verificar o conteúdo real das
+> duas entradas pelo próprio sistema (login, abrir o histórico de prontuário do paciente
+> [Luiz Guimarães Neto](#), `patient_id=26`) — texto **confirmado idêntico**. Com a incerteza
+> original resolvida, o usuário decidiu reverter a decisão abaixo: `prontuarios.id=3` foi
+> **apagado manualmente** em produção (mantendo `id=2` como o registro válido), e a constraint
+> foi reaplicada como **V22** (mesmo SQL da V20, renumerada pra não reescrever um número de
+> versão que já tinha falhado uma vez em prod). Migration V22 já deployada com sucesso. O texto
+> abaixo fica como registro de como e por que a decisão original foi tomada — a decisão em si
+> não vale mais.
 
 ## Contexto
 No deploy de produção de 27/08/2026 (primeiro em 6 semanas, trazendo todo o trabalho de M11/M13

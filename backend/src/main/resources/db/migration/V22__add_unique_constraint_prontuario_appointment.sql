@@ -1,0 +1,14 @@
+-- backend/src/main/resources/db/migration/V22__add_unique_constraint_prontuario_appointment.sql
+-- E5 (Prontuário Eletrônico) — trava no banco contra prontuário duplicado pra mesma consulta
+-- (duplo clique/retry em "Salvar e finalizar atendimento"). A checagem em
+-- ProntuarioService.create() (existsByAppointmentId) já existe na aplicação; isso fecha a
+-- corrida (check-then-act) no nível do banco também.
+--
+-- Reaplicação de V20 (desativada em 27/08/2026 — ver
+-- memoria-tecnica/decisoes/uk-prontuario-appointment-nao-aplicada-dado-legado.md). Motivo da
+-- renumeração em vez de reativar o arquivo V20 original: evitar reescrever um número de versão
+-- que já foi tentado (e falhou) em produção — mais seguro nomear como uma migration nova.
+-- O dado legado duplicado que bloqueava a V20 (appointment_id=9, prontuarios id=2 e id=3) foi
+-- resolvido antes desta migration: conteúdo confirmado idêntico pelo usuário (via UI, comparação
+-- visual das duas notas descriptografadas), duplicado (id=3) removido manualmente em produção.
+ALTER TABLE prontuarios ADD CONSTRAINT uk_prontuario_appointment UNIQUE (appointment_id);

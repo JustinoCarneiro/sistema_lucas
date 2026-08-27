@@ -1,6 +1,9 @@
--- DESATIVADA PERMANENTEMENTE em 27/08/2026 (extensão .sql.disabled — Flyway ignora, só roda
--- V*__*.sql). NÃO renomear de volta pra .sql sem antes ler
--- memoria-tecnica/decisoes/uk-prontuario-appointment-nao-aplicada-dado-legado.md.
+-- RESOLVIDA em 27/08/2026, mesmo dia — mantida como .sql.disabled só como registro histórico do
+-- incidente, NÃO reativar este arquivo. A constraint foi reaplicada como V22 (mesmo conteúdo),
+-- depois que o usuário confirmou visualmente (pelo próprio sistema) que os dois prontuários
+-- duplicados tinham conteúdo idêntico e o registro extra foi removido manualmente em produção.
+-- Ver memoria-tecnica/decisoes/uk-prontuario-appointment-nao-aplicada-dado-legado.md (atualizada
+-- com a resolução final).
 --
 -- Motivo: ao tentar aplicar esta migration em produção pela primeira vez, ela falhou porque já
 -- existe duplicidade real e legítima de ANTES desta correção existir (appointment_id=9 tem 2
