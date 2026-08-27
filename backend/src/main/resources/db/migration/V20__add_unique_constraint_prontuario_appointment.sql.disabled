@@ -1,4 +1,21 @@
+-- DESATIVADA PERMANENTEMENTE em 27/08/2026 (extensão .sql.disabled — Flyway ignora, só roda
+-- V*__*.sql). NÃO renomear de volta pra .sql sem antes ler
+-- memoria-tecnica/decisoes/uk-prontuario-appointment-nao-aplicada-dado-legado.md.
+--
+-- Motivo: ao tentar aplicar esta migration em produção pela primeira vez, ela falhou porque já
+-- existe duplicidade real e legítima de ANTES desta correção existir (appointment_id=9 tem 2
+-- prontuários, ids 2 e 3, criados com 298ms de diferença em 09/05/2026 — duplo-submit clássico).
+-- Decisão consciente do usuário: nunca apagar nem alterar prontuário de paciente pra "resolver"
+-- isso — são dados de saúde, LGPD/CFM exigem retenção de 20 anos, e apagar sob pressão de
+-- incidente é inaceitável. Os dois registros ficam como estão, para sempre.
+--
+-- Isso é seguro porque a proteção real contra este bug já está em outra camada:
+-- ProntuarioService.create() checa existsByAppointmentId() antes de salvar e recusa criar um
+-- segundo prontuário pra mesma consulta — essa checagem já está em produção e já impede o bug
+-- de se repetir, independente desta constraint de banco existir ou não. A constraint aqui seria
+-- só uma segunda camada de defesa redundante (defesa em profundidade), não a proteção primária.
+--
 -- E5 (Prontuário Eletrônico) — trava no banco contra prontuário duplicado pra mesma consulta
 -- (duplo clique/retry em "Salvar e finalizar atendimento"). A checagem em ProntuarioService já
--- existe na aplicação, mas isso fecha a corrida (check-then-act) no nível do banco também.
+-- existe na aplicação, mas isso fecharia a corrida (check-then-act) no nível do banco também.
 ALTER TABLE prontuarios ADD CONSTRAINT uk_prontuario_appointment UNIQUE (appointment_id);

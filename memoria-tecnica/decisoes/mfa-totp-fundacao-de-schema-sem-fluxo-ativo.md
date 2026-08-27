@@ -1,10 +1,15 @@
 ---
 tipo: decisao
 data: 2026-05-21
-status: Ativa
+status: Superada (27/08/2026) — fluxo de MFA implementado, ver CLAUDE.md
 ---
 
 # MFA/TOTP: schema preparado, fluxo de login ainda não usa
+
+> ⚠️ **Superada em 27/08/2026:** o fluxo completo de MFA (login em duas etapas, ADMIN/
+> PROFESSIONAL/PATIENT, `MfaController`/`MfaService`/`TotpService`) foi implementado — ver seção
+> de Princípios do `CLAUDE.md`. Esta nota fica só como histórico de por que o schema existia
+> sozinho por tanto tempo; não reflete mais o estado atual do sistema.
 
 ## Contexto
 Migration `V10__add_mfa_columns.sql` adiciona `users.mfa_enabled` e `users.totp_secret` (este último já protegido por `EncryptionConverter`), mas nenhum fluxo de autenticação (`login`, `AuthController`) lê ou valida esses campos hoje.
