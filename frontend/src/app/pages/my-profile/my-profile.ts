@@ -6,8 +6,10 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router'; // ✅ importado mas NÃO vai no imports do @Component
 import { PatientService } from '../patients/patients.service';
 import { AuthService } from '../../security/auth.service';
+import { MfaService } from '../../security/mfa.service';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../notification.service';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-my-profile',
@@ -18,9 +20,20 @@ import { NotificationService } from '../../notification.service';
 export class MyProfileComponent implements OnInit {
   private patientService = inject(PatientService);
   private authService = inject(AuthService);
+  private mfaService = inject(MfaService);
   private http = inject(HttpClient);
   private notify = inject(NotificationService);
   private router = inject(Router); // ✅ injetado corretamente via inject()
+
+  // --- MFA (SEC-02) ---
+  mfaSetupData = signal<{ secretBase32: string; otpAuthUri: string } | null>(null);
+  mfaQrCodeDataUrl = signal<string>('');
+  mfaEnableCode = '';
+  mfaBackupCodes = signal<string[] | null>(null);
+  mfaIsBusy = signal(false);
+  showDisableMfaModal = signal(false);
+  disableMfaPassword = '';
+  disableMfaCode = '';
 
   profile = signal<any>({});
   userRole = signal<string | null>(null);
@@ -177,6 +190,94 @@ export class MyProfileComponent implements OnInit {
         error: (err: any) => { this.notify.error(err.error?.message || 'Tente novamente.'); this.isSaving.set(false); }
       });
     }
+  }
+
+  // --- MFA (SEC-02) ---
+
+  iniciarSetupMfa() {
+    this.mfaIsBusy.set(true);
+    this.mfaService.setup().subscribe({
+      next: async (data) => {
+        this.mfaSetupData.set(data);
+        // Renderiza o QR code no cliente (canvas → data URL) a partir da otpauth:// URI — o
+        // secret nunca precisa ser enviado como imagem pelo backend.
+        try {
+          const dataUrl = await QRCode.toDataURL(data.otpAuthUri, { width: 220, margin: 1 });
+          this.mfaQrCodeDataUrl.set(dataUrl);
+        } catch {
+          this.mfaQrCodeDataUrl.set('');
+        }
+        this.mfaIsBusy.set(false);
+      },
+      error: (mensagem: any) => {
+        this.notify.error(typeof mensagem === 'string' ? mensagem : 'Erro ao iniciar configuração de MFA.');
+        this.mfaIsBusy.set(false);
+      }
+    });
+  }
+
+  cancelarSetupMfa() {
+    this.mfaSetupData.set(null);
+    this.mfaQrCodeDataUrl.set('');
+    this.mfaEnableCode = '';
+  }
+
+  confirmarAtivacaoMfa() {
+    if (!this.mfaEnableCode.trim()) {
+      this.notify.error('Informe o código do aplicativo autenticador.');
+      return;
+    }
+    this.mfaIsBusy.set(true);
+    this.mfaService.enable(this.mfaEnableCode.trim()).subscribe({
+      next: (data) => {
+        this.mfaBackupCodes.set(data.backupCodes);
+        this.mfaSetupData.set(null);
+        this.mfaQrCodeDataUrl.set('');
+        this.mfaEnableCode = '';
+        this.profile.update(p => ({ ...p, mfaEnabled: true }));
+        this.notify.success('MFA ativado com sucesso! Salve seus códigos de backup agora.');
+        this.mfaIsBusy.set(false);
+      },
+      error: (mensagem: any) => {
+        this.notify.error(typeof mensagem === 'string' ? mensagem : 'Código inválido.');
+        this.mfaIsBusy.set(false);
+      }
+    });
+  }
+
+  fecharBackupCodes() {
+    this.mfaBackupCodes.set(null);
+  }
+
+  openDisableMfaModal() {
+    this.disableMfaPassword = '';
+    this.disableMfaCode = '';
+    this.showDisableMfaModal.set(true);
+  }
+
+  closeDisableMfaModal() {
+    this.showDisableMfaModal.set(false);
+  }
+
+  confirmarDesativacaoMfa() {
+    if (!this.disableMfaPassword || !this.disableMfaCode.trim()) {
+      this.notify.error('Preencha a senha e o código.');
+      return;
+    }
+    this.mfaIsBusy.set(true);
+    this.mfaService.disable(this.disableMfaPassword, this.disableMfaCode.trim()).subscribe({
+      next: () => {
+        this.profile.update(p => ({ ...p, mfaEnabled: false }));
+        this.showDisableMfaModal.set(false);
+        this.notify.success('MFA desativado. Todas as sessões ativas foram encerradas — faça login novamente.');
+        this.mfaIsBusy.set(false);
+        this.authService.logout();
+      },
+      error: (mensagem: any) => {
+        this.notify.error(typeof mensagem === 'string' ? mensagem : 'Não foi possível desativar o MFA.');
+        this.mfaIsBusy.set(false);
+      }
+    });
   }
 
   excluirConta() {

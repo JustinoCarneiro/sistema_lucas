@@ -41,11 +41,19 @@ export class LoginComponent {
 
     this.authService.login(this.loginForm.value).subscribe({
       next: (response: any) => {
+        this.isLoading.set(false);
+
+        // MFA (SEC-02): senha correta não é suficiente com o 2º fator ativo — a sessão real só
+        // nasce depois do código em /mfa-verify (o backend só emitiu um cookie de pendência).
+        if (response.mfaRequired) {
+          this.router.navigate(['/mfa-verify']);
+          return;
+        }
+
         // SEC-01: O token agora é um Cookie HttpOnly invisível para o frontend.
         // O frontend armazena apenas metadados da sessão para interface.
         localStorage.setItem('role', response.role);
         localStorage.setItem('verified', String(response.verified));
-        this.isLoading.set(false);
         this.router.navigate(['/panel']);
       },
       error: (mensagem: any) => {

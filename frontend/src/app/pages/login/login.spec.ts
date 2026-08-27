@@ -4,6 +4,7 @@ import { LoginComponent } from './login';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../../security/auth.service';
+import { Router } from '@angular/router';
 import { vi, describe, beforeAll, beforeEach, it, expect } from 'vitest';
 import { of, throwError } from 'rxjs';
 
@@ -78,6 +79,25 @@ describe('LoginComponent', () => {
     component.loginForm.setValue({ email: 'user@test.com', password: 'errado' });
     component.onSubmit();
     expect(component.errorMessage()).toBe('E-mail ou senha inválidos.');
+    expect(component.isLoading()).toBe(false);
+  });
+
+  // MFA (SEC-02): senha correta não é suficiente com o 2º fator ativo — o backend só emitiu um
+  // cookie de pendência, a sessão real ainda não existe.
+  it('onSubmit com mfaRequired navega pra /mfa-verify sem gravar role/verified', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    localStorage.removeItem('role');
+    localStorage.removeItem('verified');
+
+    vi.spyOn(authService, 'login').mockReturnValue(
+      of({ mfaRequired: true, role: null, verified: false }) as any
+    );
+    component.loginForm.setValue({ email: 'mfa@test.com', password: '123456' });
+    component.onSubmit();
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/mfa-verify']);
+    expect(localStorage.getItem('role')).toBeNull();
     expect(component.isLoading()).toBe(false);
   });
 });

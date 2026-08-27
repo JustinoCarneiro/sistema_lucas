@@ -23,6 +23,7 @@ import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy';
 import { NpsAvaliacaoComponent } from './pages/nps-avaliacao/nps-avaliacao';
 import { WaitlistComponent } from './pages/waitlist/waitlist';
 import { WaitlistOfertaComponent } from './pages/waitlist-oferta/waitlist-oferta';
+import { MfaVerifyComponent } from './pages/mfa-verify/mfa-verify';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -34,6 +35,9 @@ export const routes: Routes = [
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'avaliar', component: NpsAvaliacaoComponent },
   { path: 'lista-espera/confirmar', component: WaitlistOfertaComponent },
+  // MFA (SEC-02): pré-sessão — sem authGuard (o usuário ainda não tem sessão nesse ponto, só o
+  // cookie mfa_pending_token curto emitido por /auth/login quando mfaEnabled=true).
+  { path: 'mfa-verify', component: MfaVerifyComponent },
   {
     path: 'panel',
     component: PanelComponent,
