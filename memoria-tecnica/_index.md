@@ -27,6 +27,8 @@ partir do código real, não escrito durante o desenvolvimento original.
 - [[unicidade-cadastro-inconsistente-entre-entry-points]]
 - [[teste-time-bomb-lembrete-scheduler]]
 - [[ci-workflows-bloqueados-falta-scope-workflow-no-pat]] — resolvido nesta mesma correção de metodologia
+- [[expiracao-jwt-15min-virava-3h15min-em-producao]] — timezone da JVM em prod (UTC) vs offset hardcoded no código
+- [[h2-nao-suporta-indice-unico-parcial-em-teste]] — trava real (índice parcial) nunca era testada
 
 ## Decisões
 - [[mfa-totp-fundacao-de-schema-sem-fluxo-ativo]]
