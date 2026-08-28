@@ -57,6 +57,13 @@ export class PanelComponent implements OnInit, OnDestroy {
         next: (res: any) => this.userName.set(res.name),
         error: () => this.userName.set('Paciente')
       });
+    } else if (this.userRole === 'TECNICO') {
+      this.userRoleLabel.set('Técnico');
+      // TECNICO não é Patient/Professional (sem /me próprio) — usa o endpoint genérico.
+      this.http.get<any>(`${environment.apiUrl}/auth/me`).subscribe({
+        next: (res) => this.userName.set(res.name),
+        error: () => this.userName.set('Técnico')
+      });
     } else {
       this.userRoleLabel.set('Admin');
       this.userName.set('Administrador');

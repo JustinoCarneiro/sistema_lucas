@@ -52,6 +52,16 @@ class PatientControllerTest {
     }
 
     @Test
+    @DisplayName("GET /patients — TECNICO recebe lista 200 (mesmo nível de acesso do ADMIN)")
+    void getAll_tecnico_retorna200() throws Exception {
+        when(patientService.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/patients")
+                .with(user("tecnico@test.com").roles("TECNICO")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("GET /patients/me — PATIENT recebe próprio perfil 200")
     void getMyProfile_patient_retorna200() throws Exception {
         when(patientService.getMyProfile("pac@test.com")).thenReturn(new Patient());

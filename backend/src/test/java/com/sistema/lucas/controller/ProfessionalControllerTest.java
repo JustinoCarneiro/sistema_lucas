@@ -57,6 +57,16 @@ class ProfessionalControllerTest {
     }
 
     @Test
+    @DisplayName("GET /professionals — TECNICO recebe lista 200 (mesmo nível de acesso do ADMIN)")
+    void getAll_tecnico_retorna200() throws Exception {
+        when(professionalService.findAll()).thenReturn(List.of(new Professional()));
+
+        mockMvc.perform(get("/professionals")
+                .with(user("tecnico@test.com").roles("TECNICO")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("POST /professionals — ADMIN cria profissional e recebe 201")
     void create_admin_retorna201() throws Exception {
         var dto = new ProfessionalCreateDTO("Dr. Novo", "novo@med.com", "senha123",

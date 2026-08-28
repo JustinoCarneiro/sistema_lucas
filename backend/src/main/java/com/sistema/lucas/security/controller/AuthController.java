@@ -192,7 +192,25 @@ public class AuthController {
         if (user == null) {
             return ResponseEntity.status(404).build();
         }
-        return ResponseEntity.ok(new com.sistema.lucas.security.dto.MeResponseDTO(user.getRole().name(), user.isMfaEnabled()));
+        return ResponseEntity.ok(new com.sistema.lucas.security.dto.MeResponseDTO(user.getName(), user.getRole().name(), user.isMfaEnabled()));
+    }
+
+    // Cria uma conta TECNICO (acesso técnico/operacional, mesmo nível do ADMIN em todo o
+    // sistema) — só um ADMIN já autenticado pode chamar isso (nunca autocadastro). Sem
+    // CPF/perfil clínico, é só um User puro, igual o ADMIN fundador criado pelo AdminInitializer.
+    @PostMapping("/registrar-tecnico")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> registrarTecnico(@RequestBody @jakarta.validation.Valid com.sistema.lucas.security.dto.RegisterTecnicoDTO data) {
+        if (userRepository.findByEmail(data.email()) != null) {
+            return ResponseEntity.badRequest().body("Email já cadastrado");
+        }
+
+        User tecnico = new User(data.email(), passwordEncoder.encode(data.password()), Role.TECNICO);
+        tecnico.setName(data.name());
+        tecnico.setVerified(true); // ADMIN já confirmou a identidade ao criar — sem fluxo de verificação por e-mail
+        userRepository.save(tecnico);
+
+        return ResponseEntity.status(201).body("Conta técnica criada com sucesso.");
     }
 
     @GetMapping("/verify")

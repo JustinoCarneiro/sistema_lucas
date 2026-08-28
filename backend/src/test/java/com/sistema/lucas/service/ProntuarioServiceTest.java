@@ -183,5 +183,17 @@ class ProntuarioServiceTest {
             assertEquals(1, resultado.size());
             verify(appointmentRepository, never()).existsByProfessionalEmailAndPatientId(any(), any());
         }
+
+        @Test @DisplayName("getByPatientId permite TECNICO ver qualquer paciente sem checar vínculo (mesmo nível do ADMIN)")
+        void getByPatientId_tecnico_naoChecaVinculo() {
+            var tecnico = new User(); tecnico.setEmail("tecnico@test.com"); tecnico.setRole(Role.TECNICO);
+            when(userRepository.findByEmail("tecnico@test.com")).thenReturn(tecnico);
+            when(prontuarioRepository.findByPatientIdOrderByCriadoEmDesc(1L)).thenReturn(List.of(new Prontuario()));
+
+            var resultado = prontuarioService.getByPatientId(1L, "tecnico@test.com");
+
+            assertEquals(1, resultado.size());
+            verify(appointmentRepository, never()).existsByProfessionalEmailAndPatientId(any(), any());
+        }
     }
 }

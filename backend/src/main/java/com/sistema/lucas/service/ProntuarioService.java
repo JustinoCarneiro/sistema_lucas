@@ -28,10 +28,10 @@ public class ProntuarioService {
     @Autowired private NpsService npsService;
 
     public List<Prontuario> getByPatientId(Long patientId, String userEmail) {
-        // ADMIN vê qualquer paciente; PROFESSIONAL só pode ver prontuário de paciente que já
-        // atendeu — evita acesso irrestrito a histórico clínico de terceiros (IDOR).
+        // ADMIN/TECNICO vê qualquer paciente; PROFESSIONAL só pode ver prontuário de paciente que
+        // já atendeu — evita acesso irrestrito a histórico clínico de terceiros (IDOR).
         var solicitante = userRepository.findByEmail(userEmail);
-        boolean isAdmin = solicitante != null && solicitante.getRole() == Role.ADMIN;
+        boolean isAdmin = solicitante != null && (solicitante.getRole() == Role.ADMIN || solicitante.getRole() == Role.TECNICO);
         if (!isAdmin && !appointmentRepository.existsByProfessionalEmailAndPatientId(userEmail, patientId)) {
             throw new RuntimeException("Operação de Segurança: Acesso negado. Você nunca atendeu este paciente.");
         }

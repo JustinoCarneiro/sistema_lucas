@@ -32,7 +32,7 @@ public class DashboardController {
     @Autowired private AuditLogService auditLogService;
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<Map<String, Object>> dashboardAdmin(Principal principal) {
         auditLogService.log(principal.getName(), "VISUALIZACAO", "Dashboard", null, "Acessou dashboard administrativo");
         Map<String, Object> dados = new LinkedHashMap<>();

@@ -66,6 +66,17 @@ class DashboardControllerTest {
     }
 
     @Test
+    @DisplayName("GET /dashboard/admin — TECNICO recebe 200 (mesmo nível de acesso do ADMIN)")
+    void dashboardAdmin_tecnico_retorna200() throws Exception {
+        when(appointmentRepository.countByDateRange(any(), any())).thenReturn(List.of());
+        when(appointmentRepository.countByStatus(any(StatusConsulta.class))).thenReturn(0L);
+
+        mockMvc.perform(get("/dashboard/admin")
+                .with(user("tecnico@test.com").roles("TECNICO")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("GET /dashboard/profissional — PROFESSIONAL recebe 200 com campo consultasAtrasadas")
     void dashboardProfissional_professional_retorna200ComAtrasadas() throws Exception {
         when(appointmentRepository.findTodayAppointmentsByProfessionalEmail(anyString())).thenReturn(List.of());

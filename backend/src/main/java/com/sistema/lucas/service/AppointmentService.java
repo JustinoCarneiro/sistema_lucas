@@ -67,11 +67,13 @@ public class AppointmentService {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
 
-        // 🛡️ Segurança (IDOR): paciente logado, o médico logado, ou ADMIN (mesmo bypass já usado
-        // em ProntuarioService.getByPatientId — suporte/auditoria precisa conseguir ver qualquer
-        // consulta, sem precisar ser o paciente/profissional dela).
+        // 🛡️ Segurança (IDOR): paciente logado, o médico logado, ou ADMIN/TECNICO (mesmo bypass já
+        // usado em ProntuarioService.getByPatientId — suporte/auditoria precisa conseguir ver
+        // qualquer consulta, sem precisar ser o paciente/profissional dela).
         var solicitante = userRepository.findByEmail(email);
-        boolean isAdmin = solicitante != null && solicitante.getRole() == com.sistema.lucas.model.enums.Role.ADMIN;
+        boolean isAdmin = solicitante != null &&
+            (solicitante.getRole() == com.sistema.lucas.model.enums.Role.ADMIN
+                || solicitante.getRole() == com.sistema.lucas.model.enums.Role.TECNICO);
         if (!isAdmin && !consulta.getPatient().getEmail().equals(email) && !consulta.getProfessional().getEmail().equals(email)) {
             throw new RuntimeException("Operação de Segurança: Acesso negado (IDOR). Você não pode vasculhar informações de terceiros.");
         }
@@ -150,10 +152,12 @@ public class AppointmentService {
         var consulta = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
             
-        // 🛡️ Segurança (IDOR) - Permitir Paciente, Profissional ou ADMIN
+        // 🛡️ Segurança (IDOR) - Permitir Paciente, Profissional ou ADMIN/TECNICO
         var usuarioAcao = userRepository.findByEmail(email);
         boolean isOwner = consulta.getPatient().getEmail().equals(email) || consulta.getProfessional().getEmail().equals(email);
-        boolean isAdmin = usuarioAcao != null && usuarioAcao.getRole() == com.sistema.lucas.model.enums.Role.ADMIN;
+        boolean isAdmin = usuarioAcao != null &&
+            (usuarioAcao.getRole() == com.sistema.lucas.model.enums.Role.ADMIN
+                || usuarioAcao.getRole() == com.sistema.lucas.model.enums.Role.TECNICO);
 
         if (!isOwner && !isAdmin) {
             throw new RuntimeException("Operação de Segurança: Tentativa de cancelamento malicioso bloqueada.");

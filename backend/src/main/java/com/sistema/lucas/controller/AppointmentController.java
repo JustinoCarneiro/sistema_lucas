@@ -32,14 +32,14 @@ public class AppointmentController {
 
     // Admin — somente leitura
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<List<AppointmentResponseDTO>> listarTodas(Principal principal) {
         auditLogService.log(principal.getName(), "VISUALIZACAO_LISTA", "Appointment", null, "Listou todas as consultas do sistema");
         return ResponseEntity.ok(service.findAll());
     }
 
     @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasRole('PATIENT') or hasRole('PROFESSIONAL') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PATIENT') or hasRole('PROFESSIONAL') or hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<Void> cancelar(@PathVariable Long id, @RequestBody @Valid AppointmentCancelDTO dto, Principal principal) {
         service.cancelar(java.util.Objects.requireNonNull(id), principal.getName(), dto.justification());
         return ResponseEntity.noContent().build();

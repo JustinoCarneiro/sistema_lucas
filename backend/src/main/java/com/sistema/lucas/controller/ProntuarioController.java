@@ -19,7 +19,7 @@ public class ProntuarioController {
     @Autowired private ProntuarioService service;
 
     @GetMapping("/paciente/{patientId}")
-    @PreAuthorize("hasAnyRole('PROFESSIONAL', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('PROFESSIONAL', 'ADMIN', 'TECNICO')")
     public ResponseEntity<List<ProntuarioResponseDTO>> getByPaciente(@PathVariable Long patientId, Principal principal) {
         return ResponseEntity.ok(
             service.getByPatientId(patientId, principal.getName())

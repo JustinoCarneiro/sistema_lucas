@@ -22,7 +22,7 @@ public class PatientController {
     @Autowired private AuditLogService auditLogService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSIONAL', 'TECNICO')")
     public ResponseEntity<List<PatientResponseDTO>> getAll(Principal principal) {
         auditLogService.log(principal.getName(), "VISUALIZACAO_LISTA", "Patient", null, "Listou pacientes");
         // ADMIN vê todos; PROFESSIONAL só os pacientes que já atendeu (ver PatientService).
@@ -57,7 +57,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<Void> delete(@PathVariable Long id, Principal principal) {
         auditLogService.log(principal.getName(), "EXCLUSAO", "Patient", id, "Admin excluiu paciente ID: " + id);
         service.delete(java.util.Objects.requireNonNull(id));
@@ -65,7 +65,7 @@ public class PatientController {
     }
 
     @PatchMapping("/{id}/desbloquear")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<String> desbloquear(@PathVariable Long id, Principal principal) {
         service.desbloquear(java.util.Objects.requireNonNull(id));
         auditLogService.log(principal.getName(), "DESBLOQUEIO", "Patient", id, "Admin desbloqueou agendamentos para o paciente ID: " + id);

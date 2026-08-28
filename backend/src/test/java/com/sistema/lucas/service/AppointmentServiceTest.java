@@ -695,6 +695,16 @@ class AppointmentServiceTest {
             assertDoesNotThrow(() -> appointmentService.buscarPorId(9L, "admin@test.com"));
         }
 
+        @Test @DisplayName("TECNICO pode ver qualquer consulta (mesmo nível de acesso do ADMIN)")
+        void tecnicoPodeVerQualquerConsulta() {
+            when(appointmentRepository.findById(9L)).thenReturn(Optional.of(consultaValida()));
+            var tecnico = new com.sistema.lucas.model.User();
+            tecnico.setEmail("tecnico@test.com"); tecnico.setRole(com.sistema.lucas.model.enums.Role.TECNICO);
+            when(userRepository.findByEmail("tecnico@test.com")).thenReturn(tecnico);
+
+            assertDoesNotThrow(() -> appointmentService.buscarPorId(9L, "tecnico@test.com"));
+        }
+
         @Test @DisplayName("Terceiro sem vínculo (nem paciente, nem profissional, nem ADMIN) é rejeitado (IDOR)")
         void terceiroSemVinculoLancaExcecao() {
             when(appointmentRepository.findById(9L)).thenReturn(Optional.of(consultaValida()));

@@ -16,7 +16,9 @@ Plataforma de prontuário eletrônico e agendamento de consultas, com forte foco
 > ✅ **Divergência de versão reconciliada (27/08/2026):** o `Dockerfile` sempre rodou JDK 21 em produção (`eclipse-temurin:21-jdk-alpine`, build e runtime); só o `pom.xml` mirava bytecode 17 (`<java.version>`/`<release>` desatualizados). `.cursorrules` e `README.md` já diziam 21 corretamente — eram eles que refletiam a intenção real, não o `pom.xml`. Alinhado o `pom.xml` pra 21 (zero risco de runtime, já era o JDK do container) — suíte de backend inteira (164 testes) rodou verde no novo alvo antes de commitar.
 
 ## Perfil de projeto
-Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, **PATIENT** · dado sensível de saúde, alto peso de conformidade LGPD.
+Sistema interno (clínica/consultório) · perfis **ADMIN**, **PROFESSIONAL**, **PATIENT**, **TECNICO** · dado sensível de saúde, alto peso de conformidade LGPD.
+
+> **TECNICO** (adicionado 27/08/2026): acesso técnico/operacional, **mesmo nível de permissão do ADMIN** em todo o sistema (não é um perfil restrito/read-only) — só uma conta separada da administração real da clínica. Criado exclusivamente via `POST /auth/registrar-tecnico` (`@PreAuthorize("hasRole('ADMIN')")`, nunca autocadastro). Todo `@PreAuthorize`/checagem de código que aceita ADMIN também aceita TECNICO (ver `Role.java` e os controllers/services correspondentes) — tela própria em `/panel/seguranca` (não usa `/panel/my-profile`, que é só de PROFESSIONAL/PATIENT).
 
 ## Princípios (não-funcionais críticos)
 - **Toda leitura/escrita de dado sensível é auditada** (`AuditLogService` — `audit_logs`).

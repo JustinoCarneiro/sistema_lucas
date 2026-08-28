@@ -22,7 +22,7 @@ public class ExportController {
     private final AuditLogService auditLogService;
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<String> exportAdmin(Principal principal) {
         auditLogService.log(principal.getName(), "EXPORTACAO", "Sistema", null, "Exportou relatório gerencial (Admin)");
         String csv = exportService.exportAdminData();
@@ -49,7 +49,7 @@ public class ExportController {
     }
 
     @GetMapping("/patients")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<String> exportPatients(Principal principal) {
         auditLogService.log(principal.getName(), "EXPORTACAO", "Pacientes", null, "Exportou lista completa de pacientes");
         String csv = exportService.exportPatientsData();
@@ -57,7 +57,7 @@ public class ExportController {
     }
 
     @GetMapping("/professionals")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<String> exportProfessionals(Principal principal) {
         auditLogService.log(principal.getName(), "EXPORTACAO", "Profissionais", null, "Exportou lista completa de profissionais");
         String csv = exportService.exportProfessionalsData();

@@ -48,9 +48,9 @@ export const routes: Routes = [
       // qualquer usuário autenticado — o backend (@PreAuthorize) já barrava a chamada de API,
       // mas o componente chegava a renderizar num estado quebrado antes de falhar. roleGuard
       // fecha essa segunda camada, redirecionando pro dashboard antes de montar a tela.
-      { path: 'professionals', component: ProfessionalsComponent, canActivate: [roleGuard(['ADMIN'])] },
-      { path: 'patients', component: Patients, canActivate: [roleGuard(['ADMIN'])] },
-      { path: 'appointments', component: Appointments, canActivate: [roleGuard(['ADMIN'])] },
+      { path: 'professionals', component: ProfessionalsComponent, canActivate: [roleGuard(['ADMIN', 'TECNICO'])] },
+      { path: 'patients', component: Patients, canActivate: [roleGuard(['ADMIN', 'TECNICO'])] },
+      { path: 'appointments', component: Appointments, canActivate: [roleGuard(['ADMIN', 'TECNICO'])] },
       { path: 'my-appointments', component: MyAppointmentsComponent, canActivate: [roleGuard(['PATIENT'])] },
       { path: 'my-documents', component: MyDocumentsComponent, canActivate: [roleGuard(['PATIENT'])] },
       { path: 'waitlist', component: WaitlistComponent, canActivate: [roleGuard(['PATIENT'])] },
@@ -60,11 +60,11 @@ export const routes: Routes = [
       // ADMIN também pode ver o histórico (backend: GET /prontuarios/paciente/{id} aceita
       // ADMIN e PROFESSIONAL) — só a criação de prontuário (POST) é exclusiva do profissional
       // dono da consulta, e isso já é garantido pelo backend independente do que o front mostra.
-      { path: 'medical-record/:id', component: MedicalRecordComponent, canActivate: [roleGuard(['PROFESSIONAL', 'ADMIN'])] },
+      { path: 'medical-record/:id', component: MedicalRecordComponent, canActivate: [roleGuard(['PROFESSIONAL', 'ADMIN', 'TECNICO'])] },
       { path: 'my-profile', component: MyProfileComponent, canActivate: [roleGuard(['PROFESSIONAL', 'PATIENT'])] },
       // ADMIN não tem "meu perfil" nesse sistema — esta tela existe só pra ele conseguir
       // gerenciar o próprio MFA (mesmo <app-mfa-settings> usado dentro de my-profile).
-      { path: 'seguranca', component: SecuritySettingsComponent, canActivate: [roleGuard(['ADMIN'])] },
+      { path: 'seguranca', component: SecuritySettingsComponent, canActivate: [roleGuard(['ADMIN', 'TECNICO'])] },
       // dashboard renderiza conteúdo diferente por role internamente — sem restrição de guard.
       { path: 'dashboard', component: DashboardComponent }
     ]

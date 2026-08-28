@@ -65,6 +65,46 @@ class AuthControllerTest {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().is4xxClientError());
     }
 
+    // POST /auth/registrar-tecnico — acesso técnico/operacional, mesmo nível do ADMIN, mas conta
+    // separada. Só um ADMIN já autenticado pode criar (nunca autocadastro).
+    @Test
+    void registrarTecnico_admin_criaComSucesso() throws Exception {
+        var dto = new com.sistema.lucas.security.dto.RegisterTecnicoDTO("Fulano Técnico", "tecnico@test.com", "senha123");
+        org.mockito.Mockito.when(userRepository.findByEmail("tecnico@test.com")).thenReturn(null);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/registrar-tecnico")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin@test.com").roles("ADMIN"))
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated());
+
+        org.mockito.Mockito.verify(userRepository).save(org.mockito.ArgumentMatchers.argThat(u ->
+            ((com.sistema.lucas.model.User) u).getRole() == com.sistema.lucas.model.enums.Role.TECNICO));
+    }
+
+    @Test
+    void registrarTecnico_naoAdmin_retornaProibido() throws Exception {
+        var dto = new com.sistema.lucas.security.dto.RegisterTecnicoDTO("Fulano Técnico", "tecnico2@test.com", "senha123");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/registrar-tecnico")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("prof@test.com").roles("PROFESSIONAL"))
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
+    }
+
+    @Test
+    void registrarTecnico_emailJaCadastrado_retornaBadRequest() throws Exception {
+        var dto = new com.sistema.lucas.security.dto.RegisterTecnicoDTO("Fulano Técnico", "jaexiste@test.com", "senha123");
+        org.mockito.Mockito.when(userRepository.findByEmail("jaexiste@test.com")).thenReturn(new com.sistema.lucas.model.User());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/registrar-tecnico")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin@test.com").roles("ADMIN"))
+                .contentType(java.util.Objects.requireNonNull(org.springframework.http.MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(objectMapper.writeValueAsString(dto))))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+    }
+
     // MFA (SEC-02): com mfaEnabled=true, o login NUNCA deve emitir o cookie de sessão "token" —
     // só o cookie curto "mfa_pending_token", que SecurityFilter não reconhece como sessão válida.
     @Test

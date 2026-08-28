@@ -23,7 +23,7 @@ export class DashboardComponent implements OnInit {
 
   exportar(tipo?: string) {
     const role = this.userRole();
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'TECNICO') {
       if (tipo === 'patients') this.exportService.exportPatients();
       else if (tipo === 'professionals') this.exportService.exportProfessionals();
       else this.exportService.exportAdmin();
@@ -66,7 +66,7 @@ export class DashboardComponent implements OnInit {
   carregarDados() {
     this.isLoading.set(true);
     const role = this.userRole();
-    const req = role === 'ADMIN'
+    const req = (role === 'ADMIN' || role === 'TECNICO')
       ? this.dashboardService.getAdminDashboard()
       : role === 'PROFESSIONAL'
         ? this.dashboardService.getProfissionalDashboard()

@@ -26,7 +26,7 @@ public class ProfessionalController {
     // GET /disponibilidade/profissionais-disponiveis, que já devolve só id/nome/especialidade/
     // modalidade, sem CPF/telefone/endereço/data de nascimento — este aqui devolve tudo.
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<List<ProfessionalResponseDTO>> getAll() {
         return ResponseEntity.ok(
             service.findAll().stream().map(ProfessionalResponseDTO::new).toList()
@@ -52,7 +52,7 @@ public class ProfessionalController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<String> create(@RequestBody @Valid ProfessionalCreateDTO dto, Principal principal) {
         service.create(dto);
         auditLogService.log(principal.getName(), "CRIACAO", "Professional", null, "Cadastrou profissional: " + dto.email());
@@ -60,7 +60,7 @@ public class ProfessionalController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<String> update(
             @PathVariable Long id,
             @RequestBody @Valid ProfessionalCreateDTO dto,
@@ -71,7 +71,7 @@ public class ProfessionalController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<Void> delete(@PathVariable Long id, Principal principal) {
         auditLogService.log(principal.getName(), "EXCLUSAO", "Professional", id, "Excluiu profissional ID: " + id);
         service.delete(java.util.Objects.requireNonNull(id));
@@ -79,7 +79,7 @@ public class ProfessionalController {
     }
 
     @DeleteMapping("/force/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<Void> forceDelete(@PathVariable Long id, Principal principal) {
         auditLogService.log(principal.getName(), "EXCLUSAO_CASCATA", "Professional", id, "Exclusão forçada (cascata) do profissional ID: " + id);
         service.forceDelete(java.util.Objects.requireNonNull(id));
