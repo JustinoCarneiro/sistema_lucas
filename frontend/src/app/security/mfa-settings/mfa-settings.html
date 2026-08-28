@@ -1,0 +1,99 @@
+<!-- frontend/src/app/security/mfa-settings/mfa-settings.html -->
+<div *ngIf="!isLoading()">
+  <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Verificação em duas etapas</h3>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+    Exige um código do seu aplicativo autenticador (Google Authenticator, Authy etc.) além da senha, a cada login.
+  </p>
+
+  <!-- Estado: MFA já ativo -->
+  <div *ngIf="mfaEnabled() && !mfaSetupData()" class="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+    <span class="text-sm font-semibold text-green-700 dark:text-green-400">✅ Ativado</span>
+    <button (click)="openDisableMfaModal()" class="text-sm font-bold text-red-600 dark:text-red-400 hover:underline">
+      Desativar
+    </button>
+  </div>
+
+  <!-- Estado: MFA inativo, sem setup em andamento -->
+  <button *ngIf="!mfaEnabled() && !mfaSetupData()" (click)="iniciarSetupMfa()" [disabled]="mfaIsBusy()"
+    class="w-full bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-bold py-3 rounded-xl transition shadow-sm border border-slate-300 dark:border-gray-600 disabled:opacity-50">
+    {{ mfaIsBusy() ? 'Gerando...' : '🔐 Ativar verificação em duas etapas' }}
+  </button>
+
+  <!-- Setup em andamento: QR code + confirmação -->
+  <div *ngIf="mfaSetupData()" class="p-4 bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700 rounded-xl space-y-4">
+    <p class="text-sm text-gray-700 dark:text-gray-300">
+      Escaneie o QR code com seu aplicativo autenticador, ou digite o código manualmente:
+    </p>
+    <div class="flex justify-center">
+      <img *ngIf="mfaQrCodeDataUrl()" [src]="mfaQrCodeDataUrl()" alt="QR code de configuração do MFA" class="rounded-lg border border-gray-200 dark:border-gray-600">
+    </div>
+    <p class="text-xs text-center font-mono bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg py-2 px-3 break-all">
+      {{ mfaSetupData()?.secretBase32 }}
+    </p>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código do aplicativo</label>
+      <input type="text" [(ngModel)]="mfaEnableCode" inputmode="numeric" maxlength="6" placeholder="000000"
+        class="w-full px-4 py-2 text-center tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition">
+    </div>
+    <div class="flex gap-3">
+      <button (click)="cancelarSetupMfa()" class="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-bold text-sm">
+        Cancelar
+      </button>
+      <button (click)="confirmarAtivacaoMfa()" [disabled]="mfaIsBusy()"
+        class="flex-1 py-2.5 rounded-xl bg-blue-900 dark:bg-blue-700 text-white hover:bg-blue-800 dark:hover:bg-blue-600 transition font-bold text-sm disabled:opacity-50">
+        {{ mfaIsBusy() ? 'Confirmando...' : 'Confirmar e ativar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Códigos de backup do MFA (mostrados só uma vez) -->
+<div *ngIf="mfaBackupCodes()" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-xl border border-gray-100 dark:border-gray-700">
+    <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center">Códigos de backup</h3>
+    <p class="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4 text-center">
+      ⚠️ Salve estes códigos agora — cada um funciona uma única vez, pra caso você perca acesso ao seu aplicativo autenticador. Eles não vão aparecer de novo.
+    </p>
+    <div class="grid grid-cols-2 gap-2 font-mono text-sm mb-6">
+      <div *ngFor="let code of mfaBackupCodes()" class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg py-2 text-center">
+        {{ code }}
+      </div>
+    </div>
+    <button (click)="fecharBackupCodes()"
+      class="w-full py-3 rounded-xl bg-blue-900 dark:bg-blue-700 text-white hover:bg-blue-800 dark:hover:bg-blue-600 transition font-bold shadow-md">
+      Já salvei meus códigos
+    </button>
+  </div>
+</div>
+
+<!-- Modal: Desativar MFA -->
+<div *ngIf="showDisableMfaModal()" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-xl border border-gray-100 dark:border-gray-700">
+    <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Desativar verificação em duas etapas</h3>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sua senha</label>
+        <input type="password" [(ngModel)]="disableMfaPassword" placeholder="••••••••"
+          class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código do aplicativo (ou de backup)</label>
+        <input type="text" [(ngModel)]="disableMfaCode" placeholder="000000"
+          class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition">
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Ao desativar, todas as suas sessões ativas serão encerradas por segurança.</p>
+    </div>
+
+    <div class="mt-8 flex gap-3">
+      <button (click)="closeDisableMfaModal()"
+        class="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-bold">
+        Cancelar
+      </button>
+      <button (click)="confirmarDesativacaoMfa()" [disabled]="mfaIsBusy()"
+        class="flex-1 py-3 rounded-xl bg-red-600 text-white hover:bg-red-700 transition font-bold disabled:opacity-50 shadow-md">
+        {{ mfaIsBusy() ? 'Desativando...' : 'Desativar' }}
+      </button>
+    </div>
+  </div>
+</div>

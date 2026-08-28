@@ -184,6 +184,17 @@ public class AuthController {
         return ResponseEntity.status(201).body("Paciente registrado com sucesso! Verifique seu e-mail para confirmar a conta.");
     }
 
+    // Dado mínimo do usuário logado, pra QUALQUER role (inclusive ADMIN, que não é Patient nem
+    // Professional e por isso não tem /me próprio) — hoje só alimenta a tela de Segurança (MFA).
+    @GetMapping("/me")
+    public ResponseEntity<com.sistema.lucas.security.dto.MeResponseDTO> me(java.security.Principal principal) {
+        User user = userRepository.findByEmail(principal.getName());
+        if (user == null) {
+            return ResponseEntity.status(404).build();
+        }
+        return ResponseEntity.ok(new com.sistema.lucas.security.dto.MeResponseDTO(user.getRole().name(), user.isMfaEnabled()));
+    }
+
     @GetMapping("/verify")
     public ResponseEntity<String> verify(@RequestParam("token") String token) {
         String result = emailVerificationService.verifyToken(token);

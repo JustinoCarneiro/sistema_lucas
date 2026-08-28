@@ -3,20 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyProfileComponent } from './my-profile';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { MfaService } from '../../security/mfa.service';
-import { AuthService } from '../../security/auth.service';
-import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
-import { of, throwError } from 'rxjs';
-
-vi.mock('qrcode', () => ({
-  toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,fake')
-}));
+import { describe, beforeEach, afterEach, it, expect } from 'vitest';
 
 describe('MyProfileComponent', () => {
   let component: MyProfileComponent;
   let fixture: ComponentFixture<MyProfileComponent>;
-  let mfaService: MfaService;
-  let authService: AuthService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -26,8 +17,6 @@ describe('MyProfileComponent', () => {
 
     fixture = TestBed.createComponent(MyProfileComponent);
     component = fixture.componentInstance;
-    mfaService = TestBed.inject(MfaService);
-    authService = TestBed.inject(AuthService);
     fixture.detectChanges();
   });
 
@@ -130,105 +119,5 @@ describe('MyProfileComponent', () => {
     component.showPasswordModal.set(true);
     component.closePasswordModal();
     expect(component.showPasswordModal()).toBe(false);
-  });
-
-  // --- MFA (SEC-02) ---
-
-  it('iniciarSetupMfa popula mfaSetupData e renderiza o QR code', async () => {
-    vi.spyOn(mfaService, 'setup').mockReturnValue(
-      of({ secretBase32: 'SECRET', otpAuthUri: 'otpauth://totp/x' }) as any
-    );
-
-    component.iniciarSetupMfa();
-    await new Promise(resolve => setTimeout(resolve, 0)); // aguarda o await interno do QRCode
-
-    expect(component.mfaSetupData()).toEqual({ secretBase32: 'SECRET', otpAuthUri: 'otpauth://totp/x' });
-    expect(component.mfaQrCodeDataUrl()).toBe('data:image/png;base64,fake');
-    expect(component.mfaIsBusy()).toBe(false);
-  });
-
-  it('cancelarSetupMfa limpa o estado de setup', () => {
-    component.mfaSetupData.set({ secretBase32: 'S', otpAuthUri: 'x' });
-    component.mfaQrCodeDataUrl.set('data:x');
-    component.mfaEnableCode = '123456';
-
-    component.cancelarSetupMfa();
-
-    expect(component.mfaSetupData()).toBeNull();
-    expect(component.mfaQrCodeDataUrl()).toBe('');
-    expect(component.mfaEnableCode).toBe('');
-  });
-
-  it('confirmarAtivacaoMfa sem código define erro e não chama o serviço', () => {
-    const enableSpy = vi.spyOn(mfaService, 'enable');
-    component.mfaEnableCode = '';
-    component.confirmarAtivacaoMfa();
-    expect(enableSpy).not.toHaveBeenCalled();
-  });
-
-  it('confirmarAtivacaoMfa com sucesso mostra os backup codes e marca mfaEnabled', () => {
-    component.profile.set({ mfaEnabled: false });
-    vi.spyOn(mfaService, 'enable').mockReturnValue(of({ backupCodes: ['AAA', 'BBB'] }) as any);
-
-    component.mfaEnableCode = '123456';
-    component.confirmarAtivacaoMfa();
-
-    expect(component.mfaBackupCodes()).toEqual(['AAA', 'BBB']);
-    expect(component.profile().mfaEnabled).toBe(true);
-    expect(component.mfaSetupData()).toBeNull();
-  });
-
-  it('confirmarAtivacaoMfa com código inválido não altera mfaEnabled', () => {
-    component.profile.set({ mfaEnabled: false });
-    vi.spyOn(mfaService, 'enable').mockReturnValue(throwError(() => 'Código inválido.'));
-
-    component.mfaEnableCode = '000000';
-    component.confirmarAtivacaoMfa();
-
-    expect(component.profile().mfaEnabled).toBe(false);
-    expect(component.mfaIsBusy()).toBe(false);
-  });
-
-  it('fecharBackupCodes limpa os códigos', () => {
-    component.mfaBackupCodes.set(['AAA']);
-    component.fecharBackupCodes();
-    expect(component.mfaBackupCodes()).toBeNull();
-  });
-
-  it('openDisableMfaModal abre o modal e limpa campos', () => {
-    component.disableMfaPassword = 'antiga';
-    component.disableMfaCode = '111111';
-    component.openDisableMfaModal();
-    expect(component.showDisableMfaModal()).toBe(true);
-    expect(component.disableMfaPassword).toBe('');
-    expect(component.disableMfaCode).toBe('');
-  });
-
-  it('closeDisableMfaModal fecha o modal', () => {
-    component.showDisableMfaModal.set(true);
-    component.closeDisableMfaModal();
-    expect(component.showDisableMfaModal()).toBe(false);
-  });
-
-  it('confirmarDesativacaoMfa sem senha/código define erro e não chama o serviço', () => {
-    const disableSpy = vi.spyOn(mfaService, 'disable');
-    component.disableMfaPassword = '';
-    component.disableMfaCode = '';
-    component.confirmarDesativacaoMfa();
-    expect(disableSpy).not.toHaveBeenCalled();
-  });
-
-  it('confirmarDesativacaoMfa com sucesso desmarca mfaEnabled e desloga', () => {
-    component.profile.set({ mfaEnabled: true });
-    vi.spyOn(mfaService, 'disable').mockReturnValue(of({}) as any);
-    const logoutSpy = vi.spyOn(authService, 'logout').mockImplementation(() => {});
-
-    component.disableMfaPassword = 'senha123';
-    component.disableMfaCode = '123456';
-    component.confirmarDesativacaoMfa();
-
-    expect(component.profile().mfaEnabled).toBe(false);
-    expect(component.showDisableMfaModal()).toBe(false);
-    expect(logoutSpy).toHaveBeenCalled();
   });
 });

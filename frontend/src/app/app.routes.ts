@@ -12,6 +12,7 @@ import { MyAppointmentsComponent } from './pages/my-appointments/my-appointments
 import { MyDocumentsComponent } from './pages/my-documents/my-documents';
 import { DocumentManagementComponent } from './pages/document-management/document-management';
 import { MyProfileComponent } from './pages/my-profile/my-profile';
+import { SecuritySettingsComponent } from './pages/security-settings/security-settings';
 import { ProfessionalAppointmentsComponent } from './pages/professional-appointments/professional-appointments';
 import { MedicalRecordComponent } from './pages/medical-record/medical-record';
 import { DashboardComponent } from './pages/dashboard/dashboard'; 
@@ -61,6 +62,9 @@ export const routes: Routes = [
       // dono da consulta, e isso já é garantido pelo backend independente do que o front mostra.
       { path: 'medical-record/:id', component: MedicalRecordComponent, canActivate: [roleGuard(['PROFESSIONAL', 'ADMIN'])] },
       { path: 'my-profile', component: MyProfileComponent, canActivate: [roleGuard(['PROFESSIONAL', 'PATIENT'])] },
+      // ADMIN não tem "meu perfil" nesse sistema — esta tela existe só pra ele conseguir
+      // gerenciar o próprio MFA (mesmo <app-mfa-settings> usado dentro de my-profile).
+      { path: 'seguranca', component: SecuritySettingsComponent, canActivate: [roleGuard(['ADMIN'])] },
       // dashboard renderiza conteúdo diferente por role internamente — sem restrição de guard.
       { path: 'dashboard', component: DashboardComponent }
     ]

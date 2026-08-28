@@ -37,7 +37,32 @@ class AuthControllerTest {
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(java.util.Objects.requireNonNull(context)).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(java.util.Objects.requireNonNull(context))
+            .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
+            .build();
+    }
+
+    // GET /auth/me — dado mínimo do usuário logado, pra QUALQUER role (ADMIN incluso, que não
+    // tem /me em Patient/Professional). Alimenta a tela de Segurança (MFA) do ADMIN.
+    @Test
+    void me_autenticado_retornaRoleEMfaEnabled() throws Exception {
+        var admin = new com.sistema.lucas.model.User();
+        admin.setEmail("admin@test.com");
+        admin.setRole(com.sistema.lucas.model.enums.Role.ADMIN);
+        admin.setMfaEnabled(true);
+        org.mockito.Mockito.when(userRepository.findByEmail("admin@test.com")).thenReturn(admin);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/auth/me")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin@test.com").roles("ADMIN")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.role").value("ADMIN"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.mfaEnabled").value(true));
+    }
+
+    @Test
+    void me_semAutenticacao_retornaNaoAutorizado() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/auth/me"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().is4xxClientError());
     }
 
     // MFA (SEC-02): com mfaEnabled=true, o login NUNCA deve emitir o cookie de sessão "token" —
