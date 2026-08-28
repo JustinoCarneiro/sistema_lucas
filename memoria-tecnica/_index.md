@@ -31,6 +31,7 @@ partir do código real, não escrito durante o desenvolvimento original.
 - [[h2-nao-suporta-indice-unico-parcial-em-teste]] — trava real (índice parcial) nunca era testada
 - [[jira-team-managed-endpoints-bloqueados]] — campo→layout é gap real de API; delete de issue era falta de papel atribuído, não limitação de plataforma
 - [[deploy-crash-loop-v20-dado-legado-duplicado]] — primeiro deploy em 6 semanas caiu em crash loop; rsync sem --delete mascarou a 1ª tentativa de correção
+- [[ci-backend-hibernate-postinitcallback-so-no-runner]] — CI do backend falha só no GitHub Actions (Hibernate SQM), não reproduz local; aberto, não investigado a fundo
 
 ## Decisões
 - [[mfa-totp-fundacao-de-schema-sem-fluxo-ativo]] — superada 27/08/2026, MFA implementado
