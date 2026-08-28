@@ -152,7 +152,25 @@ public class WaitlistService {
 
     // Chamado (via self., nunca this. — ver nota acima) pelo listener de cancelamento e por
     // expirarOfertasVencidas() (vaga não confirmada a tempo — cascata pro próximo da fila).
-    @Transactional
+    //
+    // REQUIRES_NEW (bug real encontrado em produção 28/08/2026, ver
+    // memoria-tecnica/bugs/waitlist-oferta-nao-persistia-after-commit.md): com propagação
+    // REQUIRED (o padrão), esse método — chamado via self. de dentro de um
+    // @TransactionalEventListener(AFTER_COMMIT), portanto na MESMA thread da requisição HTTP
+    // original — acabava "participando" do EntityManager que o Open-in-View já tinha deixado
+    // aberto (e vinculado à thread) pra essa requisição, mesmo depois da transação original de
+    // cancelar() já ter comitado. TransactionSynchronizationManager.isActualTransactionActive()
+    // reportava true, mas o flush() de verdade falhava com "no transaction is in progress" — a
+    // Appointment/WaitlistEntry nunca eram persistidas, SEM lançar exceção nenhuma até o flush
+    // (que só acontecia no commit implícito, tarde demais pro catch de aoCancelarConsulta pegar
+    // qualquer coisa de útil). Os e-mails de notificação, por serem @Async (fire-and-forget),
+    // disparavam normalmente antes disso — só esse detalhe é que expôs o bug (via
+    // /panel/logs, ver [[painel-de-logs-do-sistema]]), porque o resto do fluxo parecia ter dado
+    // certo. REQUIRES_NEW força o Spring a suspender esse recurso preso e abrir uma
+    // EntityManager/transação genuinamente nova — mesmo racional de
+    // cancelarPorExpiracaoDeOferta (AppointmentService), só que por um motivo diferente ali
+    // (isolar falhas de um loop de scheduler).
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void ofertarProximoDaFila(Long professionalId, LocalDateTime dateTime) {
         Optional<WaitlistEntry> proximo = waitlistEntryRepository
             .findFirstByProfessionalIdAndDateTimeAndStatusOrderByCriadoEmAsc(professionalId, dateTime, WaitlistStatus.AGUARDANDO);
@@ -189,7 +207,7 @@ public class WaitlistService {
             var appointment = new Appointment(
                 entry.getProfessional(), paciente, dateTime,
                 "Vaga da lista de espera", StatusConsulta.AGUARDANDO_CONFIRMACAO);
-            appointmentRepository.save(appointment);
+            appointment = appointmentRepository.save(appointment);
 
             entry.setAppointment(appointment);
             entry.setStatus(WaitlistStatus.OFERECIDA);

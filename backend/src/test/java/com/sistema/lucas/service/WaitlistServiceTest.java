@@ -77,6 +77,12 @@ class WaitlistServiceTest {
         disponibilidade.setStartTime(dateTime.toLocalTime().withMinute(0).withSecond(0).withNano(0));
         when(availabilityRepository.findByProfessionalEmailAndDate(anyString(), any()))
             .thenReturn(List.of(disponibilidade));
+        // ofertarProximoDaFila reatribui `appointment` ao retorno de save() (não reusa mais a
+        // instância pré-save) — bug real de produção encontrado 28/08/2026 era justamente usar a
+        // referência pré-save, ver o comentário no método. O mock precisa devolver o mesmo
+        // objeto recebido, senão `appointment` viraria null aqui (Mockito por padrão devolve
+        // null pra métodos não stubados que retornam objeto).
+        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Nested

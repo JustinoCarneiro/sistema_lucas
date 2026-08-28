@@ -47,3 +47,7 @@ acaso (ou de alguém abrir `docker logs` na hora certa) pra descobrir um problem
 ## Ligado a
 - Achado durante a homologação de MFA/lista de espera/NPS de 27/08/2026 — impediu terminar de
   validar lista de espera e NPS ao vivo (ambos dependem de e-mail).
+- [[painel-de-logs-do-sistema]] — efeito colateral positivo (ver acima).
+- [[waitlist-oferta-nao-persistia-after-commit]] — o SMTP quebrado foi, ironicamente, o que expôs
+  esse segundo bug (o e-mail de oferta "não chegar" seria indistinguível de "a vaga não foi
+  reservada" se o SMTP estivesse funcionando).
