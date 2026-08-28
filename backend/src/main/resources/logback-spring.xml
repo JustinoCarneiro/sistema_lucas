@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- backend/src/main/resources/logback-spring.xml -->
+<!-- Adiciona a captura pra /panel/logs (ADMIN/TECNICO) EM CIMA do que o Spring Boot já faz por
+     padrão (console) — <include> traz a config default inteira, não substitui nada. -->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+    <appender name="IN_MEMORY_LOG" class="com.sistema.lucas.logging.InMemoryLogAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- Assíncrono: nunca deixa o appender de captura atrasar a thread que está logando de
+         verdade (append() já é rápido — só empilha numa fila — mas AsyncAppender é o padrão
+         seguro de qualquer forma). -->
+    <appender name="ASYNC_IN_MEMORY_LOG" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="IN_MEMORY_LOG"/>
+        <queueSize>2000</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC_IN_MEMORY_LOG"/>
+    </root>
+</configuration>

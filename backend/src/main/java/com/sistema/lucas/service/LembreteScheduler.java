@@ -38,7 +38,7 @@ public class LembreteScheduler {
                 emailTemplateService.enviarLembrete(consulta);
                 System.out.println("📧 Lembrete enviado para: " + consulta.getPatient().getEmail());
             } catch (Exception e) {
-                System.err.println("⚠️ Falha ao enviar lembrete: " + e.getMessage());
+                logger.error("[LEMBRETE] Falha ao enviar lembrete: {}", e.getMessage());
             }
         });
 
@@ -110,7 +110,7 @@ public class LembreteScheduler {
                 emailTemplateService.enviarLembreteSemanalPendenciasProfissional(prof, qtde);
                 System.out.println("📧 Lembrete semanal enviado para profissional: " + prof.getEmail());
             } catch (Exception e) {
-                System.err.println("⚠️ Falha ao enviar lembrete semanal (profissional): " + e.getMessage());
+                logger.error("[LEMBRETE] Falha ao enviar lembrete semanal (profissional): {}", e.getMessage());
             }
         });
 
@@ -124,7 +124,7 @@ public class LembreteScheduler {
                 emailTemplateService.enviarLembreteSemanalPendenciasPaciente(pac, qtde);
                 System.out.println("📧 Lembrete semanal enviado para paciente: " + pac.getEmail());
             } catch (Exception e) {
-                System.err.println("⚠️ Falha ao enviar lembrete semanal (paciente): " + e.getMessage());
+                logger.error("[LEMBRETE] Falha ao enviar lembrete semanal (paciente): {}", e.getMessage());
             }
         });
     }

@@ -13,6 +13,7 @@ import { MyDocumentsComponent } from './pages/my-documents/my-documents';
 import { DocumentManagementComponent } from './pages/document-management/document-management';
 import { MyProfileComponent } from './pages/my-profile/my-profile';
 import { SecuritySettingsComponent } from './pages/security-settings/security-settings';
+import { SystemLogsComponent } from './pages/system-logs/system-logs';
 import { ProfessionalAppointmentsComponent } from './pages/professional-appointments/professional-appointments';
 import { MedicalRecordComponent } from './pages/medical-record/medical-record';
 import { DashboardComponent } from './pages/dashboard/dashboard'; 
@@ -65,6 +66,7 @@ export const routes: Routes = [
       // ADMIN não tem "meu perfil" nesse sistema — esta tela existe só pra ele conseguir
       // gerenciar o próprio MFA (mesmo <app-mfa-settings> usado dentro de my-profile).
       { path: 'seguranca', component: SecuritySettingsComponent, canActivate: [roleGuard(['ADMIN', 'TECNICO'])] },
+      { path: 'logs', component: SystemLogsComponent, canActivate: [roleGuard(['ADMIN', 'TECNICO'])] },
       // dashboard renderiza conteúdo diferente por role internamente — sem restrição de guard.
       { path: 'dashboard', component: DashboardComponent }
     ]

@@ -1,0 +1,71 @@
+<!-- frontend/src/app/pages/system-logs/system-logs.html -->
+<div class="p-8">
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Logs do Sistema</h2>
+    <p class="text-gray-500 dark:text-gray-400 font-medium">
+      Captura automática de todo evento de nível WARN ou ERROR ocorrido no backend, retido por 30 dias.
+    </p>
+  </div>
+
+  <div class="flex gap-2 mb-4">
+    <button (click)="setFiltro('TODOS')"
+      [class.bg-blue-800]="filtroLevel() === 'TODOS'" [class.text-white]="filtroLevel() === 'TODOS'"
+      class="px-4 py-2 rounded-lg text-sm font-semibold bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 shadow-sm">
+      Todos
+    </button>
+    <button (click)="setFiltro('WARN')"
+      [class.bg-amber-600]="filtroLevel() === 'WARN'" [class.text-white]="filtroLevel() === 'WARN'"
+      class="px-4 py-2 rounded-lg text-sm font-semibold bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 shadow-sm">
+      Avisos
+    </button>
+    <button (click)="setFiltro('ERROR')"
+      [class.bg-red-600]="filtroLevel() === 'ERROR'" [class.text-white]="filtroLevel() === 'ERROR'"
+      class="px-4 py-2 rounded-lg text-sm font-semibold bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 shadow-sm">
+      Erros
+    </button>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl overflow-hidden">
+    <div *ngIf="isLoading()" class="p-8 text-center text-gray-500 dark:text-gray-400">Carregando...</div>
+
+    <div *ngIf="!isLoading() && logs().length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
+      Nenhum evento registrado.
+    </div>
+
+    <ul *ngIf="!isLoading() && logs().length > 0" class="divide-y divide-gray-100 dark:divide-gray-700">
+      <li *ngFor="let logEntry of logs()" class="p-4 sm:p-5">
+        <div class="flex items-start gap-3 cursor-pointer" (click)="logEntry.stackTrace && toggleStackTrace(logEntry.id)">
+          <span class="shrink-0 px-2 py-1 rounded-md text-xs font-bold" [ngClass]="badgeClass(logEntry.level)">
+            {{ logEntry.level }}
+          </span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="text-xs font-mono text-gray-400 dark:text-gray-500 truncate">{{ logEntry.loggerName }}</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">{{ logEntry.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <p class="text-sm text-gray-800 dark:text-gray-100 mt-1 break-words">{{ logEntry.message }}</p>
+
+            <pre *ngIf="logEntry.stackTrace && isExpandido(logEntry.id)"
+              class="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg text-xs text-gray-600 dark:text-gray-400 overflow-x-auto whitespace-pre-wrap">{{ logEntry.stackTrace }}</pre>
+
+            <span *ngIf="logEntry.stackTrace" class="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1 inline-block">
+              {{ isExpandido(logEntry.id) ? 'ocultar stack trace' : 'ver stack trace' }}
+            </span>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <div *ngIf="!isLoading() && totalPaginas() > 1" class="flex items-center justify-between p-4 border-t border-gray-100 dark:border-gray-700">
+      <button (click)="paginaAnterior()" [disabled]="paginaAtual() === 0"
+        class="px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700">
+        Anterior
+      </button>
+      <span class="text-sm text-gray-500 dark:text-gray-400">Página {{ paginaAtual() + 1 }} de {{ totalPaginas() }}</span>
+      <button (click)="proximaPagina()" [disabled]="paginaAtual() >= totalPaginas() - 1"
+        class="px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700">
+        Próxima
+      </button>
+    </div>
+  </div>
+</div>

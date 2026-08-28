@@ -15,11 +15,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
 @Profile("dev")
 public class DataInitializer implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     @Autowired private ProfessionalRepository professionalRepository;
     @Autowired private PatientRepository patientRepository;
@@ -305,7 +309,7 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("─────────────────────────────────────────────");
 
         } catch (Exception e) {
-            System.err.println("⚠️ Erro na carga: " + e.getMessage());
+            log.error("Erro na carga de dados de demonstração: {}", e.getMessage());
             e.printStackTrace();
         }
     }
