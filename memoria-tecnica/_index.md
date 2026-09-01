@@ -24,6 +24,7 @@ partir do código real, não escrito durante o desenvolvimento original.
 ## Bugs
 - [[backup-diario-quebrado-working-directory-cron]] — falha silenciosa de ~2 meses
 - [[email-template-format-exception-bloqueou-agendamento]] — derrubou todo o fluxo de agendamento em produção
+- [[penalidade-cancelamento-tardio-sem-limite-inferior]] — cancelar consulta antiga bloqueava o paciente por 15 dias ("uma galera não consegue agendar")
 - [[unicidade-cadastro-inconsistente-entre-entry-points]]
 - [[teste-time-bomb-lembrete-scheduler]]
 - [[ci-workflows-bloqueados-falta-scope-workflow-no-pat]] — resolvido nesta mesma correção de metodologia

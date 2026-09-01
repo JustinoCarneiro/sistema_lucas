@@ -163,6 +163,14 @@ public class AppointmentService {
             throw new RuntimeException("Operação de Segurança: Tentativa de cancelamento malicioso bloqueada.");
         }
 
+        // Guarda de estado terminal: consulta já encerrada (cancelada, concluída ou falta) não
+        // pode ser cancelada de novo. Sem isso, cada re-chamada (duplo-clique/retry no botão)
+        // reincrementava infractionCount do paciente — dois cliques bastavam pra advertência +
+        // bloqueio de 15 dias numa tacada só.
+        if (ehEstadoTerminal(consulta.getStatus())) {
+            throw new RuntimeException("Esta consulta já está encerrada e não pode ser cancelada.");
+        }
+
         // ✅ Regra de 24h: Aplica penalidade mas permite a ação
         aplicarPenalidadeSeNecessario(consulta);
 
@@ -219,6 +227,12 @@ public class AppointmentService {
         // 🛡️ Segurança (IDOR)
         if (!consulta.getPatient().getEmail().equals(email)) {
             throw new RuntimeException("Apenas o paciente pode reagendar sua própria consulta.");
+        }
+
+        // Guarda de estado terminal: não se reagenda consulta já encerrada — senão ela
+        // "ressuscitaria" pra AGENDADA, e cada re-chamada empilhava infração no paciente.
+        if (ehEstadoTerminal(consulta.getStatus())) {
+            throw new RuntimeException("Esta consulta já está encerrada e não pode ser reagendada.");
         }
 
         // ✅ Regra de 24h (validar a consulta original): Aplica penalidade mas permite
@@ -286,6 +300,13 @@ public class AppointmentService {
             throw new RuntimeException("Operação de Segurança: Você não é o médico dessa consulta.");
         }
 
+        // marcarFalta continua sem guarda de janela de tempo (regra E7), mas precisa ser
+        // idempotente: consulta já encerrada não gera falta nova — senão remarcar uma FALTA
+        // já existente reincrementava a infração do paciente.
+        if (ehEstadoTerminal(consulta.getStatus())) {
+            throw new RuntimeException("Esta consulta já está encerrada e não pode ser marcada como falta.");
+        }
+
         consulta.setStatus(StatusConsulta.FALTA);
         appointmentRepository.save(consulta);
 
@@ -294,12 +315,27 @@ public class AppointmentService {
 
     // ─── Confirmação (Profissional primeiro, Paciente depois) ────────────────
 
+    // Estados terminais: consulta encerrada, não deve mais aceitar cancelamento/reagendamento/falta.
+    private boolean ehEstadoTerminal(StatusConsulta status) {
+        return status == StatusConsulta.CANCELADA
+            || status == StatusConsulta.CONCLUIDA
+            || status == StatusConsulta.FALTA;
+    }
+
     // Consultas pendentes de aprovação não geram penalidade (profissional ainda não aceitou).
     private void aplicarPenalidadeSeNecessario(Appointment consulta) {
         if (consulta.getStatus() == StatusConsulta.AGUARDANDO_CONFIRMACAO) {
             return;
         }
-        if (java.time.LocalDateTime.now().isAfter(consulta.getDateTime().minusHours(24))) {
+        // A penalidade de cancelamento/reagendamento tardio só vale na janela real: a consulta
+        // AINDA está no futuro E falta menos de 24h pra ela. Sem a checagem de "ainda no futuro",
+        // a condição valia pra QUALQUER consulta no passado — então cancelar/reagendar uma consulta
+        // antiga (que ficou pendente por nunca ter gerado prontuário) disparava infração indevida.
+        // Foi o que bloqueou uma leva de pacientes em produção.
+        java.time.LocalDateTime agora = java.time.LocalDateTime.now();
+        boolean consultaNoFuturo = agora.isBefore(consulta.getDateTime());
+        boolean faltamMenosDe24h = agora.isAfter(consulta.getDateTime().minusHours(24));
+        if (consultaNoFuturo && faltamMenosDe24h) {
             processarInfracaoPaciente(consulta.getPatient(), consulta);
         }
     }
