@@ -80,8 +80,8 @@ Remediação 01/09/2026: reset via `PATCH /patients/{id}/desbloquear` (ou UPDATE
 113, 114) estão espalhadas no tempo, plausivelmente legítimas, nenhuma virou bloqueio.
 
 Pendências fora deste fix:
-- `blocked_until` não tem migration Flyway — só existe em prod por `ddl-auto=update` histórico.
-  Formalizar numa `V23`.
+- ~~`blocked_until` não tem migration Flyway~~ — resolvido: `V24__formalize_patient_blocked_until.sql`
+  (`ADD COLUMN IF NOT EXISTS`, no-op onde a coluna já existe por `ddl-auto=update` histórico).
 - Toda vez que um profissional/admin faz faxina de consultas antigas cancelando-as, ele
   penaliza os pacientes. O fix corrige a regra; considerar também uma tela/ação de
   "arquivar consulta encalhada" que não passe por `cancelar()`.
