@@ -46,12 +46,29 @@ não travar a validação em andamento.
 é um problema do ambiente de execução do CI, não do código de produção nem da suíte de teste.
 A suíte roda 100% localmente, o que já foi a validação usada em toda esta sessão.
 
+## Atualização 01/09/2026
+Ainda reproduz em todo push no `main` (Backend CI vermelho desde 28/08; Frontend CI vermelho
+desde 30/07 — o job Cypress "Start containers" cai pelo mesmo motivo, o `lucas-api` não sobe no
+runner). Contagem de erros subiu de 25 → **38** só porque mais testes `@SpringBootTest` foram
+adicionados desde a nota original — mesma causa. Verificado no PR #1 (fix E7): os 3 checks
+ficaram idênticos ao `main` (Backend JUnit ❌, Cypress ❌, Vitest ✅) — **o PR não introduziu
+falha nova**; a suíte de backend roda 213/213 verde localmente, incluindo os testes de contexto.
+Como a equipe faz deploy por `push-and-deploy.sh` (rsync, não depende do CI), o vermelho não
+trava entrega — mas mascara regressão real de qualquer PR futuro.
+
+## Candidato de correção mais provável (não testado)
+`PostInitCallback queue could not be processed` + `sqmMultiTableMutationStrategy` em herança
+`JOINED` é um bug conhecido do Hibernate ORM 6.6.x, corrigido em patches posteriores ao 6.6.8
+(que o Spring Boot 3.4.3 traz). **Tentar primeiro:** override de uma linha no `pom.xml`
+(`<properties>`): `<hibernate.version>6.6.13.Final</hibernate.version>` (ou o patch 6.6.x mais
+recente compatível), e observar o runner. É um patch de mesma minor, risco baixo, mas precisa de
+1 PR pra validar no CI (não reproduz local). Tarefa focada de ~30 min, não de wrap-up.
+
 ## Próximo passo (quando alguém tiver tempo pra investigar)
-1. Tentar reproduzir localmente limitando CPU/threads (`docker run --cpus=1` rodando o build, ou
-   `-Dmaven.test.jvm.args` com poucos threads) pra ver se é mesmo um problema de concorrência.
-2. Testar upgrade/downgrade de patch do Hibernate ORM (via override de
-   `<hibernate.version>` no `pom.xml`, herdado do parent `spring-boot-starter-parent`).
-3. Buscar por issues abertas no Hibernate ORM sobre `PostInitCallback` + `sqmMultiTableMutationStrategy`.
+1. Aplicar o candidato acima (bump de `<hibernate.version>`) num PR dedicado e ver o runner.
+2. Se não resolver: reproduzir localmente limitando CPU/threads (`docker run --cpus=1` rodando o
+   build, ou `-Dmaven.test.jvm.args` com poucos threads) pra confirmar se é concorrência.
+3. Buscar issues abertas no Hibernate ORM sobre `PostInitCallback` + `sqmMultiTableMutationStrategy`.
 
 ## Ligado a
 - Achado durante a validação de homologação das 3 entregas de 27/08/2026 (E4/US-4.8, E11, MFA).

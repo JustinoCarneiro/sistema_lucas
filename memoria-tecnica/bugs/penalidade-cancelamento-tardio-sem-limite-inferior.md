@@ -74,10 +74,19 @@ Os `received_first_warning=true` vieram de **outro lote do mesmo bug**: 18/07 17
 pacientes **30, 109 e 22** advertidos em 32 segundos (mesma assinatura de cancelamento em lote).
 Paciente 22 ficou com advertência falsa mas nunca foi bloqueado.
 
-Remediação 01/09/2026: reset via `PATCH /patients/{id}/desbloquear` (ou UPDATE direto —
-`blocked_until=NULL, infraction_count=0, received_first_warning=false`) nos ids **30, 57, 109**
-(bloqueados) e **22** (gatilho armado). As demais advertências (32, 68, 92, 94, 97, 104, 106,
-113, 114) estão espalhadas no tempo, plausivelmente legítimas, nenhuma virou bloqueio.
+Remediação (feita em 01/09/2026, mesmo dia do deploy do fix):
+- Fix mergeado em `main` (PR #1, rebase) e deployado via `./push-and-deploy.sh` — backend subiu
+  limpo (`Started LucasApplication in 17.3s`), Flyway `v23 → v24` (o WARN "column blocked_until
+  already exists, skipping" é o `ADD COLUMN IF NOT EXISTS` funcionando como esperado).
+- Pacientes **30, 57, 109** (bloqueados) e **22** (advertência falsa, gatilho armado)
+  desbloqueados por **UPDATE direto** no banco de prod (`blocked_until=NULL, infraction_count=0,
+  received_first_warning=false`). Sanidade pós: 0 pacientes com `blocked_until > now()`.
+- O UPDATE direto **não gerou linha `DESBLOQUEIO` no `audit_logs`** (o endpoint
+  `PATCH /patients/{id}/desbloquear` geraria). Backfill manual de 4 linhas
+  `DESBLOQUEIO/Patient/{id}` feito em seguida (`usuario_email` do operador, `detalhes` NULL)
+  pra fechar o rastro na tabela.
+- As demais advertências (32, 68, 92, 94, 97, 104, 106, 113, 114) estão espalhadas no tempo,
+  plausivelmente legítimas, nenhuma virou bloqueio — não mexidas.
 
 Pendências fora deste fix:
 - ~~`blocked_until` não tem migration Flyway~~ — resolvido: `V24__formalize_patient_blocked_until.sql`
@@ -85,6 +94,8 @@ Pendências fora deste fix:
 - Toda vez que um profissional/admin faz faxina de consultas antigas cancelando-as, ele
   penaliza os pacientes. O fix corrige a regra; considerar também uma tela/ação de
   "arquivar consulta encalhada" que não passe por `cancelar()`.
+- CI de backend continua vermelho no runner (não relacionado a este fix) —
+  ver [[ci-backend-hibernate-postinitcallback-so-no-runner]].
 
 ## Ligado a
 - [[email-template-format-exception-bloqueou-agendamento]]
