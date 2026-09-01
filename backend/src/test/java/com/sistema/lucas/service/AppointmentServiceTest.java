@@ -485,6 +485,127 @@ class AppointmentServiceTest {
             assertEquals(9L, captor.getValue().professionalId());
             assertEquals(consulta.getDateTime(), captor.getValue().dateTime());
         }
+
+        @Test
+        @DisplayName("Cancelar consulta JÁ NO PASSADO não aplica penalidade (janela de 24h sem limite inferior)")
+        void cancelarConsultaPassada_naoAplicaPenalidade() {
+            Long id = 99L;
+            String email = "paciente@email.com";
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
+            consulta.setDateTime(LocalDateTime.now().minusMonths(2)); // consulta velha, nunca concluída
+            consulta.setStatus(StatusConsulta.AGENDADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            assertDoesNotThrow(() -> appointmentService.cancelar(id, email, "Limpando agendamentos antigos"));
+
+            assertEquals(StatusConsulta.CANCELADA, consulta.getStatus());
+            assertEquals(0, paciente.getInfractionCount());
+            assertFalse(paciente.isReceivedFirstWarning());
+            assertNull(paciente.getBlockedUntil());
+            verify(emailTemplateService, never()).enviarAvisoPrimeiraFalta(any(), any());
+            verify(emailTemplateService, never()).enviarAvisoBloqueioFalta(any(), any(), any());
+            verify(patientRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Reagendar consulta original JÁ NO PASSADO não aplica penalidade")
+        void reagendarConsultaPassada_naoAplicaPenalidade() {
+            Long id = 98L;
+            String email = "paciente@email.com";
+            LocalDateTime novaData = getNextDayOfWeek(DayOfWeek.MONDAY).atTime(9, 0);
+
+            var professional = new Professional();
+            professional.setId(9L);
+            professional.setEmail("ana@clinica.com");
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setProfessional(professional);
+            consulta.setDateTime(LocalDateTime.now().minusWeeks(3)); // consulta antiga
+            consulta.setStatus(StatusConsulta.AGENDADA);
+
+            var availability = new ProfessionalAvailability();
+            availability.setStartTime(LocalTime.of(9, 0));
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+            when(availabilityRepository.findByProfessionalEmailAndDate("ana@clinica.com", novaData.toLocalDate()))
+                .thenReturn(List.of(availability));
+            when(appointmentRepository.findByProfessionalIdAndDateTimeBetweenAndStatusNot(
+                eq(9L), any(), any(), any()
+            )).thenReturn(List.of());
+
+            assertDoesNotThrow(() -> appointmentService.reagendar(id, email, novaData, "Remarcar consulta antiga"));
+
+            assertEquals(0, paciente.getInfractionCount());
+            assertNull(paciente.getBlockedUntil());
+            verify(patientRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Cancelar consulta já CANCELADA lança erro e não reincrementa infração (guarda de estado terminal)")
+        void cancelarConsultaJaCancelada_lancaErro() {
+            Long id = 97L;
+            String email = "paciente@email.com";
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+            paciente.setReceivedFirstWarning(true); // já advertido — sem a guarda, o 2º clique bloquearia
+            paciente.setInfractionCount(1);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
+            consulta.setDateTime(LocalDateTime.now().plusHours(5));
+            consulta.setStatus(StatusConsulta.CANCELADA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.cancelar(id, email, "Cliquei de novo sem querer"));
+            assertTrue(ex.getMessage().contains("já está encerrada"));
+            assertEquals(1, paciente.getInfractionCount()); // não mexeu
+            assertNull(paciente.getBlockedUntil());
+            verify(patientRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Reagendar consulta já CONCLUIDA lança erro (não ressuscita pra AGENDADA)")
+        void reagendarConsultaConcluida_lancaErro() {
+            Long id = 96L;
+            String email = "paciente@email.com";
+            LocalDateTime novaData = LocalDateTime.now().plusDays(3);
+
+            var paciente = new Patient();
+            paciente.setEmail(email);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setPatient(paciente);
+            consulta.setProfessional(new Professional());
+            consulta.setDateTime(LocalDateTime.now().minusDays(1));
+            consulta.setStatus(StatusConsulta.CONCLUIDA);
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.reagendar(id, email, novaData, "Quero remarcar"));
+            assertTrue(ex.getMessage().contains("já está encerrada"));
+            assertEquals(StatusConsulta.CONCLUIDA, consulta.getStatus());
+            verify(appointmentRepository, never()).save(any());
+        }
     }
 
     // ──────────────────────── Cancelamento interno (M13: oferta expirada) ────────────────────────
@@ -656,6 +777,37 @@ class AppointmentServiceTest {
             var ex = assertThrows(RuntimeException.class,
                 () -> appointmentService.marcarFalta(id, "outro@clinica.com"));
             assertTrue(ex.getMessage().contains("não é o médico"));
+        }
+
+        @Test
+        @DisplayName("Marcar falta em consulta já encerrada lança erro (idempotência — não reincrementa infração)")
+        void marcarFaltaConsultaJaEncerrada_lancaErro() {
+            Long id = 13L;
+            String emailProf = "ana@clinica.com";
+
+            var professional = new Professional();
+            professional.setEmail(emailProf);
+
+            var patient = new Patient();
+            patient.setEmail("lucas@email.com");
+            patient.setReceivedFirstWarning(true);
+            patient.setInfractionCount(1);
+
+            var consulta = new Appointment();
+            consulta.setId(id);
+            consulta.setProfessional(professional);
+            consulta.setPatient(patient);
+            consulta.setDateTime(LocalDateTime.now().minusHours(1));
+            consulta.setStatus(StatusConsulta.FALTA); // já marcada
+
+            when(appointmentRepository.findById(id)).thenReturn(Optional.of(consulta));
+
+            var ex = assertThrows(RuntimeException.class,
+                () -> appointmentService.marcarFalta(id, emailProf));
+            assertTrue(ex.getMessage().contains("já está encerrada"));
+            assertEquals(1, patient.getInfractionCount()); // não mexeu
+            assertNull(patient.getBlockedUntil());
+            verify(emailTemplateService, never()).enviarAvisoBloqueioFalta(any(), any(), any());
         }
     }
 
