@@ -1,7 +1,7 @@
 // frontend/src/app/notification.service.ts
 import { Injectable, signal } from '@angular/core';
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export interface Toast {
   id: number;
@@ -28,6 +28,15 @@ export class NotificationService {
 
   info(message: string, duration = 4000): void {
     this.push('info', message, duration);
+  }
+
+  /**
+   * Aviso de regra de negócio (ex.: bloqueio temporário por penalidade). Não é falha de
+   * sistema — por isso não usa o visual vermelho de "Erro Detectado", que a recepção
+   * interpretava como bug. Sem normalize(): a mensagem não vem com prefixo "Erro:".
+   */
+  warning(message: string, duration = 6000): void {
+    this.push('warning', message, duration);
   }
 
   dismiss(id: number): void {

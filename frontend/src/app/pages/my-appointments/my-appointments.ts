@@ -290,8 +290,21 @@ export class MyAppointmentsComponent implements OnInit {
           this.availableSlots.set([]);
           this.loadAppointments();
         },
-        error: (msg: string) => this.notify.error(msg)
+        error: (msg: string) => this.notifyScheduleError(msg)
       });
+    }
+  }
+
+  /**
+   * O bloqueio temporário por penalidade (E7) é regra de negócio, não falha de sistema —
+   * então vai como aviso ("Atenção"), não como o vermelho "Erro Detectado", que a recepção
+   * interpretava como bug do sistema.
+   */
+  private notifyScheduleError(msg: string): void {
+    if (/temporariamente bloqueado/i.test(msg)) {
+      this.notify.warning(msg);
+    } else {
+      this.notify.error(msg);
     }
   }
 

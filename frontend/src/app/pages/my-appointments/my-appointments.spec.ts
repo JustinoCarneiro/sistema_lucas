@@ -3,8 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyAppointmentsComponent } from './my-appointments';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { describe, beforeEach, afterEach, it, expect } from 'vitest';
+import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import { environment } from '../../../environments/environment';
+import { NotificationService } from '../../notification.service';
 
 describe('MyAppointmentsComponent (Carregamento de Datas Disponíveis)', () => {
   let component: MyAppointmentsComponent;
@@ -62,6 +63,30 @@ describe('MyAppointmentsComponent (Carregamento de Datas Disponíveis)', () => {
     expect(dates[0].label).toContain('quarta-feira');
     expect(dates[1].value).toBe('2026-04-20');
     expect(dates[1].label).toContain('segunda-feira');
+  });
+
+  it('bloqueio por penalidade vira aviso ("Atenção"), não o vermelho "Erro Detectado"', () => {
+    const notify = TestBed.inject(NotificationService);
+    const warningSpy = vi.spyOn(notify, 'warning');
+    const errorSpy = vi.spyOn(notify, 'error');
+
+    (component as any).notifyScheduleError(
+      'Você está temporariamente bloqueado para novos agendamentos até 15/09/2026 12:07 devido a um cancelamento/reagendamento tardio.'
+    );
+
+    expect(warningSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('erro comum de agendamento continua indo como erro', () => {
+    const notify = TestBed.inject(NotificationService);
+    const warningSpy = vi.spyOn(notify, 'warning');
+    const errorSpy = vi.spyOn(notify, 'error');
+
+    (component as any).notifyScheduleError('Este horário já está ocupado. Escolha outro horário.');
+
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(warningSpy).not.toHaveBeenCalled();
   });
 
   it('onProfessionalChange reseta seleção de data/slot ao trocar de profissional', () => {
