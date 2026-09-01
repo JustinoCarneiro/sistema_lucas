@@ -29,6 +29,9 @@ import { NotificationService } from '../../notification.service';
                 @case ('info') {
                   <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 }
+                @case ('warning') {
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                }
               }
             </div>
             
@@ -84,35 +87,41 @@ export class ToastComponent {
     success: 'border-green-200 bg-white/85 text-green-900 dark:border-green-900/50 dark:bg-gray-900/90 dark:text-green-100',
     error:   'border-red-200 bg-white/85 text-red-900 dark:border-red-900/50 dark:bg-gray-900/90 dark:text-red-100',
     info:    'border-blue-200 bg-white/85 text-blue-900 dark:border-blue-900/50 dark:bg-gray-900/90 dark:text-blue-100',
+    warning: 'border-amber-200 bg-white/85 text-amber-900 dark:border-amber-900/50 dark:bg-gray-900/90 dark:text-amber-100',
   };
 
   readonly gradient: Record<string, string> = {
     success: 'from-green-500 to-emerald-500',
     error:   'from-red-500 to-rose-500',
     info:    'from-blue-500 to-cyan-500',
+    warning: 'from-amber-500 to-yellow-500',
   };
 
   readonly badge: Record<string, string> = {
     success: 'bg-linear-to-br from-green-400 to-green-600 text-white shadow-green-500/30',
     error:   'bg-linear-to-br from-red-400 to-red-600 text-white shadow-red-500/30',
     info:    'bg-linear-to-br from-blue-400 to-blue-600 text-white shadow-blue-500/30',
+    warning: 'bg-linear-to-br from-amber-400 to-amber-600 text-white shadow-amber-500/30',
   };
 
   readonly titleColor: Record<string, string> = {
     success: 'text-green-700 dark:text-green-400',
     error:   'text-red-700 dark:text-red-400',
     info:    'text-blue-700 dark:text-blue-400',
+    warning: 'text-amber-700 dark:text-amber-400',
   };
 
   readonly titleText: Record<string, string> = {
     success: 'Sucesso',
     error:   'Erro Detectado',
     info:    'Informação',
+    warning: 'Atenção',
   };
 
   readonly progressColor: Record<string, string> = {
     success: 'bg-green-500',
     error:   'bg-red-500',
     info:    'bg-blue-500',
+    warning: 'bg-amber-500',
   };
 }
