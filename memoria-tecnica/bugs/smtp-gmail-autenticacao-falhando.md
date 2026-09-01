@@ -2,7 +2,7 @@
 tipo: bug
 data: 2026-08-27
 severidade: Alta
-status: Aberto — aguardando ação do cliente (nova senha de app Gmail)
+status: Resolvido (01/09/2026) — nova senha de app gerada após recuperação da conta
 ---
 
 # SMTP do Gmail com falha de autenticação — nenhum e-mail do sistema sai
@@ -33,11 +33,39 @@ nova (myaccount.google.com/apppasswords) — é a conta do cliente, o usuário (
 acesso. Registrado como pendência — ver memória pessoal
 `smtp-gmail-auth-falhando-precisa-nova-senha-app` (fora deste repo).
 
-## Solução (quando a senha nova existir)
-1. Atualizar `secrets/mail_password.txt` na VPS com a senha nova, **sem espaços**.
-2. `docker compose up -d --force-recreate backend` — um `docker restart` simples **não** recarrega
+## Causa raiz real (confirmada 01/09/2026): sequestro da conta Google, não expiração comum
+A causa não foi rotação de senha inocente. Ao entrar em `myaccount.google.com/security` com o
+cliente, o histórico de "Atividades de segurança recentes" mostrou **conta restaurada** no mesmo
+dia (via fluxo de recuperação do Google) e, checando "Verificação em duas etapas" → "Senhas de
+app", havia uma senha de app cadastrada com nome **"sistema melvin"** — projeto que não tem
+nenhuma relação com esta conta (`institutolucas9@gmail.com`); confirmado por busca no repositório
+de Sistema Melvin, que usa uma conta de e-mail totalmente diferente (`imeh@igrejadapaz.com.br`,
+`~/Applications/sistema_melvin/.env`). Essa senha de app suspeita foi **criada em 14/mai** (mesmo
+dia em que senha principal, telefone de recuperação e verificação em duas etapas da conta mudaram
+todos juntos — assinatura clássica de conta comprometida) e **usada pela última vez em 30/jun**,
+data que bate com o pico de centenas de e-mails de bounce/"Renewal Notice" que lotaram a caixa de
+entrada — muito provavelmente o invasor usando o SMTP autenticado da conta pra disparar spam em
+massa. A troca da senha principal em 14/mai revogou a senha de app legítima que o Sistema Lucas
+usava, o que explica a autenticação falhando desde então (~3,5 meses, não só a última semana).
+
+**Não houve indício de que o incidente tenha exposto dado de paciente do Sistema Lucas** — a conta
+comprometida é só a caixa de e-mail usada para envio (`institutolucas9@gmail.com`), sem acesso ao
+banco de dados ou à aplicação; o invasor não tinha caminho de lá pra cá.
+
+## Solução aplicada (01/09/2026)
+1. Cliente recuperou a conta Google via fluxo de recuperação (`Conta restaurada`) e reconfigurou
+   telefone de recuperação e verificação em duas etapas com dados próprios.
+2. Apagada a senha de app suspeita ("sistema melvin") antes de gerar qualquer coisa nova.
+3. Gerada uma senha de app nova, nomeada "Sistema Lucas".
+4. Atualizado `secrets/mail_password.txt` na VPS com a senha nova, **sem espaços** (16 bytes).
+5. `docker compose up -d --force-recreate backend` — um `docker restart` simples **não** recarrega
    Docker Secrets, precisa recriar o container.
-3. Testar com um cadastro novo e confirmar que o e-mail chega.
+6. Testado com um cadastro novo (`POST /auth/register`) — sem nenhum `ERROR` de `EmailService` no
+   `/panel/logs` nem no `docker logs`, ao contrário de todo teste anterior (100% reprodutível
+   antes da correção). Cliente confirmou visualmente o recebimento na caixa de entrada.
+7. Checado `myaccount.google.com/permissions` ("Apps vinculados") em busca de acesso de terceiro
+   deixado pelo período comprometido — só havia 1 app (Stripe), reconhecido pelo cliente como uso
+   legítimo do próprio Instituto. Nenhum resquício de acesso do invasor encontrado.
 
 ## Efeito colateral positivo
 Motivou a criação de `/panel/logs` (ADMIN/TECNICO) — captura automática de todo WARN/ERROR do
