@@ -8,8 +8,9 @@ Base de conhecimento viva do projeto: bugs cabeludos já resolvidos (com causa r
 tomadas fora da spec original do [`CLAUDE.md`](../CLAUDE.md). Não documenta conceitos genéricos — só o
 que é específico deste projeto e não seria óbvio olhando só o código.
 
-Padrão da metodologia Onda-Dev — ver seção 11 de
-[`Metodologia_de_Desenvolvimento_-_Onda.md`](../docs/Metodologia_de_Desenvolvimento_-_Onda.md).
+Padrão da metodologia OndaDev (Memória Técnica Viva) — ver a metodologia canônica no
+`onda-starter`; ponteiro local em
+[`docs/Metodologia_de_Desenvolvimento_-_Onda.md`](../docs/Metodologia_de_Desenvolvimento_-_Onda.md).
 
 Este projeto não tinha nenhum artefato da metodologia Onda antes de 29/07/2026 — todo o conteúdo
 aqui (e em `CLAUDE.md`/`docs/spec.md`/`ROADMAP.md`/`design/`) foi reconstruído retroativamente a
