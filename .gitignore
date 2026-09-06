@@ -54,3 +54,5 @@ backup_*
 .obsidian/workspace-mobile.json
 .obsidian/graph.json
 .obsidian/appearance.json
+# ─── OndaDev ───
+.ondadev/handoff/current.md

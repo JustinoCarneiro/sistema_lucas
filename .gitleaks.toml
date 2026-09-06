@@ -1,0 +1,8 @@
+title = "Sistema Lucas — gitleaks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Config de teste do backend: chaves e segredos de exemplo, não credenciais reais."
+paths = ['''backend/src/test/resources/.*''']

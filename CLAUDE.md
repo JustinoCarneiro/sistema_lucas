@@ -1,6 +1,10 @@
+@AGENTS.md
+
 # SISTEMA LUCAS
 
 Plataforma de prontuário eletrônico e agendamento de consultas, com forte foco em conformidade LGPD (dados de saúde e identificação).
+
+> Metodologia: OndaDev — versão em `ONDA_VERSION`. Contrato de trabalho em `AGENTS.md`.
 
 ## DIRETIVA PRIMÁRIA
 
@@ -59,8 +63,8 @@ AGUARDANDO_CONFIRMACAO ──aprovar (profissional)──→ AGENDADA ──conf
 - `cancelar` pode ser feito pelo paciente, profissional dono, ou qualquer ADMIN, de qualquer estado, com justificativa obrigatória. Penalidade só se aplica se `< 24h` da consulta **e** o estado já passou de `AGUARDANDO_CONFIRMACAO`.
 
 
-## Diretivas de Gestão (Regra de Ouro do Trello + Jira)
-> **ATENÇÃO:** Toda vez que você (Claude/IA) criar, modificar ou deletar qualquer especificação funcional ou técnica nos arquivos `CLAUDE.md`, `ROADMAP.md`, `docs/spec.md` ou `design/DESIGN.md`, você é **OBRIGADO** a executar **os dois scripts** — `./scripts/trello_sync.py` e `./scripts/jira_sync.py` — para espelhar essa exata alteração no Trello e no Jira correspondentes (criando cards/issues no Backlog, atualizando os Critérios de Aceite ou arquivando o que foi cancelado). Documentação, Trello e Jira são a mesma entidade. Board Jira deste projeto: `LUC` em `ondaenterprise.atlassian.net` (credenciais em `.env.jira`, fora do controle de versão).
+## Diretivas de Gestão (Jira)
+O quadro Jira do projeto (board `LUC` em `ondaenterprise.atlassian.net`) é uma **projeção do status**, não a fonte da verdade — essa continua sendo `CLAUDE.md` + `docs/spec.md` + `ROADMAP.md`. A spec muda primeiro nos arquivos; o board é acertado depois, à mão na UI ou com `scripts/jira_sync.py` para lotes pontuais — **nunca disparado automaticamente por edição de doc** (isso recriava issues em duplicata). Não há mais Trello. Credenciais de API do Jira em `.env.jira`, fora do controle de versão. Exclusão de issue exige confirmação explícita.
 
 ## Convenções
 - Erros padronizados via `GlobalExceptionHandler` (`@RestControllerAdvice`) — `ExceptionDTO(message, code)`.
