@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Sistema Lucas — Manual de Uso</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   OndaDev · Base de formatação para PDF (paged media)
+   ───────────────────────────────────────────────────────────────────────────
+   SÓ ESTRUTURA. Nada de paleta, tipografia de marca ou estética.
+   O objetivo é um único: nada corta, nada estoura a página, nada quebra feio.
+
+   Como usar: concatene este arquivo ANTES do CSS de tema do projeto, dentro
+   de um único <style> no <head>. O tema só adiciona cor/fonte/borda por cima.
+
+   Renderizador de referência: WeasyPrint (>= 60).
+   Motivo: suporte real a @page, margin boxes, break-*, widows/orphans e
+   repetição de <thead>. Chrome headless --print-to-pdf é frágil pra isso.
+   Gere sempre com:  weasyprint --base-url <dir>/ entrada.html saida.pdf
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Página ───────────────────────────────────────────────────────────────
+   Tamanho e margem SEMPRE explícitos. Margem generosa e simétrica nas laterais
+   dá "corredor de segurança": conteúdo que vaza um pouco ainda cai na margem,
+   não fora da folha. Rodapé/cabeçalho vivem nas margin boxes — NUNCA no fluxo —
+   então nunca colidem com o conteúdo nem empurram texto pra fora.            */
+@page {
+  size: A4;
+  margin: 20mm 18mm 20mm 18mm;
+  /* O projeto sobrescreve o texto; o contador é padrão. */
+  @bottom-right { content: counter(page) " / " counter(pages); font-size: 8pt; }
+}
+
+/* ── 2. Reset mínimo ────────────────────────────────────────────────────────
+   box-sizing:border-box → padding/borda NÃO somam à largura, então um bloco
+   com padding nunca ultrapassa o container e vaza pra fora da página.        */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Força impressão de cores de fundo em motores WebKit/Blink (Chrome headless).
+   WeasyPrint já imprime fundos por padrão e avisa que não conhece a
+   propriedade sem prefixo — o aviso é inofensivo, mantenha as duas p/ portabilidade. */
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  margin: 0;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  /* Alinhamento à esquerda de propósito: "justify" sem hifenização gera
+     "rios" e empurra palavras longas pra fora da caixa. */
+  text-align: left;
+  /* Palavra/URL/token gigante quebra em vez de alargar a página. */
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  /* Nunca deixa 1 linha órfã/viúva de parágrafo sozinha numa página. */
+  widows: 3;
+  orphans: 3;
+}
+
+/* ── 3. Títulos: andam junto com o que vem depois ───────────────────────────
+   break-after:avoid → um título NUNCA fica sozinho no pé da página.
+   break-inside:avoid → o próprio título não racha em duas páginas.
+   Margem de topo modesta: margem grande é "engolida" de forma inconsistente
+   no topo de página e vira buraco. Primeiro elemento do corpo sem margem.    */
+h1, h2, h3, h4, h5, h6 {
+  break-after: avoid;
+  break-inside: avoid;
+  page-break-after: avoid;      /* alias legado, mantém compat */
+  margin: 1.1em 0 0.4em;
+  line-height: 1.25;
+}
+body > :first-child,
+h1:first-child, h2:first-child { margin-top: 0; }
+
+p, ul, ol, dl { margin: 0.4em 0; }
+li { margin: 0.2em 0; break-inside: avoid; }   /* bullet de 2 linhas não racha */
+
+/* ── 4. Quebra de seção deliberada ─────────────────────────────────────────
+   Use a classe .pb (ou data-break) só onde a seção DEVE começar em folha
+   nova. Não espalhe: quebra demais = páginas meio vazias.                    */
+.pb, [data-break="page"] { break-before: page; page-break-before: always; }
+.no-break, .keep { break-inside: avoid; page-break-inside: avoid; }
+
+/* ── 5. Blocos atômicos: nunca partem ──────────────────────────────────────
+   figura, citação, código, cartão, "callout": ou cabem inteiros numa página,
+   ou vão inteiros pra próxima. IMPORTANTE: break-inside:avoid só funciona se
+   o bloco couber em UMA página. Bloco mais alto que a área útil é quebrado
+   assim mesmo — por isso as imagens têm teto de altura (seção 6).           */
+figure, blockquote, pre, table,
+.callout, .card, .figure, .admonition {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ── 6. Imagens: a causa nº 1 de "cortou" ──────────────────────────────────
+   max-width:100%  → nunca mais larga que a caixa de texto.
+   height:auto     → mantém proporção.
+   max-height      → teto pra não passar da área útil de UMA página.
+                     A4 retrato, margens 20mm ≈ 257mm úteis; deixamos folga
+                     pra legenda/nota → 225mm. Imagem alta ESCALA, não corta.
+   A <figcaption> fica DENTRO de <figure> → anda sempre junto da imagem.     */
+img {
+  max-width: 100%;
+  height: auto;
+  break-inside: avoid;
+}
+figure {
+  margin: 0.8em 0 1em;
+  text-align: center;
+  break-inside: avoid;
+}
+figure > img { max-height: 225mm; object-fit: contain; }
+figcaption { break-before: avoid; margin-top: 0.35em; font-size: 0.85em; }
+
+/* Ativo opcional: para 1 asset largo demais (diagrama, planilha), vire a
+   página. Aplique class="landscape" no wrapper do asset.                     */
+@page landscape { size: A4 landscape; }
+.landscape { page: landscape; break-before: page; break-after: page; }
+.landscape > img, .landscape > svg { max-height: 170mm; }  /* altura útil deitada */
+
+/* ── 7. Tabelas ───────────────────────────────────────────────────────────
+   table-layout:fixed + quebra de palavra nas células → uma célula com texto
+   longo NÃO estica a coluna pra fora da página (o erro clássico).
+   Para tabela LONGA (mais alta que a página) NÃO use break-inside:avoid no
+   <table> — em vez disso repita o cabeçalho e proteja a linha:              */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0.7em 0;
+}
+th, td {
+  overflow-wrap: anywhere;   /* valor válido moderno; quebra token sem coluna estourar */
+  vertical-align: top;
+  text-align: left;
+}
+thead { display: table-header-group; }   /* cabeçalho repete a cada página */
+tfoot { display: table-footer-group; }
+tr    { break-inside: avoid; page-break-inside: avoid; }  /* linha não racha */
+/* Tabela curta que você QUER inteira numa página: <table class="keep"> */
+table.keep { break-inside: avoid; }
+
+/* ── 8. Código e texto pré-formatado ──────────────────────────────────────
+   pre-wrap + quebra → o código quebra linha em vez de ser cortado na direita.
+   ASCII art / diagrama de largura fixa NÃO pode quebrar sem corromper: não
+   coloque no PDF. Converta para HTML que reflui (ex.: flex-wrap) ou para
+   imagem/SVG que escala. Se for inevitável, use <pre class="wide"> + vire a
+   página (.landscape) ou reduza a fonte conscientemente.                     */
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0.7em 0.9em;
+  font-size: 0.82em;
+  line-height: 1.35;
+}
+pre.wide { white-space: pre; }           /* preserva alinhamento; combine c/ .landscape */
+code { overflow-wrap: anywhere; }        /* trecho inline longo não alarga a página */
+
+/* ── 9. Página inteira (capa, divisória, folha de rosto) ──────────────────
+   min-height perto da área útil + break-after → ocupa a folha e força a
+   próxima. Use unidades de página (mm/%), nunca vh/vw pra dimensionar bloco
+   impresso.                                                                  */
+.sheet {
+  min-height: 245mm;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+  page-break-after: always;
+}
+
+/* ── 10. Proibições que quebram paged media ──────────────────────────────
+   - position: fixed/sticky no fluxo do corpo  → só dentro de @page margin box
+   - dimensionar bloco com vh/vw               → use mm/cm/%
+   - box-shadow / filter / container queries   → WeasyPrint ignora em silêncio
+   - <thead> sem display:table-header-group    → cabeçalho some nas páginas 2+
+   - imagem sem max-width:100% e sem teto de altura → corta/estoura
+   - "justify" sem hyphens                     → overflow horizontal
+   Mantenha o CSS de impressão conservador e SEMPRE renderize pra conferir.  */
+
+
+  /* ---- Tema Sistema Lucas (só estética; estrutura vem do base) ---- */
+  @page { @bottom-center { content: "Sistema Lucas · Manual de Uso"; font-size: 8pt; color: #94a3b8; }
+          @bottom-right  { color: #94a3b8; } }
+  body { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #1f2937; }
+  h1, h2, h3, h4 { color: #1e3a8a; }
+  h2 { font-size: 15pt; padding-bottom: 5px; border-bottom: 2px solid #1e3a8a; }
+  h3 { font-size: 12pt; color: #2563eb; }
+  h4 { font-size: 10.7pt; color: #1d4ed8; }
+  ul, ol { padding-left: 22px; }
+  strong { color: #0f172a; }
+  code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px;
+         font-family: "SFMono-Regular", Consolas, monospace; }
+  table { font-size: 9pt; }
+  th { background: #1e3a8a; color: #fff; padding: 6px 8px; }
+  td { border: 1px solid #d1d5db; padding: 6px 8px; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  blockquote { background: #eff6ff; border-left: 4px solid #2563eb; padding: 8px 14px;
+               border-radius: 4px; color: #1e293b; }
+  a { color: #2563eb; text-decoration: none; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+
+  .fluxo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; margin: 12px 0; }
+  .fluxo .st { background: #1e3a8a; color: #fff; font-weight: 600; font-size: 8.5pt;
+               padding: 4px 9px; border-radius: 6px; white-space: nowrap; }
+  .fluxo .ar { color: #2563eb; font-size: 8pt; white-space: nowrap; }
+  .fluxo .ar em { font-style: normal; color: #475569; }
+  .fluxo-nota { font-size: 9pt; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0;
+                border-radius: 6px; padding: 8px 12px; }
+  .fluxo-nota .st.sm { background: #e0e7ff; color: #1e3a8a; font-weight: 600;
+                       padding: 1px 6px; border-radius: 4px; }
+  .fluxo-nota em { font-style: italic; color: #1d4ed8; }
+
+  figure.shot img { border: 1px solid #cbd5e1; border-radius: 8px; }
+  figure.shot figcaption { color: #64748b; }
+
+  .cover { text-align: center; justify-content: center; }
+  .cover .badge { display: inline-block; background: #2563eb; color: #fff; padding: 6px 20px;
+                  border-radius: 20px; font-size: 9pt; letter-spacing: 2px; margin-bottom: 22px; }
+  .cover h1 { font-size: 34pt; color: #1e3a8a; margin: 0; }
+  .cover .sub { font-size: 14pt; color: #475569; margin-top: 10px; }
+  .cover .meta { margin-top: 60px; font-size: 9.5pt; color: #64748b; display: inline-block;
+                 text-align: left; border-top: 1px solid #cbd5e1; padding-top: 18px; }
+  .cover .meta div { margin: 3px 0; }
+
+</style></head><body>
+
+<div class="cover sheet">
+  <div><span class="badge">MANUAL DE USO</span></div>
+  <h1>Sistema Lucas</h1>
+  <div class="sub">Prontuário eletrônico e agendamento de consultas</div>
+  <div class="sub" style="font-size:11pt;margin-top:18px;">Passo a passo por perfil: Paciente · Profissional · Administrador · Técnico</div>
+  <div class="meta">
+    <div><strong>Documento</strong>&nbsp;&nbsp;Manual operacional das telas</div>
+    <div><strong>Gerado em</strong>&nbsp;&nbsp;09 de setembro de 2026</div>
+    <div><strong>Fonte</strong>&nbsp;&nbsp;docs/MANUAL_USUARIO.md + capturas do ambiente de demonstração</div>
+    <div><strong>Conformidade</strong>&nbsp;&nbsp;LGPD — Lei nº 13.709/2018</div>
+  </div>
+</div>
+
+<blockquote>
+<p>Manual operacional, passo a passo, para os perfis de acesso do sistema: <strong>Paciente</strong>,
+<strong>Profissional</strong>, <strong>Administrador</strong> e <strong>Técnico</strong> (o Técnico tem o mesmo acesso do
+Administrador — ver <a href="#49-perfil-t%C3%A9cnico">4.9</a>). Descreve o que cada tela faz e como usá-la — não
+é a especificação técnica (isso está em <a href="./spec.md"><code>docs/spec.md</code></a>) nem o guia de conformidade
+LGPD voltado ao público (isso está em
+<a href="../documentacao/documentacao_cliente.html"><code>documentacao/documentacao_cliente.html</code></a>, com foco
+em proteção de dados). Escrito a partir do comportamento real das telas em 03/08/2026;
+revisado em 09/09/2026 para incluir verificação em duas etapas, lista de espera, avaliação
+pós-consulta (NPS), o perfil Técnico e o painel de logs.</p>
+</blockquote>
+<h2 id="sumário">Sumário</h2>
+<ol>
+<li><a href="#1-acesso-ao-sistema-comum-a-todos-os-perfis">Acesso ao sistema (comum a todos os perfis)</a></li>
+<li><a href="#2-manual-do-paciente">Manual do Paciente</a></li>
+<li><a href="#3-manual-do-profissional">Manual do Profissional</a></li>
+<li><a href="#4-manual-do-administrador">Manual do Administrador</a></li>
+<li><a href="#5-m%C3%A1quina-de-estados-da-consulta--refer%C3%AAncia-r%C3%A1pida">Máquina de estados da consulta — referência rápida</a><ul>
+<li><a href="#51-diagrama-de-estados">5.1 Diagrama de estados</a></li>
+<li><a href="#52-cancelar-recusar-e-reagendar--quem-faz-o-qu%C3%AA-e-onde">5.2 Cancelar, recusar e reagendar — quem faz o quê e onde</a></li>
+</ul>
+</li>
+<li><a href="#6-perguntas-frequentes-gerais">Perguntas frequentes gerais</a></li>
+</ol>
+<hr>
+<h2 id="1-acesso-ao-sistema-comum-a-todos-os-perfis">1. Acesso ao sistema (comum a todos os perfis)</h2>
+<h3 id="11-criar-conta-somente-paciente">1.1 Criar conta (somente paciente)</h3>
+<figure class="shot"><img src="manual-assets/02-cadastro.png" alt="Cadastro de paciente (1.1)"><figcaption>Cadastro de paciente (1.1)</figcaption></figure>
+
+<p>Só o <strong>paciente</strong> se cadastra sozinho, na tela <strong>Cadastro</strong> (link a partir da tela de Login).
+Profissionais e administradores não se auto-cadastram — a conta deles é criada por um
+administrador (ver <a href="#42-profissionais--cadastrar-editar-e-excluir">4.2</a>).</p>
+<p>Passos:</p>
+<ol>
+<li>Preencha nome, e-mail, senha e demais dados pedidos.</li>
+<li>Aceite os <strong>Termos de Uso e a Política de Privacidade</strong> — o aceite é obrigatório; sem ele o
+cadastro não é enviado.</li>
+<li>Envie o formulário.</li>
+<li>Você receberá um e-mail de <strong>verificação</strong>, com um link válido por 24 horas. Clique nele para
+ativar a conta.</li>
+</ol>
+<p>Se o e-mail informado já estiver em uso — como paciente ou como profissional — o sistema recusa o
+cadastro e avisa que o e-mail já está cadastrado.</p>
+<blockquote>
+<p><strong>Ainda não verifiquei meu e-mail — posso usar o sistema?</strong> Sim. Enquanto a conta não é
+verificada, aparece uma faixa amarela no topo (&quot;Seu e-mail ainda não foi verificado. Por favor,
+verifique sua caixa de entrada.&quot;). Você consegue fazer login e navegar normalmente; a faixa some
+assim que você clica no link do e-mail.</p>
+<p><strong>O link de verificação expirou (mais de 24h) e não recebi outro.</strong> O sistema não tem um botão
+de &quot;reenviar verificação&quot;. Nesse caso, contate a administração da clínica — ela consegue
+reenviar o e-mail ou confirmar a conta manualmente. Verifique antes a caixa de spam/lixo
+eletrônico.</p>
+</blockquote>
+<h3 id="12-login">1.2 Login</h3>
+<figure class="shot"><img src="manual-assets/01-login.png" alt="Tela de acesso (1.2)"><figcaption>Tela de acesso (1.2)</figcaption></figure>
+
+<p>Na tela <strong>Login</strong>, informe e-mail e senha. Se as credenciais não conferirem, o sistema mostra um
+erro genérico (não informa se o problema foi o e-mail ou a senha, por segurança).</p>
+<p>Sua sessão fica ativa por um período limitado; ao expirar, o sistema pede login novamente.</p>
+<h3 id="13-esqueci-minha-senha">1.3 Esqueci minha senha</h3>
+<figure class="shot"><img src="manual-assets/03-esqueci-senha.png" alt="Recuperação de senha (1.3)"><figcaption>Recuperação de senha (1.3)</figcaption></figure>
+
+<p>Na tela de login, use o link <strong>Esqueci minha senha</strong>:</p>
+<ol>
+<li>Informe o e-mail cadastrado.</li>
+<li>O sistema sempre mostra a mesma mensagem de sucesso, exista ou não aquele e-mail na base —
+isso é proposital, para não revelar quais e-mails têm conta.</li>
+<li>Se o e-mail existir, chega um link de redefinição, de uso único e validade curta.</li>
+<li>Abra o link, defina a nova senha.</li>
+</ol>
+<h3 id="14-sair-do-sistema">1.4 Sair do sistema</h3>
+<p>No rodapé do menu lateral, o botão <strong>Sair do sistema</strong> encerra a sessão. O token de acesso é
+invalidado imediatamente no servidor (não basta fechar a aba — ver <a href="#66-seguran%C3%A7a-da-sess%C3%A3o">Segurança</a>).</p>
+<h3 id="15-tema-claroescuro">1.5 Tema claro/escuro</h3>
+<p>O ícone de sol/lua no topo da tela alterna entre tema claro e escuro. A preferência fica salva
+para os próximos acessos.</p>
+<h3 id="16-verificação-em-duas-etapas-2fa">1.6 Verificação em duas etapas (2FA)</h3>
+<figure class="shot"><img src="manual-assets/15-paciente-meu-perfil.png" alt="Meu Perfil + verificação em duas etapas (1.6 / 1.8)"><figcaption>Meu Perfil + verificação em duas etapas (1.6 / 1.8)</figcaption></figure>
+
+<p>A verificação em duas etapas está disponível para <strong>Administrador</strong>, <strong>Profissional</strong> e
+<strong>Paciente</strong>. Quando ativada, o login passa a exigir, além da senha, um <strong>código de 6 dígitos</strong> de
+um aplicativo autenticador (Google Authenticator, Authy e similares).</p>
+<p><strong>Como ativar:</strong></p>
+<ol>
+<li>Abra <strong>Meu Perfil</strong> (Paciente/Profissional) ou <strong>Segurança</strong> (Administrador/Técnico).</li>
+<li>Clique em <strong>Ativar verificação em duas etapas</strong>.</li>
+<li>Escaneie o QR code com o aplicativo autenticador — ou digite o código exibido manualmente.</li>
+<li>Digite o código de 6 dígitos que o aplicativo gerou e confirme.</li>
+<li>O sistema mostra os <strong>códigos de backup</strong> — anote-os num lugar seguro. Cada código funciona
+<strong>uma única vez</strong> e serve para entrar caso você perca o acesso ao aplicativo. <strong>Eles não são
+exibidos de novo.</strong></li>
+</ol>
+<p><strong>Como é o login depois de ativada:</strong> você informa e-mail e senha normalmente; em seguida o
+sistema pede o código do aplicativo. Só depois do código a sessão é aberta. Perdeu o celular? Use
+um dos códigos de backup no lugar do código do aplicativo.</p>
+<p><strong>Como desativar:</strong> na mesma tela, clique em <strong>Desativar</strong> e informe sua senha e um código
+(do aplicativo ou de backup). Ao desativar, todas as suas sessões abertas são encerradas.</p>
+<h3 id="17-sessão-expirada-por-inatividade">1.7 Sessão expirada por inatividade</h3>
+<p>Depois de <strong>15 minutos sem nenhuma ação</strong> na área logada, o sistema encerra a sessão
+automaticamente e volta para a tela de login. É uma proteção para computadores compartilhados
+(recepção, consultório). Basta entrar de novo — nada é perdido.</p>
+<h3 id="18-trocar-a-senha-estando-logado">1.8 Trocar a senha estando logado</h3>
+<p><strong>Paciente</strong> e <strong>Profissional</strong>: em <strong>Meu Perfil</strong>, botão <strong>Alterar minha senha</strong> — informe a
+nova senha duas vezes (mínimo de 6 caracteres). <strong>Administrador/Técnico</strong> não têm &quot;Meu Perfil&quot;;
+se precisarem trocar a senha, usam o fluxo <strong>Esqueci minha senha</strong> (<a href="#13-esqueci-minha-senha">1.3</a>).</p>
+<hr>
+<h2 id="2-manual-do-paciente">2. Manual do Paciente</h2>
+<p>Menu lateral (&quot;Minha Área&quot;): <strong>Início · Minhas Consultas · Meus Documentos</strong>, com <strong>Meu Perfil</strong>
+no rodapé.</p>
+<h3 id="21-meu-perfil">2.1 Meu Perfil</h3>
+<p>Tela para ver e atualizar seus próprios dados cadastrais (nome, telefone, endereço, contato de
+emergência, alergias etc.) a qualquer momento.</p>
+<h3 id="22-início-painel">2.2 Início (Painel)</h3>
+<figure class="shot"><img src="manual-assets/10-paciente-inicio.png" alt="Início do paciente (2.2)"><figcaption>Início do paciente (2.2)</figcaption></figure>
+
+<p>Mostra, num só lugar:</p>
+<ul>
+<li>sua <strong>próxima consulta</strong>;</li>
+<li>consultas que estão <strong>aguardando alguma ação sua</strong> (ex.: confirmar presença);</li>
+<li><strong>documentos</strong> que o profissional já liberou para você.</li>
+</ul>
+<h3 id="23-agendar-uma-consulta">2.3 Agendar uma consulta</h3>
+<figure class="shot"><img src="manual-assets/12-paciente-agendar.png" alt="Formulário de agendamento guiado (2.3)"><figcaption>Formulário de agendamento guiado (2.3)</figcaption></figure>
+
+<p>Em <strong>Minhas Consultas</strong>, use o formulário de agendamento:</p>
+<table>
+<thead>
+<tr>
+<th>Passo</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Escolha o <strong>profissional</strong> — a lista mostra a modalidade de atendimento de cada um (presencial, online ou híbrido).</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Escolha a <strong>data</strong>.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Escolha um <strong>horário livre</strong> entre os disponíveis naquele dia — horários ocupados ou já passados não aparecem.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Descreva, opcionalmente, o <strong>motivo da consulta</strong>.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Confirme. A consulta é criada no status <strong>Aguardando Confirmação</strong>.</td>
+</tr>
+</tbody></table>
+<p>Se você estiver <strong>bloqueado por penalidade</strong> (ver <a href="#29-penalidades-por-falta-ou-cancelamento-tardio">2.9</a>),
+o sistema recusa o agendamento e informa a data em que o bloqueio termina.</p>
+<h3 id="24-acompanhar-o-status-da-consulta">2.4 Acompanhar o status da consulta</h3>
+<figure class="shot"><img src="manual-assets/11-paciente-minhas-consultas.png" alt="Minhas Consultas — lista e status (2.4)"><figcaption>Minhas Consultas — lista e status (2.4)</figcaption></figure>
+
+<p>Cada consulta listada em <strong>Minhas Consultas</strong> mostra um status:</p>
+<table>
+<thead>
+<tr>
+<th>Status na tela</th>
+<th>O que significa</th>
+<th>O que fazer</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Aguardando Confirmação</strong></td>
+<td>Você agendou, falta o profissional aceitar.</td>
+<td>Aguardar.</td>
+</tr>
+<tr>
+<td><strong>Agendada</strong></td>
+<td>O profissional aceitou.</td>
+<td>Aguardar o profissional confirmar (etapa seguinte da dupla confirmação).</td>
+</tr>
+<tr>
+<td><strong>Aguardando paciente</strong></td>
+<td>O profissional já confirmou; falta você confirmar.</td>
+<td>Confirmar sua presença (ver <a href="#25-confirmar-presen%C3%A7a">2.5</a>).</td>
+</tr>
+<tr>
+<td><strong>Confirmada</strong></td>
+<td>Ambos os lados confirmaram.</td>
+<td>Comparecer na data marcada.</td>
+</tr>
+<tr>
+<td><strong>Concluída</strong></td>
+<td>O profissional já atendeu e registrou o prontuário.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Cancelada</strong></td>
+<td>A consulta foi cancelada (por você, pelo profissional ou por um admin).</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Faltou</strong></td>
+<td>Você não compareceu e o profissional marcou falta.</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h3 id="25-confirmar-presença">2.5 Confirmar presença</h3>
+<p>A consulta passa por <strong>duas confirmações</strong> antes do dia do atendimento: primeiro o profissional,
+depois você. Você só consegue confirmar depois que o profissional já confirmou (status
+<strong>Aguardando paciente</strong>) — se tentar antes, o sistema avisa: <em>&quot;Aguardando confirmação do
+profissional primeiro.&quot;</em></p>
+<h3 id="26-cancelar-uma-consulta">2.6 Cancelar uma consulta</h3>
+<p>Em <strong>Minhas Consultas</strong>, o botão <strong>Cancelar</strong> aparece em toda consulta que ainda não foi
+encerrada — inclusive nas que ainda estão &quot;Aguardando Confirmação&quot;. Ao cancelar:</p>
+<ul>
+<li>é obrigatório escrever uma <strong>justificativa</strong> (mínimo de 10 caracteres);</li>
+<li>se faltar <strong>menos de 24h</strong> para o horário marcado, <strong>e</strong> a consulta ainda estiver no futuro,
+<strong>e</strong> ela já tiver passado da fase &quot;Aguardando Confirmação&quot;, uma penalidade é aplicada à sua
+conta (ver <a href="#29-penalidades-por-falta-ou-cancelamento-tardio">2.9</a>);</li>
+<li>cancelamentos com 24h ou mais de antecedência, ou de consultas ainda não aceitas pelo
+profissional, <strong>não</strong> geram penalidade.</li>
+</ul>
+<blockquote>
+<p>A janela de cancelamento mostra um aviso de penalidade sempre que faltam menos de 24h para o
+horário (ou a data já passou). Esse aviso é preventivo: se a consulta <strong>já passou da data</strong>, o
+cancelamento <strong>não</strong> bloqueia sua conta — a penalidade só vale para consulta que ainda vai
+acontecer.</p>
+</blockquote>
+<h3 id="27-reagendar-uma-consulta">2.7 Reagendar uma consulta</h3>
+<p>O botão <strong>Reagendar</strong> só aparece depois que o profissional <strong>já aceitou</strong> a consulta (status
+&quot;Agendada&quot; ou adiante). Se ela ainda está &quot;Aguardando Confirmação&quot;, cancele e agende de novo.</p>
+<p>Ao reagendar para nova data/horário, a consulta <strong>volta para &quot;Agendada&quot;</strong> e o ciclo de dupla
+confirmação recomeça daí — o profissional confirma de novo e depois você — mesmo que ela já
+estivesse totalmente confirmada antes. Reagendar exige <strong>justificativa</strong> e, se a consulta original
+estiver a menos de 24h, aplica a mesma penalidade do cancelamento tardio.</p>
+<h3 id="28-meus-documentos">2.8 Meus Documentos</h3>
+<figure class="shot"><img src="manual-assets/13-paciente-meus-documentos.png" alt="Meus Documentos e Portabilidade (2.8 / 2.10)"><figcaption>Meus Documentos e Portabilidade (2.8 / 2.10)</figcaption></figure>
+
+<p>Nesta tela você vê os documentos clínicos (laudos, atestados, exames) que o profissional
+<strong>liberou</strong> para você. Documentos ainda não liberados pelo profissional não aparecem. Documentos
+em PDF podem ser baixados pelo botão <strong>Baixar PDF</strong>.</p>
+<h3 id="29-penalidades-por-falta-ou-cancelamento-tardio">2.9 Penalidades por falta ou cancelamento tardio</h3>
+<p>O sistema aplica penalidade progressiva quando você falta a uma consulta ou cancela com menos de
+24h de antecedência (depois que a consulta já havia sido aceita pelo profissional):</p>
+<ol>
+<li><strong>1ª ocorrência:</strong> advertência por e-mail. Sua conta <strong>não</strong> é bloqueada.</li>
+<li><strong>Da 2ª ocorrência em diante:</strong> sua conta fica <strong>bloqueada por 15 dias</strong> para novos
+agendamentos, com aviso por e-mail. Cada nova infração após a advertência reinicia um bloqueio
+de 15 dias.</li>
+</ol>
+<p>Enquanto estiver bloqueado, ao tentar agendar o sistema recusa e informa <strong>a data e a hora em que
+o bloqueio termina</strong>. Passado esse prazo, o agendamento volta a funcionar sozinho.</p>
+<p>Uma falta marcada pelo profissional (você não compareceu) <strong>sempre</strong> gera penalidade, mesmo que a
+data já estivesse próxima ou distante — não há regra de antecedência para falta, só para
+cancelamento.</p>
+<p>Se precisar de desbloqueio antes do prazo, contate a administração (ver <a href="#43-pacientes--visualizar-desbloquear-e-excluir">4.3</a>).</p>
+<h3 id="210-portabilidade--exportar-meus-dados">2.10 Portabilidade — exportar meus dados</h3>
+<p>Na tela <strong>Meus Documentos</strong>, o botão <strong>Portabilidade (Exportar Meus Dados)</strong> gera um arquivo
+<strong>JSON</strong> com todos os seus dados: cadastro, prontuários, documentos, consultas e o registro do seu
+consentimento aos Termos de Uso — seu direito de portabilidade garantido pela LGPD (Art. 18, V).</p>
+<h3 id="211-lista-de-espera">2.11 Lista de Espera</h3>
+<figure class="shot"><img src="manual-assets/14-paciente-lista-espera.png" alt="Lista de Espera (2.11)"><figcaption>Lista de Espera (2.11)</figcaption></figure>
+
+<p>Quando o profissional não tem horário livre na data que você quer, use a <strong>Lista de Espera</strong>
+(menu lateral):</p>
+<ol>
+<li>Escolha o <strong>profissional</strong>, a <strong>data</strong> e o <strong>horário</strong> que você gostaria.</li>
+<li>Clique em <strong>Entrar na fila</strong>.</li>
+<li>Se alguém cancelar ou reagendar e liberar exatamente aquele horário, o sistema <strong>reserva a vaga
+para o primeiro da fila</strong> e envia um <strong>e-mail com um link de confirmação</strong>.</li>
+<li>Você tem um prazo curto (por padrão, <strong>2 horas</strong>) para clicar no link e confirmar. Se não
+confirmar a tempo, a vaga passa para o próximo da fila e sua entrada fica como <strong>Expirada</strong>.</li>
+</ol>
+<p>Na própria tela você acompanha o status de cada entrada: <strong>Aguardando</strong>, <strong>Vaga oferecida —
+confira seu e-mail</strong>, <strong>Confirmada</strong>, <strong>Expirada</strong> ou <strong>Cancelada</strong>. Enquanto está &quot;Aguardando&quot;,
+o botão <strong>Sair</strong> remove você da fila.</p>
+<blockquote>
+<p>A vaga confirmada pela lista de espera já entra como uma consulta normal na sua lista de
+<strong>Minhas Consultas</strong>, seguindo o ciclo de dupla confirmação.</p>
+</blockquote>
+<h3 id="212-avaliação-pós-consulta-nps">2.12 Avaliação pós-consulta (NPS)</h3>
+<figure class="shot"><img src="manual-assets/04-avaliar-nps.png" alt="Avaliação pós-consulta (2.12)"><figcaption>Avaliação pós-consulta (2.12)</figcaption></figure>
+
+<p>Depois que o profissional registra o prontuário e a consulta é <strong>concluída</strong>, você recebe um
+<strong>e-mail convidando a avaliar o atendimento</strong> (nota de 0 a 10 e um comentário opcional).</p>
+<ul>
+<li>O link é <strong>público e de uso único</strong> — não precisa estar logado para responder.</li>
+<li>O prazo para responder é de <strong>7 dias</strong>; depois disso o link expira.</li>
+<li>Responder é <strong>opcional</strong>; serve para a clínica medir a satisfação com o atendimento.</li>
+</ul>
+<h3 id="213-perguntas-frequentes-paciente">2.13 Perguntas frequentes (Paciente)</h3>
+<ul>
+<li><strong>&quot;O horário que eu queria sumiu da lista&quot;</strong> — outro paciente pode ter agendado esse mesmo
+horário primeiro, a hora já passou, ou o profissional retirou aquele horário da disponibilidade.</li>
+<li><strong>&quot;Não achei nenhum horário com o profissional que eu quero&quot;</strong> — o profissional pode não ter
+publicado a agenda ainda. Entre na <strong>Lista de Espera</strong> (<a href="#211-lista-de-espera">2.11</a>) para ser
+avisado quando abrir vaga.</li>
+<li><strong>&quot;Não aparece nenhum profissional para eu escolher&quot;</strong> — a lista só mostra profissionais que já
+configuraram disponibilidade. Se está vazia, ainda não há agenda publicada.</li>
+<li><strong>&quot;Não consigo confirmar minha consulta&quot;</strong> — confirme se o status já é &quot;Aguardando paciente&quot;; se
+ainda estiver &quot;Agendada&quot;, o profissional ainda não confirmou a vez dele.</li>
+<li><strong>&quot;Confirmei a minha parte e o status não virou &#39;Confirmada&#39;&quot;</strong> — verifique se o profissional
+também já confirmou. A consulta só fica &quot;Confirmada&quot; com as <strong>duas</strong> confirmações.</li>
+<li><strong>&quot;Não consigo agendar nada&quot;</strong> — verifique se sua conta está bloqueada por penalidade; a
+mensagem de erro informa a data e a hora em que o bloqueio termina.</li>
+<li><strong>&quot;Onde eu cancelo minha consulta?&quot;</strong> — em <strong>Minhas Consultas</strong>, botão <strong>Cancelar</strong> no cartão da
+consulta (funciona em qualquer status ainda ativo). Ver <a href="#26-cancelar-uma-consulta">2.6</a>.</li>
+<li><strong>&quot;Reagendei uma consulta que já estava confirmada e ela voltou para &#39;Agendada&#39;&quot;</strong> — é o
+comportamento esperado: reagendar reinicia a dupla confirmação. Ver <a href="#27-reagendar-uma-consulta">2.7</a>.</li>
+<li><strong>&quot;Cancelei uma consulta antiga e o sistema me avisou de bloqueio — fui bloqueado?&quot;</strong> — não. O
+aviso é preventivo; cancelamento de consulta cuja data já passou não aplica penalidade.</li>
+<li><strong>&quot;Recebi um e-mail pedindo para avaliar a consulta — é do sistema?&quot;</strong> — sim, é a avaliação
+pós-consulta (<a href="#212-avalia%C3%A7%C3%A3o-p%C3%B3s-consulta-nps">2.12</a>). O link não pede login e vale 7 dias.</li>
+<li><strong>&quot;O médico disse que enviou um documento, mas não aparece em Meus Documentos&quot;</strong> — o documento
+só fica visível depois que o profissional o <strong>libera</strong>. Peça a ele para disponibilizar.</li>
+</ul>
+<hr>
+<h2 id="3-manual-do-profissional">3. Manual do Profissional</h2>
+<p>Menu lateral (&quot;Área do Profissional&quot;): <strong>Início · Minha Disponibilidade · Minha Agenda ·
+Documentos</strong>, com <strong>Meu Perfil</strong> no rodapé.</p>
+<h3 id="31-meu-perfil">3.1 Meu Perfil</h3>
+<p>Além dos dados cadastrais, aqui você define sua <strong>modalidade de atendimento</strong>
+(presencial / online / híbrido) — é essa informação que o paciente vê ao escolher entre
+profissionais na hora de agendar.</p>
+<h3 id="32-minha-disponibilidade">3.2 Minha Disponibilidade</h3>
+<figure class="shot"><img src="manual-assets/24-profissional-disponibilidade.png" alt="Minha Disponibilidade (3.2)"><figcaption>Minha Disponibilidade (3.2)</figcaption></figure>
+
+<p>Grade de horários livres para atendimento, organizada por <strong>data específica</strong> (não por dia da
+semana recorrente).</p>
+<ul>
+<li>Só é possível editar a grade do <strong>mês atual ou do próximo</strong> — meses passados não podem ser
+alterados.</li>
+<li>Cada horário marcado dura sempre <strong>1 hora</strong>.</li>
+<li>Se você tentar salvar uma grade removendo um horário que já tem uma consulta ativa vinculada
+(Aguardando Confirmação, Agendada, Aguardando paciente ou Confirmada), o sistema recusa e pede
+para cancelar aquela consulta individualmente primeiro.</li>
+</ul>
+<p>Use as setas para navegar entre os meses, marque os horários livres na grade e clique em
+<strong>Salvar</strong> para publicar.</p>
+<blockquote>
+<p><strong>Alerta &quot;Atenção ao Prazo&quot;.</strong> Se você ainda não publicou a agenda e faltam menos de 15 dias
+para o fim do mês, a tela mostra um aviso amarelo. Ele some assim que você salva pelo menos um
+horário no mês. É só um lembrete — não bloqueia nada.</p>
+</blockquote>
+<h3 id="33-minha-agenda">3.3 Minha Agenda</h3>
+<figure class="shot"><img src="manual-assets/22-profissional-agenda-proximas.png" alt="Minha Agenda — aba Próximas (3.3)"><figcaption>Minha Agenda — aba Próximas (3.3)</figcaption></figure>
+
+<figure class="shot"><img src="manual-assets/21-profissional-agenda-hoje.png" alt="Minha Agenda — aba Hoje (3.3)"><figcaption>Minha Agenda — aba Hoje (3.3)</figcaption></figure>
+
+<p>Três abas organizam suas consultas, e <strong>cada aba mostra botões diferentes</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Aba</th>
+<th>O que lista</th>
+<th>Botões disponíveis</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Hoje</strong></td>
+<td>Atendimentos do dia.</td>
+<td>Aprovar/Recusar (se &quot;Aguardando Confirmação&quot;); Confirmar (se &quot;Agendada&quot;); <strong>Iniciar atendimento</strong> e <strong>Paciente faltou</strong> (de &quot;Agendada&quot; em diante).</td>
+</tr>
+<tr>
+<td><strong>Próximas</strong></td>
+<td>Consultas futuras (não hoje).</td>
+<td>Apenas <strong>Aprovar/Recusar</strong> ou <strong>Confirmar</strong>. Iniciar atendimento, marcar falta e cancelar <strong>não</strong> aparecem aqui — só no dia (aba Hoje) ou depois (aba Atrasadas).</td>
+</tr>
+<tr>
+<td><strong>Atrasadas</strong></td>
+<td>Consultas cuja data já passou e ainda sem desfecho (a agenda não &quot;resolve&quot; nada sozinha).</td>
+<td><strong>Registrar atendimento</strong>, <strong>Paciente faltou</strong> e <strong>Cancelar</strong> (ou só <strong>Cancelar</strong>, se ainda estiver &quot;Aguardando Confirmação&quot;).</td>
+</tr>
+</tbody></table>
+<h3 id="34-aprovar-ou-recusar-uma-solicitação">3.4 Aprovar ou recusar uma solicitação</h3>
+<p>Toda consulta nasce como uma solicitação do paciente, no status <strong>Aguardando Confirmação</strong>.
+Nas abas Hoje/Próximas, use:</p>
+<ul>
+<li><strong>✓ Aprovar</strong> — o status vira <strong>Agendada</strong>.</li>
+<li><strong>✕ Recusar</strong> — pede uma justificativa obrigatória; o status vira <strong>Cancelada</strong>.</li>
+</ul>
+<p>Depois que a consulta sair de &quot;Aguardando Confirmação&quot;, os botões de aprovar/recusar somem — não
+é mais possível aprovar/recusar de novo.</p>
+<blockquote>
+<p><strong>Recusar não tem desfazer.</strong> A consulta vira &quot;Cancelada&quot; definitivamente; se foi engano, o
+paciente precisa solicitar o agendamento de novo.</p>
+</blockquote>
+<h3 id="35-confirmar-presença-sua-parte-na-dupla-confirmação">3.5 Confirmar presença (sua parte na dupla confirmação)</h3>
+<p>Quando a consulta está <strong>Agendada</strong>, o botão <strong>Confirmar</strong> registra que você confirma o
+atendimento. O status vira &quot;Aguardando paciente&quot; — falta agora a confirmação do lado dele.</p>
+<h3 id="351-cancelar-uma-consulta-que-você-já-aceitou">3.5.1 Cancelar uma consulta que você já aceitou</h3>
+<p>Este é um ponto que costuma gerar dúvida. A tela <strong>Minha Agenda</strong> <strong>não tem um botão &quot;Cancelar&quot;
+para uma consulta futura já aceita</strong> (status &quot;Agendada&quot;, &quot;Aguardando paciente&quot; ou &quot;Confirmada&quot;)
+enquanto a data não chega. As opções do profissional são:</p>
+<table>
+<thead>
+<tr>
+<th>Situação</th>
+<th>O que fazer</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A consulta ainda está <strong>&quot;Aguardando Confirmação&quot;</strong></td>
+<td>Use <strong>✕ Recusar</strong> (<a href="#34-aprovar-ou-recusar-uma-solicita%C3%A7%C3%A3o">3.4</a>) — vira &quot;Cancelada&quot;.</td>
+</tr>
+<tr>
+<td>A consulta já foi aceita e a <strong>data já passou</strong></td>
+<td>Aba <strong>Atrasadas</strong> → botão <strong>Cancelar</strong> (<a href="#38-cancelar-consulta-atrasada">3.8</a>).</td>
+</tr>
+<tr>
+<td>A consulta já foi aceita e <strong>ainda vai acontecer</strong></td>
+<td>Não há botão na sua agenda. Peça à <strong>administração</strong> para cancelar (ela cancela qualquer consulta pela Agenda Geral — ver <a href="#44-agenda-geral">4.4</a>). Alternativa: registrar o desfecho no dia (atendimento ou <strong>Paciente faltou</strong>).</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Se esse fluxo (pedir à administração) for frequente na clínica, avalie com o time do sistema
+adicionar um botão <strong>Cancelar</strong> direto na agenda do profissional.</p>
+</blockquote>
+<h3 id="36-iniciarregistrar-atendimento-prontuário">3.6 Iniciar/Registrar atendimento (prontuário)</h3>
+<figure class="shot"><img src="manual-assets/26-profissional-prontuario.png" alt="Prontuário Eletrônico e histórico clínico (3.6 / 3.10)"><figcaption>Prontuário Eletrônico e histórico clínico (3.6 / 3.10)</figcaption></figure>
+
+<p>O botão <strong>Iniciar atendimento</strong> (aba <strong>Hoje</strong>) ou <strong>Registrar atendimento</strong> (aba <strong>Atrasadas</strong>)
+leva para a tela de <strong>Prontuário Eletrônico</strong> daquela consulta.</p>
+<blockquote>
+<p><strong>Atenção:</strong> salvar o prontuário é o que <strong>conclui a consulta</strong> — não existe um botão separado
+de &quot;concluir&quot;. Assim que você grava as notas clínicas, o status muda automaticamente para
+<strong>Concluída</strong>. Só é possível chegar a essa tela a partir de uma consulta que já existe; não há
+guarda de status prévio, então tecnicamente dá pra registrar o prontuário mesmo de uma consulta
+ainda não confirmada — mas o fluxo normal é registrar depois do atendimento de fato acontecer.</p>
+</blockquote>
+<h3 id="37-marcar-falta-do-paciente">3.7 Marcar falta do paciente</h3>
+<p>Se o paciente não comparecer, use <strong>Paciente faltou</strong>. O status vira <strong>Faltou</strong> e uma penalidade é
+aplicada à conta do paciente automaticamente, <strong>sempre</strong> — diferente do cancelamento, aqui não
+existe regra de antecedência de 24h.</p>
+<h3 id="38-cancelar-consulta-atrasada">3.8 Cancelar consulta atrasada</h3>
+<figure class="shot"><img src="manual-assets/23-profissional-agenda-atrasadas.png" alt="Minha Agenda — aba Atrasadas (3.8)"><figcaption>Minha Agenda — aba Atrasadas (3.8)</figcaption></figure>
+
+<p>Na aba <strong>Atrasadas</strong>, consultas ainda em &quot;Aguardando Confirmação&quot; só podem ser <strong>canceladas</strong>
+(não faz mais sentido aprovar algo cuja data já passou). Para as demais, o botão <strong>Cancelar</strong>
+também está disponível, junto de &quot;Registrar atendimento&quot; e &quot;Paciente faltou&quot;.</p>
+<h3 id="39-documentos--upload-e-visibilidade">3.9 Documentos — upload e visibilidade</h3>
+<figure class="shot"><img src="manual-assets/25-profissional-documentos.png" alt="Documentos — upload e visibilidade (3.9)"><figcaption>Documentos — upload e visibilidade (3.9)</figcaption></figure>
+
+<p>Na tela <strong>Documentos</strong>:</p>
+<ol>
+<li>Clique para abrir o formulário de novo documento.</li>
+<li>Preencha título, tipo, e o conteúdo — texto direto ou upload de um <strong>PDF</strong>.</li>
+<li>Marque <strong>&quot;Disponibilizar para o paciente imediatamente&quot;</strong> se quiser liberar na hora; senão, o
+documento fica oculto até você liberar depois.</li>
+<li>Salve.</li>
+</ol>
+<p>Depois de criado, o botão de disponibilidade (<strong>Sim/Não</strong> ou <strong>Disponível/Oculto</strong>) alterna a
+visibilidade a qualquer momento — você decide quando o paciente passa a enxergar aquele laudo ou
+atestado.</p>
+<blockquote>
+<p>PDFs são validados pela assinatura real do arquivo (não só pela extensão) e há um limite de
+tamanho de aproximadamente 5MB — arquivos disfarçados de PDF ou grandes demais são recusados.</p>
+</blockquote>
+<h3 id="310-histórico-clínico-do-paciente">3.10 Histórico clínico do paciente</h3>
+<p>A tela de <strong>Prontuário Eletrônico</strong> (aberta pelo botão de iniciar/registrar atendimento) mostra,
+acima do campo de novas anotações, o <strong>histórico de prontuários anteriores</strong> daquele paciente —
+consultas passadas com outros profissionais inclusive. É consulta apenas; você edita só a
+anotação da consulta atual.</p>
+<h3 id="311-início-painel">3.11 Início (Painel)</h3>
+<figure class="shot"><img src="manual-assets/20-profissional-inicio.png" alt="Início do profissional (3.11)"><figcaption>Início do profissional (3.11)</figcaption></figure>
+
+<p>Mostra sua agenda do dia, pendências de confirmação, consultas atrasadas, suas próximas consultas
+e o total de pacientes únicos que você já atendeu.</p>
+<h3 id="312-exportar-meus-atendimentos">3.12 Exportar meus atendimentos</h3>
+<p>No painel <strong>Início</strong>, o botão <strong>Exportar Meus Atendimentos</strong> gera um <strong>CSV</strong> com os prontuários
+que você criou — um backup do seu próprio trabalho clínico.</p>
+<h3 id="313-perguntas-frequentes-profissional">3.13 Perguntas frequentes (Profissional)</h3>
+<ul>
+<li><strong>&quot;Onde eu cancelo uma consulta que já aceitei?&quot;</strong> — enquanto a data não chega, não há botão na
+sua agenda; a administração cancela pela Agenda Geral. Ver <a href="#351-cancelar-uma-consulta-que-voc%C3%AA-j%C3%A1-aceitou">3.5.1</a>.</li>
+<li><strong>&quot;Na aba Próximas só aparece Confirmar / Aprovar / Recusar&quot;</strong> — é o esperado. Iniciar
+atendimento, marcar falta e cancelar só aparecem na aba <strong>Hoje</strong> (no dia) ou na aba
+<strong>Atrasadas</strong> (depois). Ver a tabela em <a href="#33-minha-agenda">3.3</a>.</li>
+<li><strong>&quot;Recusei uma solicitação sem querer&quot;</strong> — não há como desfazer; a consulta fica &quot;Cancelada&quot;.
+O paciente precisa solicitar de novo.</li>
+<li><strong>&quot;Não consigo remover um horário da minha disponibilidade&quot;</strong> — provavelmente há uma consulta
+ativa vinculada a ele; cancele a consulta individualmente antes de tirá-lo da grade.</li>
+<li><strong>&quot;Não consigo editar a disponibilidade de um mês&quot;</strong> — só o mês atual e o próximo podem ser
+editados.</li>
+<li><strong>&quot;Confirmei a consulta e o status não ficou &#39;Confirmada&#39;&quot;</strong> — falta a confirmação do paciente.
+Depois da sua confirmação o status fica &quot;Aguardando paciente&quot; até ele confirmar também.</li>
+<li><strong>&quot;O prontuário concluiu a consulta antes da hora&quot;</strong> — é o comportamento esperado: salvar o
+prontuário sempre marca a consulta como Concluída, não existe um passo intermediário.</li>
+<li><strong>&quot;Marquei falta e o paciente reclamou de bloqueio&quot;</strong> — falta <strong>sempre</strong> gera penalidade, sem
+janela de 24h. A 1ª é advertência; da 2ª em diante, bloqueio de 15 dias. Desbloqueio é com a
+administração.</li>
+<li><strong>&quot;Meu PDF foi recusado no upload&quot;</strong> — o arquivo precisa ser um PDF de verdade (o sistema checa
+a assinatura do arquivo, não só a extensão <code>.pdf</code>) e ter até ~5MB.</li>
+</ul>
+<hr>
+<h2 id="4-manual-do-administrador">4. Manual do Administrador</h2>
+<p>Menu lateral (&quot;Administração&quot;): <strong>Início · Profissionais · Pacientes · Agenda Geral ·
+Segurança · Logs</strong>.</p>
+<blockquote>
+<p>Este capítulo vale igual para o perfil <strong>Técnico</strong> — ele vê o mesmo menu e tem o mesmo poder do
+Administrador (ver <a href="#49-perfil-t%C3%A9cnico">4.9</a>).</p>
+</blockquote>
+<h3 id="41-início-painel">4.1 Início (Painel)</h3>
+<figure class="shot"><img src="manual-assets/30-admin-inicio.png" alt="Início do administrador (4.1)"><figcaption>Início do administrador (4.1)</figcaption></figure>
+
+<p>Visão geral da operação: totais de profissionais e pacientes cadastrados, e as consultas do dia
+agrupadas por status. Os botões <strong>Exportar Pacientes</strong>, <strong>Exportar Profissionais</strong> e <strong>Exportar
+Relatório Geral</strong> geram os respectivos arquivos <strong>CSV</strong> (ver <a href="#45-exporta%C3%A7%C3%B5es-administrativas">4.5</a>).</p>
+<h3 id="42-profissionais--cadastrar-editar-e-excluir">4.2 Profissionais — cadastrar, editar e excluir</h3>
+<figure class="shot"><img src="manual-assets/31-admin-profissionais.png" alt="Profissionais — cadastrar, editar, excluir (4.2)"><figcaption>Profissionais — cadastrar, editar, excluir (4.2)</figcaption></figure>
+
+<ul>
+<li><strong>+ Novo profissional</strong> abre o formulário de cadastro (nome, e-mail, dados profissionais,
+modalidade de atendimento etc.). <strong>Cadastrar</strong> salva. É o único jeito de criar uma conta de
+profissional — profissionais não se auto-cadastram.</li>
+<li><strong>Editar</strong> reabre o formulário preenchido; <strong>Salvar alterações</strong> grava.</li>
+<li><strong>Excluir</strong> apaga o profissional. Se ele tiver consultas, prontuários, disponibilidade ou
+documentos vinculados, esta ação é uma <strong>exclusão em cascata e definitiva</strong> — o sistema mostra um
+alerta de confirmação antes (&quot;Isso apagará DE FORMA PERMANENTE todas as consultas, prontuários,
+horários e documentos vinculados a ele. Essa ação não pode ser desfeita.&quot;). Leia o aviso com
+atenção antes de confirmar.</li>
+</ul>
+<h3 id="43-pacientes--visualizar-desbloquear-e-excluir">4.3 Pacientes — visualizar, desbloquear e excluir</h3>
+<figure class="shot"><img src="manual-assets/32-admin-pacientes.png" alt="Pacientes — visualizar, desbloquear, excluir (4.3)"><figcaption>Pacientes — visualizar, desbloquear, excluir (4.3)</figcaption></figure>
+
+<p>A lista de pacientes pode ser filtrada por <strong>Todos</strong>, <strong>Bloqueados</strong> ou <strong>Com infrações</strong>.</p>
+<ul>
+<li><strong>Desbloquear</strong> (aparece só em pacientes com bloqueio ativo) zera <strong>todo</strong> o histórico de
+penalidade daquele paciente de uma vez — bloqueio, contador de infrações e a advertência
+anterior. Não é um desbloqueio parcial.</li>
+<li><strong>Excluir</strong> remove a conta. Se o paciente <strong>não</strong> tiver nenhuma consulta ou prontuário
+vinculado, o registro é apagado de fato. Se tiver, o sistema <strong>anonimiza</strong> em vez de apagar:
+nome, e-mail, CPF, telefone, endereço e demais dados de identificação são irreversivelmente
+sobrescritos e o login passa a ser impossível, mas o <strong>prontuário clínico permanece intacto</strong> —
+exigência legal de retenção por 20 anos (CFM), mesmo respeitando o direito ao esquecimento da
+LGPD.</li>
+</ul>
+<h3 id="44-agenda-geral">4.4 Agenda Geral</h3>
+<figure class="shot"><img src="manual-assets/33-admin-agenda-geral.png" alt="Agenda Geral — cancelamento pela administração (4.4)"><figcaption>Agenda Geral — cancelamento pela administração (4.4)</figcaption></figure>
+
+<p>Visão de todas as consultas do sistema, com busca por nome e filtros por status e por data. O
+botão <strong>Cancelar</strong> fica disponível para consultas em <strong>Agendada</strong>, <strong>Aguardando paciente</strong> ou
+<strong>Confirmada</strong> — o administrador pode cancelar qualquer consulta, de qualquer paciente ou
+profissional, sempre com <strong>justificativa obrigatória</strong>, igual ao fluxo do paciente
+(ver <a href="#26-cancelar-uma-consulta">2.6</a>).</p>
+<p>É por aqui que se cancela uma <strong>consulta futura já aceita</strong> quando o pedido parte do profissional
+(a agenda dele não tem esse botão — ver <a href="#351-cancelar-uma-consulta-que-voc%C3%AA-j%C3%A1-aceitou">3.5.1</a>).</p>
+<blockquote>
+<p>Uma consulta ainda em <strong>&quot;Aguardando Confirmação&quot;</strong> não mostra o botão <strong>Cancelar</strong> na Agenda
+Geral — recusar uma solicitação pendente é ação do profissional (ou ela é cancelada pelo
+próprio paciente). Para consultas já atrasadas, o desfecho é dado pelo profissional na aba
+<strong>Atrasadas</strong> da agenda dele.</p>
+</blockquote>
+<h3 id="45-exportações-administrativas">4.5 Exportações administrativas</h3>
+<table>
+<thead>
+<tr>
+<th>Botão</th>
+<th>Formato</th>
+<th>Conteúdo</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Exportar Pacientes</td>
+<td>CSV</td>
+<td>Dados operacionais dos pacientes (CPF mascarado)</td>
+</tr>
+<tr>
+<td>Exportar Profissionais</td>
+<td>CSV</td>
+<td>Dados operacionais dos profissionais</td>
+</tr>
+<tr>
+<td>Exportar Relatório Geral</td>
+<td>CSV</td>
+<td>Consolidado de consultas</td>
+</tr>
+</tbody></table>
+<h3 id="46-painel-de-logs">4.6 Painel de Logs</h3>
+<figure class="shot"><img src="manual-assets/35-admin-logs.png" alt="Painel de Logs (4.6)"><figcaption>Painel de Logs (4.6)</figcaption></figure>
+
+<p>Menu <strong>Logs</strong>. Lista automática de tudo que o sistema registrou como <strong>aviso (WARN)</strong> ou <strong>erro
+(ERROR)</strong> em qualquer parte do backend — falha de envio de e-mail, erro de integração, exceção
+inesperada. Serve para diagnosticar problemas sem depender de acesso ao servidor.</p>
+<ul>
+<li>Os registros ficam guardados por <strong>30 dias</strong> e depois são expurgados automaticamente.</li>
+<li>Dá para <strong>filtrar por nível</strong> (WARN / ERROR) e navegar por páginas.</li>
+<li>A gravação acontece em lote a cada poucos segundos, então um erro que acabou de ocorrer pode
+levar alguns segundos para aparecer.</li>
+<li>Uma mensagem de erro pode conter um dado pessoal citado incidentalmente (ex.: o e-mail de um
+paciente dentro do texto do erro). É a mesma informação que já apareceria no log do servidor;
+trate a tela com o mesmo cuidado.</li>
+</ul>
+<h3 id="47-segurança-verificação-em-duas-etapas-do-próprio-administrador">4.7 Segurança (verificação em duas etapas do próprio administrador)</h3>
+<figure class="shot"><img src="manual-assets/34-admin-seguranca.png" alt="Segurança — 2FA do administrador (4.7)"><figcaption>Segurança — 2FA do administrador (4.7)</figcaption></figure>
+
+<p>Menu <strong>Segurança</strong>. Como o Administrador e o Técnico não têm &quot;Meu Perfil&quot;, esta tela existe para
+eles ativarem/desativarem a <strong>verificação em duas etapas</strong> da própria conta. O passo a passo é o
+mesmo da <a href="#16-verifica%C3%A7%C3%A3o-em-duas-etapas-2fa">1.6</a>.</p>
+<h3 id="48-perguntas-frequentes-administrador">4.8 Perguntas frequentes (Administrador)</h3>
+<ul>
+<li><strong>&quot;O profissional pediu para cancelar uma consulta futura dele&quot;</strong> — faça pela <strong>Agenda Geral</strong>
+(<a href="#44-agenda-geral">4.4</a>); a agenda do profissional não tem esse botão enquanto a data não chega.</li>
+<li><strong>&quot;Não aparece o botão Cancelar numa consulta &#39;Aguardando Confirmação&#39;&quot;</strong> — é esperado; essa
+solicitação é recusada pelo profissional ou cancelada pelo paciente.</li>
+<li><strong>&quot;Excluí um profissional sem querer&quot;</strong> — a exclusão é permanente e em cascata; não há
+&quot;lixeira&quot;. Confirme sempre com atenção o aviso antes de excluir.</li>
+<li><strong>&quot;O paciente diz que está bloqueado mas já passaram os 15 dias&quot;</strong> — confira a data de
+<code>blockedUntil</code> nos detalhes do paciente; se o prazo já venceu, o próximo agendamento deveria
+funcionar normalmente. Use <strong>Desbloquear</strong> apenas para liberar antes do prazo.</li>
+<li><strong>&quot;Desbloqueei o paciente mas queria manter a advertência&quot;</strong> — não dá: <strong>Desbloquear</strong> zera
+tudo de uma vez (bloqueio + contador de infrações + advertência).</li>
+<li><strong>&quot;Excluí um paciente mas o prontuário ainda aparece em relatórios&quot;</strong> — é esperado: quando há
+vínculo clínico, a exclusão anonimiza a identidade, não apaga o prontuário.</li>
+<li><strong>&quot;Preciso de uma conta de acesso técnico separada da administração da clínica&quot;</strong> — é o perfil
+<strong>Técnico</strong> (<a href="#49-perfil-t%C3%A9cnico">4.9</a>), criado por um administrador.</li>
+</ul>
+<h3 id="49-perfil-técnico">4.9 Perfil Técnico</h3>
+<p>O <strong>Técnico</strong> é uma conta com o <strong>mesmo nível de acesso do Administrador</strong> em todo o sistema — não
+é um perfil restrito nem somente-leitura. Existe apenas para separar o acesso técnico/operacional
+da administração real da clínica. Só um Administrador cria essa conta; não há auto-cadastro.</p>
+<hr>
+<h2 id="5-máquina-de-estados-da-consulta--referência-rápida">5. Máquina de estados da consulta — referência rápida</h2>
+<h3 id="51-diagrama-de-estados">5.1 Diagrama de estados</h3>
+<div class="fluxo"><span class="st">Aguardando Confirmação</span> <span class="ar">→ <em>profissional aprova</em> →</span> <span class="st">Agendada</span> <span class="ar">→ <em>profissional confirma</em> →</span> <span class="st">Aguardando paciente</span> <span class="ar">→ <em>paciente confirma</em> →</span> <span class="st">Confirmada</span> <span class="ar">→ <em>prontuário salvo</em> →</span> <span class="st">Concluída</span></div><p class="fluxo-nota"><strong>Recusa:</strong> de <span class="st sm">Aguardando Confirmação</span>, <em>profissional recusa</em> → <span class="st sm">Cancelada</span>.<br><strong>De qualquer estado:</strong> <em>cancelar</em> → <span class="st sm">Cancelada</span> · <em>marcar falta</em> → <span class="st sm">Faltou</span> · <em>reagendar</em> → volta para <span class="st sm">Agendada</span>.</p>
+<p>Pontos que costumam gerar dúvida:</p>
+<ul>
+<li><strong>Reagendar sempre reinicia a dupla confirmação</strong> (a consulta volta para <strong>Agendada</strong>), mesmo
+partindo de uma consulta já Confirmada.</li>
+<li><strong>Só o registro do prontuário conclui a consulta</strong> — não existe um botão &quot;concluir&quot; separado.</li>
+<li><strong>Falta sempre gera penalidade.</strong> Cancelamento/reagendamento só gera penalidade quando as três
+condições valem juntas: faltam menos de 24h, a consulta <strong>ainda está no futuro</strong>, e ela já saiu
+de &quot;Aguardando Confirmação&quot;. Cancelar consulta cuja data já passou <strong>não</strong> penaliza.</li>
+</ul>
+<h3 id="52-cancelar-recusar-e-reagendar--quem-faz-o-quê-e-onde">5.2 Cancelar, recusar e reagendar — quem faz o quê e onde</h3>
+<table>
+<thead>
+<tr>
+<th>Estado da consulta</th>
+<th>Paciente</th>
+<th>Profissional</th>
+<th>Administrador / Técnico</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Aguardando Confirmação</strong> (ainda não aceita)</td>
+<td><strong>Cancelar</strong> em <em>Minhas Consultas</em>. Sem penalidade.</td>
+<td><strong>Recusar</strong> em <em>Minha Agenda</em> (abas Hoje/Próximas; ou <em>Atrasadas</em> se a data passou) → vira Cancelada.</td>
+<td><em>Sem botão de cancelar na Agenda Geral neste estado.</em></td>
+</tr>
+<tr>
+<td><strong>Agendada / Aguardando paciente / Confirmada</strong>, data ainda <strong>no futuro</strong></td>
+<td><strong>Cancelar</strong> ou <strong>Reagendar</strong> em <em>Minhas Consultas</em>. Penalidade se &lt; 24h.</td>
+<td><strong>Sem botão</strong> na agenda enquanto a data não chega. Encaminhar à administração.</td>
+<td><strong>Cancelar</strong> na <em>Agenda Geral</em> (justificativa obrigatória).</td>
+</tr>
+<tr>
+<td><strong>Agendada / Aguardando paciente / Confirmada</strong>, data <strong>já passou</strong> (atrasada)</td>
+<td><strong>Cancelar</strong> em <em>Minhas Consultas</em> (não penaliza — data passada).</td>
+<td>Aba <strong>Atrasadas</strong>: <strong>Registrar atendimento</strong>, <strong>Paciente faltou</strong> ou <strong>Cancelar</strong>.</td>
+<td><strong>Cancelar</strong> na <em>Agenda Geral</em>.</td>
+</tr>
+<tr>
+<td><strong>Concluída / Cancelada / Faltou</strong> (encerrada)</td>
+<td>—</td>
+<td>—</td>
+<td>— (estado final; não dá para reabrir)</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Reagendar</strong> é exclusivo do <strong>paciente</strong> e só depois de a consulta ter sido aceita.</li>
+<li><strong>Marcar falta</strong> é exclusivo do <strong>profissional</strong>, em qualquer data, e sempre aplica penalidade.</li>
+<li>Todo cancelamento (qualquer perfil) exige <strong>justificativa</strong>.</li>
+</ul>
+<hr>
+<h2 id="6-perguntas-frequentes-gerais">6. Perguntas frequentes gerais</h2>
+<h3 id="61-esqueci-minha-senha-e-agora">6.1 Esqueci minha senha, e agora?</h3>
+<p>Veja <a href="#13-esqueci-minha-senha">1.3</a>. A mensagem de sucesso aparece sempre, mesmo que o e-mail
+informado não exista no sistema — isso é proposital.</p>
+<h3 id="62-por-que-recebi-um-erro-muitas-tentativas-aguarde">6.2 Por que recebi um erro &quot;muitas tentativas, aguarde&quot;?</h3>
+<p>Rotas sensíveis (login, exportações, prontuários, documentos, avaliação de consulta, lista de
+espera) têm limite de 30 requisições por minuto por IP. Ao passar do limite, o sistema bloqueia
+por 1 minuto — normalmente resolve sozinho sem precisar de suporte.</p>
+<h3 id="63-o-sistema-me-desconectou-sozinho">6.3 O sistema me desconectou sozinho</h3>
+<p>Depois de <strong>15 minutos sem atividade</strong> na área logada, a sessão expira por segurança e o sistema
+volta para o login. Basta entrar de novo. Ver <a href="#17-sess%C3%A3o-expirada-por-inatividade">1.7</a>.</p>
+<h3 id="64-o-login-começou-a-pedir-um-código-de-6-dígitos">6.4 O login começou a pedir um código de 6 dígitos</h3>
+<p>Alguém ativou a <strong>verificação em duas etapas</strong> nessa conta (<a href="#16-verifica%C3%A7%C3%A3o-em-duas-etapas-2fa">1.6</a>).
+O código vem do aplicativo autenticador. Sem o celular, use um <strong>código de backup</strong>. Sem o
+aplicativo e sem os códigos de backup, a administração precisa ajudar a recuperar o acesso.</p>
+<h3 id="65-não-recebi-um-e-mail-do-sistema-verificação-redefinição-de-senha-vaga-avaliação">6.5 Não recebi um e-mail do sistema (verificação, redefinição de senha, vaga, avaliação)</h3>
+<p>Confira a caixa de spam/lixo eletrônico. Links têm validade: verificação de conta <strong>24h</strong>,
+redefinição de senha <strong>curta</strong>, oferta de vaga da lista de espera <strong>~2h</strong>, avaliação de consulta
+<strong>7 dias</strong>. Expirou? Para verificação e vaga, refaça a ação (login / entrar na fila) ou contate a
+administração; para senha, peça um novo link em <strong>Esqueci minha senha</strong>.</p>
+<h3 id="66-segurança-da-sessão">6.6 Segurança da sessão</h3>
+<ul>
+<li>Ao clicar em <strong>Sair do sistema</strong>, o acesso é revogado imediatamente no servidor, não só apagado
+do navegador.</li>
+<li>Dados sensíveis (CPF, telefone, endereço, alergias, conteúdo de prontuário e documentos) ficam
+<strong>cifrados</strong> no banco de dados.</li>
+<li>Toda leitura ou alteração de dado de saúde fica registrada em trilha de auditoria interna.</li>
+</ul>
+<p>Para o detalhamento de conformidade com a LGPD (direitos do titular, retenção de dados, canal de
+atendimento à privacidade), consulte o guia
+<a href="../documentacao/documentacao_cliente.html"><code>documentacao/documentacao_cliente.html</code></a>.</p>
+
+
+
+</body></html>

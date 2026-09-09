@@ -1,0 +1,140 @@
+[
+  {
+    "slug": "01-login",
+    "file": "manual-assets/01-login.png",
+    "caption": "Tela de acesso (1.2)",
+    "ok": true
+  },
+  {
+    "slug": "02-cadastro",
+    "file": "manual-assets/02-cadastro.png",
+    "caption": "Cadastro de paciente (1.1)",
+    "ok": true
+  },
+  {
+    "slug": "03-esqueci-senha",
+    "file": "manual-assets/03-esqueci-senha.png",
+    "caption": "Recuperação de senha (1.3)",
+    "ok": true
+  },
+  {
+    "slug": "04-avaliar-nps",
+    "file": "manual-assets/04-avaliar-nps.png",
+    "caption": "Avaliação pós-consulta (2.12)",
+    "ok": true
+  },
+  {
+    "slug": "10-paciente-inicio",
+    "file": "manual-assets/10-paciente-inicio.png",
+    "caption": "Início do paciente (2.2)",
+    "ok": true
+  },
+  {
+    "slug": "11-paciente-minhas-consultas",
+    "file": "manual-assets/11-paciente-minhas-consultas.png",
+    "caption": "Minhas Consultas — lista e status (2.4)",
+    "ok": true
+  },
+  {
+    "slug": "12-paciente-agendar",
+    "file": "manual-assets/12-paciente-agendar.png",
+    "caption": "Formulário de agendamento guiado (2.3)",
+    "ok": true
+  },
+  {
+    "slug": "13-paciente-meus-documentos",
+    "file": "manual-assets/13-paciente-meus-documentos.png",
+    "caption": "Meus Documentos e Portabilidade (2.8 / 2.10)",
+    "ok": true
+  },
+  {
+    "slug": "14-paciente-lista-espera",
+    "file": "manual-assets/14-paciente-lista-espera.png",
+    "caption": "Lista de Espera (2.11)",
+    "ok": true
+  },
+  {
+    "slug": "15-paciente-meu-perfil",
+    "file": "manual-assets/15-paciente-meu-perfil.png",
+    "caption": "Meu Perfil + verificação em duas etapas (1.6 / 1.8)",
+    "ok": true
+  },
+  {
+    "slug": "20-profissional-inicio",
+    "file": "manual-assets/20-profissional-inicio.png",
+    "caption": "Início do profissional (3.11)",
+    "ok": true
+  },
+  {
+    "slug": "21-profissional-agenda-hoje",
+    "file": "manual-assets/21-profissional-agenda-hoje.png",
+    "caption": "Minha Agenda — aba Hoje (3.3)",
+    "ok": true
+  },
+  {
+    "slug": "22-profissional-agenda-proximas",
+    "file": "manual-assets/22-profissional-agenda-proximas.png",
+    "caption": "Minha Agenda — aba Próximas (3.3)",
+    "ok": true
+  },
+  {
+    "slug": "23-profissional-agenda-atrasadas",
+    "file": "manual-assets/23-profissional-agenda-atrasadas.png",
+    "caption": "Minha Agenda — aba Atrasadas (3.8)",
+    "ok": true
+  },
+  {
+    "slug": "24-profissional-disponibilidade",
+    "file": "manual-assets/24-profissional-disponibilidade.png",
+    "caption": "Minha Disponibilidade (3.2)",
+    "ok": true
+  },
+  {
+    "slug": "25-profissional-documentos",
+    "file": "manual-assets/25-profissional-documentos.png",
+    "caption": "Documentos — upload e visibilidade (3.9)",
+    "ok": true
+  },
+  {
+    "slug": "26-profissional-prontuario",
+    "file": "manual-assets/26-profissional-prontuario.png",
+    "caption": "Prontuário Eletrônico e histórico clínico (3.6 / 3.10)",
+    "ok": true
+  },
+  {
+    "slug": "30-admin-inicio",
+    "file": "manual-assets/30-admin-inicio.png",
+    "caption": "Início do administrador (4.1)",
+    "ok": true
+  },
+  {
+    "slug": "31-admin-profissionais",
+    "file": "manual-assets/31-admin-profissionais.png",
+    "caption": "Profissionais — cadastrar, editar, excluir (4.2)",
+    "ok": true
+  },
+  {
+    "slug": "32-admin-pacientes",
+    "file": "manual-assets/32-admin-pacientes.png",
+    "caption": "Pacientes — visualizar, desbloquear, excluir (4.3)",
+    "ok": true
+  },
+  {
+    "slug": "33-admin-agenda-geral",
+    "file": "manual-assets/33-admin-agenda-geral.png",
+    "caption": "Agenda Geral — cancelamento pela administração (4.4)",
+    "ok": true
+  },
+  {
+    "slug": "34-admin-seguranca",
+    "file": "manual-assets/34-admin-seguranca.png",
+    "caption": "Segurança — 2FA do administrador (4.7)",
+    "ok": true
+  },
+  {
+    "slug": "35-admin-logs",
+    "file": "manual-assets/35-admin-logs.png",
+    "caption": "Painel de Logs (4.6)",
+    "ok": true
+  }
+]
