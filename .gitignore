@@ -30,6 +30,9 @@ debug_*.js
 # Bytecode gerado ao rodar os scripts Python de scripts/ (trello_sync.py, jira_sync.py)
 scripts/__pycache__/
 
+# Dependências das ferramentas de documentação (scripts/gerar-*.mjs)
+scripts/node_modules/
+
 # Arquivos de referencia visual
 /template-ref/
 

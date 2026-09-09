@@ -1,0 +1,16 @@
+{
+  "name": "sistema-lucas-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ferramentas de documentação — captura de telas e geração do MANUAL_USUARIO.pdf. Não faz parte do build do app.",
+  "scripts": {
+    "prints": "node gerar-prints-manual.mjs",
+    "pdf": "node gerar-manual-pdf.mjs",
+    "manual": "node gerar-prints-manual.mjs && node gerar-manual-pdf.mjs"
+  },
+  "devDependencies": {
+    "marked": "^14.1.4",
+    "puppeteer-core": "^23.11.1"
+  }
+}

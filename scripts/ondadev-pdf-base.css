@@ -1,0 +1,172 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   OndaDev · Base de formatação para PDF (paged media)
+   ───────────────────────────────────────────────────────────────────────────
+   SÓ ESTRUTURA. Nada de paleta, tipografia de marca ou estética.
+   O objetivo é um único: nada corta, nada estoura a página, nada quebra feio.
+
+   Como usar: concatene este arquivo ANTES do CSS de tema do projeto, dentro
+   de um único <style> no <head>. O tema só adiciona cor/fonte/borda por cima.
+
+   Renderizador de referência: WeasyPrint (>= 60).
+   Motivo: suporte real a @page, margin boxes, break-*, widows/orphans e
+   repetição de <thead>. Chrome headless --print-to-pdf é frágil pra isso.
+   Gere sempre com:  weasyprint --base-url <dir>/ entrada.html saida.pdf
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Página ───────────────────────────────────────────────────────────────
+   Tamanho e margem SEMPRE explícitos. Margem generosa e simétrica nas laterais
+   dá "corredor de segurança": conteúdo que vaza um pouco ainda cai na margem,
+   não fora da folha. Rodapé/cabeçalho vivem nas margin boxes — NUNCA no fluxo —
+   então nunca colidem com o conteúdo nem empurram texto pra fora.            */
+@page {
+  size: A4;
+  margin: 20mm 18mm 20mm 18mm;
+  /* O projeto sobrescreve o texto; o contador é padrão. */
+  @bottom-right { content: counter(page) " / " counter(pages); font-size: 8pt; }
+}
+
+/* ── 2. Reset mínimo ────────────────────────────────────────────────────────
+   box-sizing:border-box → padding/borda NÃO somam à largura, então um bloco
+   com padding nunca ultrapassa o container e vaza pra fora da página.        */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Força impressão de cores de fundo em motores WebKit/Blink (Chrome headless).
+   WeasyPrint já imprime fundos por padrão e avisa que não conhece a
+   propriedade sem prefixo — o aviso é inofensivo, mantenha as duas p/ portabilidade. */
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  margin: 0;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  /* Alinhamento à esquerda de propósito: "justify" sem hifenização gera
+     "rios" e empurra palavras longas pra fora da caixa. */
+  text-align: left;
+  /* Palavra/URL/token gigante quebra em vez de alargar a página. */
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  /* Nunca deixa 1 linha órfã/viúva de parágrafo sozinha numa página. */
+  widows: 3;
+  orphans: 3;
+}
+
+/* ── 3. Títulos: andam junto com o que vem depois ───────────────────────────
+   break-after:avoid → um título NUNCA fica sozinho no pé da página.
+   break-inside:avoid → o próprio título não racha em duas páginas.
+   Margem de topo modesta: margem grande é "engolida" de forma inconsistente
+   no topo de página e vira buraco. Primeiro elemento do corpo sem margem.    */
+h1, h2, h3, h4, h5, h6 {
+  break-after: avoid;
+  break-inside: avoid;
+  page-break-after: avoid;      /* alias legado, mantém compat */
+  margin: 1.1em 0 0.4em;
+  line-height: 1.25;
+}
+body > :first-child,
+h1:first-child, h2:first-child { margin-top: 0; }
+
+p, ul, ol, dl { margin: 0.4em 0; }
+li { margin: 0.2em 0; break-inside: avoid; }   /* bullet de 2 linhas não racha */
+
+/* ── 4. Quebra de seção deliberada ─────────────────────────────────────────
+   Use a classe .pb (ou data-break) só onde a seção DEVE começar em folha
+   nova. Não espalhe: quebra demais = páginas meio vazias.                    */
+.pb, [data-break="page"] { break-before: page; page-break-before: always; }
+.no-break, .keep { break-inside: avoid; page-break-inside: avoid; }
+
+/* ── 5. Blocos atômicos: nunca partem ──────────────────────────────────────
+   figura, citação, código, cartão, "callout": ou cabem inteiros numa página,
+   ou vão inteiros pra próxima. IMPORTANTE: break-inside:avoid só funciona se
+   o bloco couber em UMA página. Bloco mais alto que a área útil é quebrado
+   assim mesmo — por isso as imagens têm teto de altura (seção 6).           */
+figure, blockquote, pre, table,
+.callout, .card, .figure, .admonition {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ── 6. Imagens: a causa nº 1 de "cortou" ──────────────────────────────────
+   max-width:100%  → nunca mais larga que a caixa de texto.
+   height:auto     → mantém proporção.
+   max-height      → teto pra não passar da área útil de UMA página.
+                     A4 retrato, margens 20mm ≈ 257mm úteis; deixamos folga
+                     pra legenda/nota → 225mm. Imagem alta ESCALA, não corta.
+   A <figcaption> fica DENTRO de <figure> → anda sempre junto da imagem.     */
+img {
+  max-width: 100%;
+  height: auto;
+  break-inside: avoid;
+}
+figure {
+  margin: 0.8em 0 1em;
+  text-align: center;
+  break-inside: avoid;
+}
+figure > img { max-height: 225mm; object-fit: contain; }
+figcaption { break-before: avoid; margin-top: 0.35em; font-size: 0.85em; }
+
+/* Ativo opcional: para 1 asset largo demais (diagrama, planilha), vire a
+   página. Aplique class="landscape" no wrapper do asset.                     */
+@page landscape { size: A4 landscape; }
+.landscape { page: landscape; break-before: page; break-after: page; }
+.landscape > img, .landscape > svg { max-height: 170mm; }  /* altura útil deitada */
+
+/* ── 7. Tabelas ───────────────────────────────────────────────────────────
+   table-layout:fixed + quebra de palavra nas células → uma célula com texto
+   longo NÃO estica a coluna pra fora da página (o erro clássico).
+   Para tabela LONGA (mais alta que a página) NÃO use break-inside:avoid no
+   <table> — em vez disso repita o cabeçalho e proteja a linha:              */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0.7em 0;
+}
+th, td {
+  overflow-wrap: anywhere;   /* valor válido moderno; quebra token sem coluna estourar */
+  vertical-align: top;
+  text-align: left;
+}
+thead { display: table-header-group; }   /* cabeçalho repete a cada página */
+tfoot { display: table-footer-group; }
+tr    { break-inside: avoid; page-break-inside: avoid; }  /* linha não racha */
+/* Tabela curta que você QUER inteira numa página: <table class="keep"> */
+table.keep { break-inside: avoid; }
+
+/* ── 8. Código e texto pré-formatado ──────────────────────────────────────
+   pre-wrap + quebra → o código quebra linha em vez de ser cortado na direita.
+   ASCII art / diagrama de largura fixa NÃO pode quebrar sem corromper: não
+   coloque no PDF. Converta para HTML que reflui (ex.: flex-wrap) ou para
+   imagem/SVG que escala. Se for inevitável, use <pre class="wide"> + vire a
+   página (.landscape) ou reduza a fonte conscientemente.                     */
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0.7em 0.9em;
+  font-size: 0.82em;
+  line-height: 1.35;
+}
+pre.wide { white-space: pre; }           /* preserva alinhamento; combine c/ .landscape */
+code { overflow-wrap: anywhere; }        /* trecho inline longo não alarga a página */
+
+/* ── 9. Página inteira (capa, divisória, folha de rosto) ──────────────────
+   min-height perto da área útil + break-after → ocupa a folha e força a
+   próxima. Use unidades de página (mm/%), nunca vh/vw pra dimensionar bloco
+   impresso.                                                                  */
+.sheet {
+  min-height: 245mm;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+  page-break-after: always;
+}
+
+/* ── 10. Proibições que quebram paged media ──────────────────────────────
+   - position: fixed/sticky no fluxo do corpo  → só dentro de @page margin box
+   - dimensionar bloco com vh/vw               → use mm/cm/%
+   - box-shadow / filter / container queries   → WeasyPrint ignora em silêncio
+   - <thead> sem display:table-header-group    → cabeçalho some nas páginas 2+
+   - imagem sem max-width:100% e sem teto de altura → corta/estoura
+   - "justify" sem hyphens                     → overflow horizontal
+   Mantenha o CSS de impressão conservador e SEMPRE renderize pra conferir.  */
